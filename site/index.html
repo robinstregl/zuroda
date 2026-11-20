@@ -5794,14 +5794,16 @@ function knockout(f,msg){if(X.end)return;X.ko=msg+' Zuro dragged you home.';X.de
 function hitFoe(f,dmg,src){if(f.dead)return;f.hp-=dmg;f.stun=src==='hammer'?1.1:1.3;f.hitT=0.3;f.aware=1;f.alert=Math.max(f.alert,0.5);xBurst(f.x,f.y,'#ffd36e',10,90);sfx.hit();
   if(f.hp<=0)killFoe(f);else xText(f.type==='drone'?'Hit! It wobbles…':'Hit! It\'s stunned…','#9a6a14');}
 function killFoe(f){f.dead=true;SV.scrapT[f.id]=SV.exp;xBurst(f.x,f.y,'#ff6a4a',22,140);xBurst(f.x,f.y,'#8b8f96',18,110);sfx.boom();
-  const n=FOE[f.type].chip+(f.type==='bot'&&Math.random()<0.4?1:0);dropChip(f.x,f.y,n);xText('Destroyed! A circuit fell out','#2f7a52');X.events.push({x:f.x,y:f.y,t:'chip'});}
+  const n=FOE[f.type].chip+(f.type==='bot'&&Math.random()<0.4?1:0);dropChip(f.x,f.y,n);dropChip(f.x,f.y,1+(Math.random()<0.5?1:0),'scrap');xText('Destroyed! A circuit and some scrap fell out','#2f7a52');X.events.push({x:f.x,y:f.y,t:'chip'});}
 // circuits fall on the ground where the robot broke – you have to walk over and pick them up (Robin 20. 11.)
+function makeScrapDrop(n){const g=grp();const m=makeScrap(n,Math.floor(Math.random()*999));m.scale.setScalar(0.8);g.add(m);g.userData.b=m;g.userData.ring=part(G.ring,new T.MeshBasicMaterial({color:C('#c8b89a'),transparent:true,opacity:0.6,depthWrite:false}),0,0.06,0,1.4,1,1.4,g,true);return g;}
 function makeChipDrop(){const g=grp();PART_OL=0.01;const b=grp(0,0.12,0,g);b.rotation.set(0.15,0.6,0.1);part(G.box,'#3f8a5a',0,0,0,0.9,0.1,0.9,b);part(G.box,'#2b3436',0,0.07,0,0.42,0.06,0.42,b);
   for(let i=0;i<4;i++)for(const sd of [-1,1]){part(G.box,'#d9a441',-0.3+i*0.2,0,sd*0.5,0.07,0.05,0.14,b);part(G.box,'#d9a441',sd*0.5,0,-0.3+i*0.2,0.14,0.05,0.07,b);}PART_OL=0;
   g.userData.ring=part(G.ring,new T.MeshBasicMaterial({color:C('#7ee0a8'),transparent:true,opacity:0.8,depthWrite:false}),0,0.06,0,1.6,1,1.6,g,true);g.userData.b=b;return g;}
-function dropChip(x,y,n){const a=Math.random()*6.28,d=X.drops||(X.drops=[]);const o={x:x+Math.cos(a)*6,y:y+Math.sin(a)*6,n,m:makeChipDrop(),t:X.t};o.m.position.set(o.x*S,H2(o.x,o.y),o.y*S);X.scene.add(o.m);d.push(o);}
-function updDrops(){const D=X.drops;if(!D)return;for(let i=D.length-1;i>=0;i--){const o=D[i];const k=1.6*(1+Math.sin(X.t*4+i)*0.12);o.m.userData.ring.scale.set(k,1,k);o.m.userData.b.position.y=0.12+Math.abs(Math.sin(X.t*3+i))*0.15;
-  if(X.end||Math.hypot(o.x-X.x,o.y-X.y)>14)continue;if(room()<1){if(X.fullCd<=0){fullMsg();X.fullCd=2;}continue;}const t=Math.min(o.n,room());X.chips+=t;o.n-=t;sfx.core();xText('+'+t+' {chip} circuit','#2f7a52');
+function dropChip(x,y,n,kind){const a=Math.random()*6.28,d=X.drops||(X.drops=[]);const sc=kind==='scrap';const o={x:x+Math.cos(a)*(sc?11:6),y:y+Math.sin(a)*(sc?11:6),n,kind:sc?'scrap':'chip',m:sc?makeScrapDrop(n):makeChipDrop(),t:X.t};o.m.position.set(o.x*S,H2(o.x,o.y),o.y*S);X.scene.add(o.m);d.push(o);}
+function updDrops(){const D=X.drops;if(!D)return;for(let i=D.length-1;i>=0;i--){const o=D[i];const k=1.6*(1+Math.sin(X.t*4+i)*0.12);o.m.userData.ring.scale.set(k,1,k);if(o.kind!=='scrap')o.m.userData.b.position.y=0.12+Math.abs(Math.sin(X.t*3+i))*0.15;
+  if(X.end||Math.hypot(o.x-X.x,o.y-X.y)>14)continue;if(room()<1){if(X.fullCd<=0){fullMsg();X.fullCd=2;}continue;}const t=Math.min(o.n,room());o.n-=t;
+  if(o.kind==='scrap'){X.scrap+=t;sfx.clink();xText('+'+t+' {scrap}','#5d6168');}else{X.chips+=t;sfx.core();xText('+'+t+' {chip} circuit','#2f7a52');}
   if(o.n<=0){X.scene.remove(o.m);D.splice(i,1);}}}
 function slingShoot(){const l=gearLv('prak'),f=X.foeNear;if(!l||!f||f.dead||X.end)return false;if(X.slingCd>0)return false;const d=Math.hypot(f.x-X.x,f.y-X.y);if(d>SLING.range(l))return false;
   if(X.scrap<1){xText('No scrap left to shoot','#c0532f');return false;}X.scrap--;X.slingCd=SLING.cd(l);X.face=Math.atan2(f.x-X.x,f.y-X.y);heroPlay(X.hero,'throw',1.9);
@@ -5967,7 +5969,7 @@ function animExp(dt){
     for(const k of c.crates)if(k.m&&k.m.userData.spark){const sp=k.m.userData.spark;sp.position.y=1.9+Math.sin(t*2+k.ph)*0.2;sp.rotation.y=t*2;sp.visible=Math.sin(t*2.2+k.ph)>0;}
     for(const f of c.fata){if(f.gone&&f.m){const a=clamp(1-(X.t-f.goneT)/0.8,0,1);if(a<=0){f.m.parent&&f.m.parent.remove(f.m);f.m=null;}else{f.m.scale.set(1+(1-a)*0.6,1,1+(1-a)*0.6);f.m.position.x+=Math.sin(t*40)*0.01;
       f.m.traverse(o=>{if(o.material&&!o.userData.cl){o.material=o.material.clone();o.material.transparent=true;o.userData.cl=1;}if(o.material)o.material.opacity=a;});}}}
-    for(const f of c.foes){const m=f.m;if(!m)continue;if(f.dead){m.g.visible=false;m.cone.visible=false;continue;}const hh=H2(f.x,f.y);m.g.position.set(f.x*S,hh,f.y*S);
+    for(const f of c.foes){const m=f.m;if(!m)continue;if(f.dead){m.cone.visible=false;if(!m.broken){m.broken=1;const hh=H2(f.x,f.y);m.g.position.set(f.x*S,hh,f.y*S);m.body.rotation.set(0,-f.dir,f.type==='drone'?0.5:1.15);m.body.position.y=f.type==='drone'?-1.2:-0.25;m.eye.material.emissiveIntensity=0;m.eye.material.color.set('#3a2a20');if(m.legs)m.legs.forEach(L=>{L.rotation.z=0.6;});}continue;}const hh=H2(f.x,f.y);m.g.position.set(f.x*S,hh,f.y*S);
       const wob=f.stun>0?Math.sin(t*22)*0.25:0;
       if(f.type==='drone'){m.body.position.y=1.6+Math.sin(t*3+f.cx)*0.15-(f.stun>0?0.5:0);}
       else{const mv=f.stun>0?0:f.chase>0?16:f.pause>0?0:8;m.body.position.y=mv?Math.abs(Math.sin(t*mv+f.x))*0.07:0;m.legs.forEach((L,k)=>{L.rotation.z=mv?Math.sin(t*mv+k*1.6)*0.35:0;});}
