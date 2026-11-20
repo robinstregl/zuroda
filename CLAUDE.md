@@ -8,3 +8,5 @@
 - Test: `sh build.sh <cesta k lokálnímu three.min.js> /tmp/tt.html` a `python3 tools/bot_regression.py 18` (Playwright + Chrome se swiftshaderem). Na začátku je výběr postavy – v testech klikni „Woman“ a „Start“.
 - Rozhodnutí o designu (ekonomika, nepřátelé, předměty, mapa) jsou v projektu „THE GAME“ na claude.ai (`claude/daleko-zaklad-hry.md`, `claude/zuroda-kolo-nepratele-ekonomika.md`, `claude/daleko-postavy.md`).
 - Budovy se stavějí okamžitě (Robin nechce čekací časovače). Všechny budovy mají 10 úrovní, předměty taky (kromě Kompasu).
+- Animace postavy: `src/anims.js` vzniká z Quaternius Universal Animation Library (GLB na Robinově Macu ve složce Desktop/Animace) příkazem `python3 tools/retarget.py UAL1.glb UAL2.glb '{"klíč":["1|2","Název_klipu",loop]}' src/anims.js`. Postava nemá kostru – převod nastavuje rotace kloubů (hips, spine, neck, sh/el/hand, leg/knee/foot). Akce (`heroPlay(H,'smash')`) hrají jen na horní polovině těla.
+- Zvuky jsou v `site/sfx/*.mp3`, mapování v `SND` v game.js; syntetické tóny jsou záloha.

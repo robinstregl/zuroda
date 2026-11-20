@@ -941,7 +941,7 @@ function makeHero(gear){
   if(gear.body==='cloak'){const cl=cgrp(chest,[0,0.2,-0.2]);H.cloak=cl;mk(rbox(0.66,1.16,0.05,0.025),'#7a3f2a',cl,{p:[0,-0.56,0]});mk(rbox(0.66,0.06,0.06,0.02),GOLD,cl,{p:[0,-1.12,0.0],ol:0.008});
     mk(tor(0.17,0.04,8,20),'#7a3f2a',neck,{p:[0,-0.04,0],r:[Math.PI/2,0,0],ol:0.01});mk(sph(0.05),GOLD,neck,{p:[0,-0.04,0.17],ol:0.006});}
   if(gear.back)buildBack(chest,gear.back,H,false);
-  if(gear.tool==='hammer')addHammer(spine,[-0.3,0.03,0.08],[0.15,0,0.25],0.9);
+  if(gear.tool==='hammer'){H.hammer=addHammer(spine,[-0.3,0.03,0.08],[0.15,0,0.25],0.9);H.hammerPar=spine;H.hammerP=H.hammer.position.clone();H.hammerR=H.hammer.rotation.clone();}
   if(ST.chunky){H.head.scale.setScalar(1.28);H.head.position.y+=0.03;for(const hd of H.hand)hd.scale.setScalar(1.25);for(const ft of H.foot)ft.scale.set(1.2,1.15,1.2);H.root.scale.setScalar(0.94);blobShadow(H.root,0.62);}
   return H;
 }
@@ -1051,9 +1051,37 @@ function makeDog(dgear){if(WOLT)return makeDogGLB(dgear);
 }
 
 
+// ===== motion-capture animations (Quaternius Universal Animation Library, CC0 – retargeted by tools/retarget.py) =====
+const ANIM={},AF=61;
+function animClip(k){let c=ANIM[k];if(c)return c;const D=typeof ANIM_DATA!=='undefined'&&ANIM_DATA[k];if(!D)return null;const b=atob(D.d),a=new Float32Array(b.length);
+  for(let i=0;i<b.length;i++){let v=b.charCodeAt(i);if(v>127)v-=256;a[i]=v/127;}c={fps:D.fps,n:D.n,loop:D.loop,a,dur:D.loop?D.n/D.fps:(D.n-1)/D.fps};ANIM[k]=c;return c;}
+function sampleClip(c,t,out){let f=t*c.fps;if(c.loop){f%=c.n;if(f<0)f+=c.n;}else f=clamp(f,0,c.n-1);const i0=Math.floor(f),i1=c.loop?(i0+1)%c.n:Math.min(c.n-1,i0+1),k=f-i0,a=c.a;
+  for(let j=0;j<AF;j++)out[j]=a[i0*AF+j]*(1-k)+a[i1*AF+j]*k;return out;}
+const QIDX=[0,5,9];for(let j=13;j<AF;j+=4)QIDX.push(j);
+// blend b into a (k = weight of b); quaternions are sign-aligned first. upperOnly leaves hips and legs alone.
+function blendInto(a,b,k,upperOnly){if(k<=0)return;for(const i of QIDX){if(upperOnly&&(i===0||i>=37))continue;const kk=upperOnly&&(i===5||i===9)?k*0.5:k;const d=a[i]*b[i]+a[i+1]*b[i+1]+a[i+2]*b[i+2]+a[i+3]*b[i+3],sg=d<0?-1:1;
+    for(let j=0;j<4;j++)a[i+j]=a[i+j]*(1-kk)+b[i+j]*sg*kk;}if(!upperOnly)a[4]=a[4]*(1-k)+b[4]*k;}
+function applyPose(H,p){const q=(o,i)=>{const x=p[i],y=p[i+1],z=p[i+2],w=p[i+3],l=Math.hypot(x,y,z,w)||1;o.quaternion.set(x/l,y/l,z/l,w/l);};
+  q(H.hips,0);H.hips.position.y=0.93+p[4]*0.93;q(H.spine,5);H.chest.quaternion.set(0,0,0,1);q(H.neck,9);H.head.quaternion.set(0,0,0,1);
+  const J=[H.sh,H.el,H.hand,H.leg,H.knee,H.foot];for(let ji=0;ji<6;ji++)for(let s=0;s<2;s++)q(J[ji][s],13+(ji*2+s)*4);}
+// one-shot action on top of the base loop (upper body only while walking)
+function heroPlay(H,k,speed){if(!H||!animClip(k))return;H.one={k,t0:H._t||0,sp:speed||1};}
+function toolInHand(H,on){const h=H.hammer;if(!h||H._toolHand===on)return;H._toolHand=on;
+  if(on){H.hand[0].add(h);h.position.set(0,-0.06,0.04);h.rotation.set(Math.PI/2,0,0);}else{H.hammerPar.add(h);h.position.copy(H.hammerP);h.rotation.copy(H.hammerR);}}
+function animPose(H,t,walk,ph){const base=walk?'walk':(H.idleK||'idle'),c=animClip(base);if(!c)return false;
+  const dt=Math.max(0,Math.min(0.1,t-(H._t===undefined?t:H._t)));H._t=t;
+  const P=H._pose||(H._pose=new Float32Array(AF)),T=H._tmp||(H._tmp=new Float32Array(AF));
+  sampleClip(c,walk?(((ph/(2*Math.PI))%1+1)%1)*c.dur:t,P);
+  if(H._base!==base){if(H._last){H._from=H._from||new Float32Array(AF);H._from.set(H._last);H._fade=1;}H._base=base;}
+  if(H._fade>0){H._fade=Math.max(0,H._fade-dt/0.2);T.set(H._from);blendInto(T,P,1-H._fade,false);P.set(T);}
+  let tool=base==='fix';
+  if(H.one){const oc=animClip(H.one.k),el=(t-H.one.t0)*H.one.sp;if(el>=oc.dur){H.one=null;}else{sampleClip(oc,el,T);const w=Math.min(1,el/0.06,(oc.dur-el)/0.1);blendInto(P,T,w,H.one.k!=='yes');if(H.one.k==='smash')tool=true;}}
+  toolInHand(H,tool);
+  H._last=H._last||new Float32Array(AF);H._last.set(P);applyPose(H,P);return true;}
 function heroPose(H,t,walk,phIn){
   const ph=phIn!==undefined?phIn:t*7.5;
-  if(walk){const s=Math.sin(ph),c=Math.cos(ph);
+  if(animPose(H,t,walk,ph)){}
+  else if(walk){const s=Math.sin(ph),c=Math.cos(ph);
     H.leg[0].rotation.x=-s*0.55;H.leg[1].rotation.x=s*0.55;
     H.knee[0].rotation.x=Math.max(0,c)*0.95+0.05;H.knee[1].rotation.x=Math.max(0,-c)*0.95+0.05;
     H.foot[0].rotation.x=-H.leg[0].rotation.x*0.4-H.knee[0].rotation.x*0.6+0.1;H.foot[1].rotation.x=-H.leg[1].rotation.x*0.4-H.knee[1].rotation.x*0.6+0.1;
@@ -1438,7 +1466,8 @@ function updateBase(dt){
   applyDay(BS.scene,BS.sun);baseCamera();updWisps(BS.wisps,dt,0,2,29);updDroneFly();
   const t=tNow;
   const tq=TQ();
-  if(BS.hero){heroPose(BS.hero,tq,false);blinkFace(BS.hero,BS.dog,tq,Math.floor(tq/5)%4===3?'happy':'idle',Math.floor(tq/4)%3===2?'happy':'idle');if(BS.dog)dogPose(BS.dog,tq,'idle',0);}
+  if(BS.hero&&window._cheer){window._cheer=0;heroPlay(BS.hero,'yes',1);}
+  if(BS.hero){BS.hero.idleK=Math.floor(tq/9)%3===2?'fold':'idle';heroPose(BS.hero,tq,false);blinkFace(BS.hero,BS.dog,tq,Math.floor(tq/5)%4===3?'happy':'idle',Math.floor(tq/4)%3===2?'happy':'idle');if(BS.dog)dogPose(BS.dog,tq,'idle',0);}
   for(const k in BS.bots){animBot(BS.bots[k],tq);BS.bots[k].g.rotation.y=Math.sin(t*0.4+k.length)*0.6;}
   for(const p of BS.palms)p.rotation.z=Math.sin(t*0.9+p.parent.position.x)*0.05;
   const gi=BS.gInst,ng=Math.min(gi.N,4+totalLevels()*9+(SV.b.sklenik?22:0)+SV.decor.length*2);gi.discs.count=ng;gi.blades.count=ng*3;gi.flowers.count=ng?BS.flowerPrefix[ng-1]:0;
@@ -1605,7 +1634,7 @@ function updCombatBtns(){const b=$('bSling'),l=gearLv('prak'),f=X.foeNear;const 
 function updateMelonBtn(){const b=$('bMelon');if(scene==='exp'&&X&&!X.end&&X.bottles>0){b.classList.remove('hidden');$('mCnt').textContent=X.bottles;}else b.classList.add('hidden');}
 $('bSling').addEventListener('click',e=>{e.stopPropagation();slingShoot();});
 $('bDrop').addEventListener('click',e=>{e.stopPropagation();dropCache();});
-$('bMelon').addEventListener('click',e=>{e.stopPropagation();if(!X||X.end||X.bottles<=0)return;if(X.cap-X.water<0.15){xText('Flask is full','#3f8fa1');return;}X.bottles--;X.water=Math.min(X.cap,X.water+BOTTLE);sfx.drink();xText('+0.5 L {bottle}','#3f8fa1');updateMelonBtn();});
+$('bMelon').addEventListener('click',e=>{e.stopPropagation();if(!X||X.end||X.bottles<=0)return;if(X.cap-X.water<0.15){xText('Flask is full','#3f8fa1');return;}X.bottles--;X.water=Math.min(X.cap,X.water+BOTTLE);sfx.drink();heroPlay(X.hero,'drink',1.5);xText('+0.5 L {bottle}','#3f8fa1');updateMelonBtn();});
 function xText(t,c){float3(X.x*S,H2(X.x,X.y)+3.2,X.y*S,t,c);}
 function xBurst(x,y,col,n,s){burst3(X.scene,x*S,H2(x,y)+0.6,y*S,col,n,(s||80)/22);}
 const weight=()=>X.scrap+X.cores*2+(X.chips||0);
@@ -1680,11 +1709,11 @@ function killFoe(f){f.dead=true;SV.scrapT[f.id]=SV.exp;xBurst(f.x,f.y,'#ff6a4a',
   let n=FOE[f.type].chip+(f.type==='bot'&&Math.random()<0.4?1:0),got=0;while(n>0&&room()>=1){X.chips++;n--;got++;}
   xText(got?'Destroyed! +'+got+' {chip}':'Destroyed! …but your backpack is full','#2f7a52');X.events.push({x:f.x,y:f.y,t:'chip'});}
 function slingShoot(){const l=gearLv('prak'),f=X.foeNear;if(!l||!f||f.dead||X.end)return false;if(X.slingCd>0)return false;const d=Math.hypot(f.x-X.x,f.y-X.y);if(d>SLING.range(l))return false;
-  if(X.scrap<1){xText('No scrap left to shoot','#c0532f');return false;}X.scrap--;X.slingCd=SLING.cd(l);X.face=Math.atan2(f.x-X.x,f.y-X.y);
+  if(X.scrap<1){xText('No scrap left to shoot','#c0532f');return false;}X.scrap--;X.slingCd=SLING.cd(l);X.face=Math.atan2(f.x-X.x,f.y-X.y);heroPlay(X.hero,'throw',1.9);
   const m=part(G.sph,'#8b8f96',X.x*S,1.2,X.y*S,0.16,0.16,0.16,X.scene,true);X.shots.push({f,x0:X.x,y0:X.y,t:0,dur:Math.max(0.12,d/430),m,dmg:SLING.dmg(l)});sfx.sling();return true;}
 function updShots(dt){for(let i=X.shots.length-1;i>=0;i--){const s=X.shots[i];s.t+=dt;const k=Math.min(1,s.t/s.dur),x=lerp(s.x0,s.f.x,k),y=lerp(s.y0,s.f.y,k);
   s.m.position.set(x*S,H2(x,y)+1.2+Math.sin(k*Math.PI)*1.1,y*S);if(k>=1){X.scene.remove(s.m);X.shots.splice(i,1);if(!s.f.dead)hitFoe(s.f,s.dmg,'sling');}}}
-function smash(){const f=X.nearFoe,l=gearLv('kladivo');if(!f||f.dead||!l||X.smashCd>0||X.end)return false;X.smashCd=0.45;X.face=Math.atan2(f.x-X.x,f.y-X.y);X.dest=null;X.smashT=X.t;hitFoe(f,hammerDmg(l),'hammer');return true;}
+function smash(){const f=X.nearFoe,l=gearLv('kladivo');if(!f||f.dead||!l||X.smashCd>0||X.end)return false;X.smashCd=0.45;X.face=Math.atan2(f.x-X.x,f.y-X.y);X.dest=null;X.smashT=X.t;heroPlay(X.hero,'smash',1);hitFoe(f,hammerDmg(l),'hammer');return true;}
 // water caches (Robin 20. 11.): leave a full bottle in the desert, it stays on the map – walk bottle to bottle to get further
 function makeCacheBottle(){const g=grp();PART_OL=0.012;const gl=new T.MeshStandardMaterial({color:C('#7cc3cf'),transparent:true,opacity:0.85,roughness:0.2});
   const b=grp(0,0,0,g);b.rotation.z=0.12;part(G.cyl,gl,0,0.45,0,0.32,0.9,0.32,b);part(G.cyl,gl,0,1.0,0,0.14,0.22,0.14,b);part(G.cyl,'#c0432f',0,1.16,0,0.16,0.1,0.16,b);part(G.box,'#e8e0c8',0,0.45,0.3,0.36,0.3,0.03,b);
@@ -1771,7 +1800,7 @@ function endExp(type,cp){
   if(type==='thirst'){const lf=rescueLoss();const ls=Math.ceil(X.scrap*lf),lc=X.cores?Math.max(0,Math.round(X.cores*lf)):0;const lx=X.chips?Math.max(0,Math.round(X.chips*lf)):0;X.lostS=ls;X.lostC=lc;X.lostX=lx;X.lossPct=Math.round(lf*100);X.scrap-=ls;X.cores-=lc;X.chips-=lx;
     if(ls||lc||lx)SV.bags.push({x:Math.round(X.x),y:Math.round(X.y),s:ls,c:lc,k:lx});sfx.fail();
     X.rs={hx:X.x*S,hz:X.y*S,face:X.x>0?-Math.PI/2:Math.PI/2,dx0:X.dx*S,dz0:X.dy*S,dface0:X.dface};}
-  else{sfx.home();X.back=Math.round(X.water*10)/10;SV.well=Math.min(wellCap(),SV.well+X.water);}
+  else{sfx.home();window._cheer=1;X.back=Math.round(X.water*10)/10;SV.well=Math.min(wellCap(),SV.well+X.water);}
   SV.scrap+=X.scrap;SV.cores+=X.cores;SV.chips=(SV.chips||0)+(X.chips||0);SV.exp++;if(X.maxD>SV.best){SV.best=X.maxD;X.record=true;}
   X.addM=Math.round(X.walked*M_PER_U);SV.meters=(SV.meters||0)+X.addM;X.lv1=[heroLv(),dogLv()];
   X.msg=null;if(SV.b.radio&&SV.msg<Math.min(MSGS.length,SV.b.radio)){X.msg=MSGS[SV.msg];SV.msg++;}
@@ -1822,7 +1851,7 @@ function animExp(dt){
   if(X.end==='thirst'&&X.rs){animRescue(X.t-X.endT,tq);}
   else{
     H.root.position.set(X.x*S,h,X.y*S);H.root.rotation.set(0,X.face,0);
-    heroPose(H,tq,X.moving,qph(X.walkPh));
+    H.idleK=X.dis?'fix':'idle';heroPose(H,tq,X.moving&&!X.dis,qph(X.walkPh));
     blinkFace(H,D,tq,X.water/X.cap<0.25?'tired':(Math.floor(tq/6)%5===4?'happy':'idle'),X.dmoving?'idle':(Math.floor(tq/4)%4===3?'happy':'look'));
     D.root.position.set(X.dx*S,H2(X.dx,X.dy),X.dy*S);D.root.rotation.set(0,X.dface,0);
     dogPose(D,tq,X.dmoving?'trot':'idle',qph(X.dph));
@@ -1834,8 +1863,7 @@ function animExp(dt){
   // dest marker
   if(X.dest&&!X.end&&!BOT){X.destM.visible=true;const pu=1+Math.sin(t*6)*0.12;X.destM.position.set(X.dest.x*S,H2(X.dest.x,X.dest.y)+0.08,X.dest.y*S);X.destM.scale.set(1.6*pu,1,1.6*pu);}else X.destM.visible=false;
   // wreck progress ring
-  if(X.dis&&!X.end){const wr=X.dis.w;X.wreckRing.visible=true;X.wreckRing.position.set(wr.x*S,0.12,wr.y*S);const s=1+X.dis.t/1.3*2.4;X.wreckRing.scale.set(s,1,s);H.sh[1].rotation.x=-1.2-Math.abs(Math.sin(X.t*12))*1.1;}else X.wreckRing.visible=false;
-  if(X.smashT&&X.t-X.smashT<0.32&&!X.end){H.sh[1].rotation.x=-2.4+(X.t-X.smashT)/0.32*2.2;}
+  if(X.dis&&!X.end){const wr=X.dis.w;X.wreckRing.visible=true;X.wreckRing.position.set(wr.x*S,0.12,wr.y*S);const s=1+X.dis.t/1.3*2.4;X.wreckRing.scale.set(s,1,s);}else X.wreckRing.visible=false;
   // chunk objects (+ cull far chunks)
   const cullR=(X.camD||40)*0.95+14;
   for(const c of X.chunks.values()){
@@ -2143,6 +2171,9 @@ function snapChars(kind,w,h){try{const r2=new T.WebGLRenderer({antialias:true,al
 function refreshPortraits(){for(const [k,w,h] of [['f',360,400],['m',360,400],['dog',360,400],['trio',540,600]]){if(!PORTRAIT[k]){const u=snapChars(k,w,h);if(u)PORTRAIT[k]=u;}}
   document.querySelectorAll('img[data-portrait]').forEach(im=>{const k=im.dataset.portrait==='hero'?(SV.sex==='f'?'f':'m'):im.dataset.portrait;if(PORTRAIT[k]){im.src=PORTRAIT[k];im.style.visibility='';}});}
 window.__portrait=k=>PORTRAIT[k];
+window.__animSnap=(k,t,ry,sx)=>{try{const w=220,h=300,r2=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});r2.setSize(w,h);r2.outputEncoding=T.sRGBEncoding;const sc=new T.Scene();setupLights(sc);
+  const keep=SV.sex;SV.sex=sx||'f';const H=makeHero(Object.assign(heroGear(),{tool:'hammer'}));SV.sex=keep;H.root.rotation.y=ry||0;sc.add(H.root);const c=animClip(k);const P=new Float32Array(AF);sampleClip(c,t,P);applyPose(H,P);if(k==='smash'||k==='fix')toolInHand(H,true);
+  const cam=new T.PerspectiveCamera(30,w/h,0.1,50);cam.position.set(0,1.6,5.2);cam.lookAt(0,1.0,0);r2.render(sc,cam);const u=r2.domElement.toDataURL('image/png');r2.dispose();return u;}catch(e){return 'ERR '+e;}};
 (function buildTitle(){const el=$('tbtns');el.innerHTML='';
   const inp=document.createElement('input');inp.maxLength=14;inp.value=SV.name||'Wanderer';inp.placeholder='Your name';
   inp.style.cssText='font:inherit;font-size:16px;text-align:center;padding:11px 14px;border-radius:999px;border:1.5px solid rgba(58,42,32,.25);background:#fff8ea;color:#3a2a20';
