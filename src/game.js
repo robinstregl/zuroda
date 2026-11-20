@@ -20,7 +20,7 @@ const S=0.1; // 2D game units -> 3D units
 // ===== economy (Robin 20. 11. evening): every building has 10 levels, costs grow ~×1.45 per level, gold scrap from level 3, circuits from level 5, building stays instant =====
 const r5=v=>v<20?Math.round(v):Math.round(v/5)*5;
 // sc = scrap base, g = growth, c = gold per level, x = circuits per level, e0/eg = energy, eff = text for level n
-function mkLv(o){return Array.from({length:10},(_,i)=>({s:r5(o.sc*Math.pow(o.g,i)),c:o.c[i]||0,x:o.x[i]||0,en:Math.round(o.e0*Math.pow(o.eg,i)),get eff(){return o.eff(i+1);}}));}
+function mkLv(o){return Array.from({length:10},(_,i)=>({s:r5(o.sc*Math.pow(o.g,i)),c:o.c[i]||0,x:o.x[i]||0,en:i<2?0:Math.round(o.e0*Math.pow(o.eg,i)),get eff(){return o.eff(i+1);}}));}
 const BLD={
   // village layout (Robin 20. 11.): a small settlement that grew along a road
   cerpadlo:{name:'Water Pump',x:-74,y:-66,rot:0.35,col:'#5aa9b8',desc:'An old pump robot. It pumps water from deep underground into your well – more and faster with every level.',
@@ -47,7 +47,7 @@ const VPATHS=[
 const BAG=[14,22,30,40,52,66,82,100,120,145,175];
 // gear (Robin 20. 11. evening): few items, each with 10 levels; the Workshop level caps the gear level (w = n)
 const IG=[0,0,1,2,3,4,6,8,10,13],IX=[0,0,0,0,1,2,3,4,6,8];
-function mkGear(sc,e0,eff){return Array.from({length:10},(_,i)=>({s:r5(sc*Math.pow(1.45,i)),c:IG[i],x:IX[i],en:Math.round(e0*Math.pow(1.33,i)),w:i+1,get eff(){return eff(i+1);}}));}
+function mkGear(sc,e0,eff){return Array.from({length:10},(_,i)=>({s:r5(sc*Math.pow(1.45,i)),c:IG[i],x:IX[i],en:i<2?0:Math.round(e0*Math.pow(1.33,i)),w:i+1,get eff(){return eff(i+1);}}));}
 const HAMMER_NEED={2:1,0:3,1:5,3:7};// wreck kind → hammer level
 const hammerDmg=l=>l?1+Math.floor((l-1)/3):0,hammerYield=l=>1+0.06*Math.max(0,l-1);
 const SLING={range:l=>95+l*8,dmg:l=>l<5?1:l<9?2:3,cd:l=>0.85-l*0.045};
@@ -93,7 +93,7 @@ const CH=240,W=360;
 
 // ================= save =================
 const SAVE_KEY='daleko3_save';
-function freshSave(){return {v:1,eco:2,seed:(Math.random()*4294967295)>>>0,scrap:0,cores:0,chips:0,bottles:0,b:{cerpadlo:0,solar:0,dilna:0,dron:0,radio:0},energy:12,scout:null,
+function freshSave(){return {v:1,eco:2,seed:(Math.random()*4294967295)>>>0,scrap:0,cores:0,chips:0,bottles:0,b:{cerpadlo:0,solar:0,dilna:0,dron:0,radio:0},energy:30,scout:null,
   craft:{},decor:[],taken:[],bags:[],exp:0,best:0,msg:0,lore:0,scrapT:{},meters:0,name:'Wanderer',tod:0.12,zoom:14,mscale:1,seen:{},lastPath:null,well:24,wellAt:Date.now(),camps:{},fetch:null,caches:[]};}
 function loadSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.v===1){s.takenSet=new Set(s.taken||[]);s.scrapT=s.scrapT||{};s.meters=s.meters||0;s.name=s.name||'Wanderer';if(s.tod===undefined)s.tod=0.12;s.zoom=clamp(s.zoom||14,10,18);
     if(!s.eco){s.eco=2;s.well=24;s.wellAt=Date.now();s.camps={};s.fetch=null;}// older save → new water economy
@@ -197,8 +197,11 @@ if(/notex/.test(location.hash))ST.tex=false;// compare: open with #notex for the
 const T=window.THREE;
 const stage=$('stage'),canvas=$('c'),ov=$('o'),ctx=ov.getContext('2d');
 let cw=0,ch=0,dpr=1;
-const R=new T.WebGLRenderer({canvas,antialias:!ST.px});
-R.shadowMap.enabled=ST.sh!=='none';R.shadowMap.type={basic:T.BasicShadowMap,pcf:T.PCFShadowMap,pcfsoft:T.PCFSoftShadowMap,none:T.BasicShadowMap}[ST.sh];R.outputEncoding=T.sRGBEncoding;
+const TOUCH=matchMedia('(pointer:coarse)').matches;
+const R=new T.WebGLRenderer({canvas,antialias:!ST.px&&!TOUCH,powerPreference:'high-performance'});
+// dynamic resolution (iPhone run was ~50 fps with uneven frames): render scale drops if frames are slow, creeps back up when there is headroom
+let RQ=0,RQmax=2,fpsAcc=0,fpsN=0,fpsT=0,fastT=0;
+R.shadowMap.enabled=ST.sh!=='none';R.shadowMap.type={basic:T.BasicShadowMap,pcf:T.PCFShadowMap,pcfsoft:TOUCH?T.PCFShadowMap:T.PCFSoftShadowMap,none:T.BasicShadowMap}[ST.sh];R.outputEncoding=T.sRGBEncoding;
 const cam=ST.cam==='persp'?new T.PerspectiveCamera(ST.fov,0.56,1,900):new T.OrthographicCamera(-1,1,1,-1,1,600);let ASP=0.56,PXW=0.1,CAMDIST=120,VH=800;
 if(!ST.px)canvas.style.imageRendering='auto';
 if(ST.css)canvas.style.filter=ST.css;
@@ -223,8 +226,8 @@ const OUT_W={value:0.08};
 // framed on desktop (backdrop + side panels), full screen on phones; on phones use the visual viewport so the canvas is never stretched
 function resize(){const vv=window.visualViewport,vw=innerWidth,full=Math.round(vv?vv.height:innerHeight);
   const framed=vw>=760&&vw>full*0.9,B=document.body.classList;B.toggle('framed',framed);B.toggle('wide',framed&&vw>=1180&&full>=560);
-  const vh=framed?Math.max(420,full-48):full,sw=Math.min(vw,Math.round(vh*0.5625));stage.style.width=sw+'px';stage.style.height=vh+'px';dpr=Math.min(2,window.devicePixelRatio||1);
-  VH=vh;R.setPixelRatio(ST.px?Math.min(ST.px,sw*dpr)/sw:dpr);R.setSize(sw,vh,false);cw=Math.round(sw*dpr);ch=Math.round(vh*dpr);ov.width=cw;ov.height=ch;ASP=sw/vh;}
+  const vh=framed?Math.max(420,full-48):full,sw=Math.min(vw,Math.round(vh*0.5625));stage.style.width=sw+'px';stage.style.height=vh+'px';dpr=Math.min(2,window.devicePixelRatio||1);RQmax=TOUCH?Math.min(dpr,1.75):dpr;if(!RQ||RQ>RQmax)RQ=RQmax;
+  VH=vh;R.setPixelRatio(ST.px?Math.min(ST.px,sw*dpr)/sw:RQ);R.setSize(sw,vh,false);cw=Math.round(sw*dpr);ch=Math.round(vh*dpr);ov.width=cw;ov.height=ch;ASP=sw/vh;}
 addEventListener('resize',resize);if(window.visualViewport)visualViewport.addEventListener('resize',resize);addEventListener('orientationchange',()=>setTimeout(resize,250));resize();
 const grainC=document.createElement('canvas');grainC.width=grainC.height=180;
 (()=>{const g=grainC.getContext('2d'),id=g.createImageData(180,180);for(let i=0;i<id.data.length;i+=4){const v=Math.random()*255;id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=Math.random()<0.5?14:0;}g.putImageData(id,0,0);})();
@@ -327,7 +330,7 @@ const _v=new T.Vector3();
 function proj(x3,y3,z3){_v.set(x3,y3,z3).project(cam);return {x:(_v.x*0.5+0.5)*cw,y:(-_v.y*0.5+0.5)*ch,z:_v.z,on:_v.z<1&&Math.abs(_v.x)<1.05&&Math.abs(_v.y)<1.05};}
 function setupLights(scene){
   const hm=ST.hemi||['#fff1d8','#9c7048'];const hemi=new T.HemisphereLight(C(hm[0]),C(hm[1]),ST.hemiI||0.62);scene.add(hemi);
-  const sun=new T.DirectionalLight(C(ST.sunC||'#ffeccc'),ST.sunI||0.98);sun.castShadow=ST.sh!=='none';sun.shadow.mapSize.set(ST.px?1024:2048,ST.px?1024:2048);
+  const sun=new T.DirectionalLight(C(ST.sunC||'#ffeccc'),ST.sunI||0.98);sun.castShadow=ST.sh!=='none';sun.shadow.mapSize.set(ST.px||TOUCH?1024:2048,ST.px||TOUCH?1024:2048);
   const sc=sun.shadow.camera;sc.left=-38;sc.right=38;sc.top=38;sc.bottom=-38;sc.near=1;sc.far=160;sun.shadow.bias=-0.0012;sun.shadow.normalBias=0.03;
   sun.userData.hemi=hemi;scene.add(sun);scene.add(sun.target);return sun;
 }
@@ -1358,7 +1361,7 @@ function refreshBaseUI(){
   updWellUI(true);
 }
 let _wellKey='';
-function updWellUI(force){const cap=wellCap(),w=SV.well;const k=Math.floor(w*10)+'|'+cap;if(!force&&k===_wellKey)return;_wellKey=k;
+function updWellUI(force){const cap=wellCap(),w=SV.well;const k=Math.floor(w*10)+'|'+cap+'|'+Math.floor(SV.energy||0);if(!force&&k===_wellKey)return;_wellKey=k;
   $('wellFill').style.width=(clamp(w/cap,0,1)*100).toFixed(1)+'%';$('rE').textContent=Math.floor(SV.energy||0)+'/'+energyCap();$('eFill').style.width=(clamp((SV.energy||0)/energyCap(),0,1)*100).toFixed(1)+'%';$('wellTxt').textContent=Math.floor(w)+'/'+cap+' L';$('wellRate').innerHTML=icx('{water} well +'+wellRate()+' L/min');}
 function sendWolt(){if(!SV.bags.length||dogLv()<3||SV.fetch)return;if(SV.well<3){toast('{water}','Not enough water','Zuro needs 3 L for the trip.');return;}
   SV.well-=3;let bi=0;SV.bags.forEach((b,i)=>{if(b.s+b.c*3>SV.bags[bi].s+SV.bags[bi].c*3)bi=i;});const b=SV.bags.splice(bi,1)[0];
@@ -1390,7 +1393,7 @@ const pips=(l,n)=>'<span class="pips">'+Array.from({length:n},(_,i)=>`<i class="
 const costChips=(n,cnt)=>{const ch=[];if(n.s)ch.push(`<span class="cc ${SV.scrap>=n.s?'':'no'}">{scrap} ${n.s}</span>`);if(n.c)ch.push(`<span class="cc ${SV.cores>=n.c?'':'no'}">{core} ${n.c}</span>`);if(n.x)ch.push(`<span class="cc ${(SV.chips||0)>=n.x?'':'no'}">{chip} ${n.x}</span>`);if(n.en)ch.push(`<span class="cc ${(SV.energy||0)>=n.en?'':'no'}">{energy} ${n.en}</span>`);if(n.w&&(SV.b.dilna|0)<n.w)ch.push(`<span class="cc no">Workshop ${n.w}</span>`);return ch.join('');};
 function canPay(n){return SV.scrap>=(n.s||0)&&SV.cores>=(n.c||0)&&(SV.chips||0)>=(n.x||0)&&(SV.energy||0)>=(n.en||0)&&(!n.w||(SV.b.dilna|0)>=n.w);}
 const pay=n=>{SV.scrap-=n.s||0;SV.cores-=n.c||0;SV.chips=(SV.chips||0)-(n.x||0);SV.energy-=n.en||0;};
-const BOTTLE_COST=()=>({s:bottleCost(),c:0,en:2}),SMELT_COST={s:30,c:0,en:5};
+const BOTTLE_COST=()=>({s:bottleCost(),c:0,en:0}),SMELT_COST={s:30,c:0,en:5};
 function workshopGrid(){
   const sel=B.wsel||'kladivo';let h='<div class="sect">GEAR</div><div class="igrid">';
   for(const ck in CRAFT){const c=CRAFT[ck],gl=gearLv(ck);
@@ -1986,12 +1989,13 @@ function edgeArrow(tx,ty,label,col){
   ctx.rotate(a);ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(9*dpr,0);ctx.lineTo(-5*dpr,-6*dpr);ctx.lineTo(-2*dpr,0);ctx.lineTo(-5*dpr,6*dpr);ctx.closePath();ctx.fill();ctx.restore();
   ctx.font=`600 ${10*dpr}px ${FF}`;ctx.textAlign='center';ctx.fillStyle=col;ctx.fillText(label,px,py+(py>ch/2?-20*dpr:28*dpr));
 }
+const _dc={};function DW(id,p,v){const k=id+p;if(_dc[k]===v)return;_dc[k]=v;$(id).style[p]=v;}function DT(id,v){v=String(v);if(_dc[id]===v)return;_dc[id]=v;$(id).textContent=v;}
 function updExpHUD(){const cap=X.cap,can=canteenCap(),w=clamp(X.water,0,cap);
   // thin horizontal bar: canteen (reserve) on the left, flask on the right – the flask is drunk first
-  const cW=Math.min(w,can)/cap*100,fW=Math.max(w-can,0)/cap*100;$('wfC').style.width=cW.toFixed(1)+'%';$('wf').style.left=(can/cap*100).toFixed(1)+'%';$('wf').style.width=fW.toFixed(1)+'%';
-  $('wdiv').style.left=(can/cap*100).toFixed(1)+'%';$('wdiv').style.display=can?'':'none';
-  $('wt').textContent=fmtL(w)+' L';$('wt').classList.toggle('low',w/cap<0.25);
-  $('xd').textContent=fmtM(Math.hypot(X.x,X.y));const wgt=weight();$('xbag').textContent=wgt+'/'+bagCap();$('xbag').classList.toggle('warn',wgt>=bagCap());$('xgold').textContent=X.cores;$('xchip').textContent=X.chips||0;
+  const cW=Math.min(w,can)/cap*100,fW=Math.max(w-can,0)/cap*100;DW('wfC','width',cW.toFixed(1)+'%');DW('wf','left',(can/cap*100).toFixed(1)+'%');DW('wf','width',fW.toFixed(1)+'%');
+  DW('wdiv','left',(can/cap*100).toFixed(1)+'%');DW('wdiv','display',can?'':'none');
+  DT('wt',fmtL(w)+' L');$('wt').classList.toggle('low',w/cap<0.25);
+  DT('xd',fmtM(Math.hypot(X.x,X.y)));const wgt=weight();DT('xbag',wgt+'/'+bagCap());$('xbag').classList.toggle('warn',wgt>=bagCap());DT('xgold',X.cores);DT('xchip',X.chips||0);
   // context action (Zuro bubble + button)
   let st='',txt='',btn='',dis=false;
   if(X.intro){}
@@ -2240,15 +2244,19 @@ let CSHEET=null;
 window.__charSheet=()=>{const sc=new T.Scene();sc.background=C('#2a2420');setupLights(sc);const keep=SV.sex;const row=(z,mkf,sx)=>{for(let i=0;i<4;i++){const o=mkf();o.root.position.set((i-1.5)*2.3,z,0);o.root.rotation.y=[0,-Math.PI/2,Math.PI,0.6][i];o.root.scale.setScalar(sx);sc.add(o.root);}};
   SV.sex='f';row(3.4,()=>makeHero(heroGear()),1);SV.sex='m';row(0.4,()=>makeHero(heroGear()),1);SV.sex=keep;row(-2.4,()=>makeDog(dogGear()),1.15);
   const cam=new T.OrthographicCamera(-5,5,5*innerHeight/Math.max(1,stage.clientWidth),-5*innerHeight/Math.max(1,stage.clientWidth),0.1,100);cam.position.set(0,2.6,14);cam.lookAt(0,1.0,0);CSHEET={sc,cam};ov.style.display='none';};
+function placeMute(){const p=scene==='exp'?$('xhud'):$('bhud'),m=$('mute');if(!p||!m||p.classList.contains('hidden'))return;const pr=p.querySelector('.wpanel');if(!pr)return;const b=pr.getBoundingClientRect().bottom-stage.getBoundingClientRect().top;const t=Math.round(b+10)+'px';if(m.style.top!==t)m.style.top=t;const xm=$('xMap');if(xm&&xm.style.top!==t)xm.style.top=t;}
+let muteT=0;
 function frame(nowT){
   if(window.CATALOG)return;
-  const dt=Math.min(0.05,(nowT-last)/1000);last=nowT;tNow+=dt;
+  const rdt=(nowT-last)/1000,dt=Math.min(0.05,rdt);last=nowT;tNow+=dt;
+  if(!ST.px&&rdt>0&&rdt<0.25&&!document.hidden){fpsAcc+=rdt;fpsN++;fpsT+=rdt;if(fpsT>2){const f=fpsN/fpsAcc;fpsAcc=fpsN=fpsT=0;
+    if(f<54&&RQ>1){RQ=Math.max(1,RQ-0.25);R.setPixelRatio(RQ);R.setSize(stage.clientWidth,VH,false);fastT=0;}else if(f>58.5&&RQ<RQmax){fastT+=2;if(fastT>=8){RQ=Math.min(RQmax,RQ+0.25);R.setPixelRatio(RQ);R.setSize(stage.clientWidth,VH,false);fastT=0;}}else fastT=0;}}
   if(CSHEET){R.render(CSHEET.sc,CSHEET.cam);requestAnimationFrame(frame);return;}
   if(scene!=='title'&&!(scene==='exp'&&X&&X.end))SV.tod=((SV.tod||0)+dt*(scene==='exp'?(window.SPD||1):1)/DAYLEN)%1;
   if(scene==='exp'&&X)applyDay(X.scene,X.sun);
   if(scene!=='title'){tickWell(dt*(window.SPD||1));checkFetch();checkScout();if(scene==='base'){updWellUI();if(SV.fetch){const r=Math.max(0,Math.ceil((SV.fetch.until-Date.now())/1000));const t2='Zuro is out… '+Math.floor(r/60)+':'+String(r%60).padStart(2,'0');if($('bGo').dataset.t!==t2){$('bGo').dataset.t=t2;$('bGo').innerHTML=t2;}}}}
   if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').classList.remove('on');}
-  updParts(dt);
+  updParts(dt);if((muteT-=dt)<=0){muteT=0.5;placeMute();}
   if(scene==='exp'&&!MV.open){for(let q=0;q<(window.SPD||1)&&scene==='exp';q++)updateExp(dt);}
   else updateBase(dt);
   R.render(scene3,cam);
@@ -2257,7 +2265,6 @@ function frame(nowT){
     if(!X.end)updExpHUD();}
   else if(scene!=='exp'&&scene!=='title')drawBaseOverlay();
   drawFloaters();
-  const vg=ctx.createRadialGradient(cw/2,ch/2,Math.min(cw,ch)*0.35,cw/2,ch/2,Math.max(cw,ch)*0.8);vg.addColorStop(0,'rgba(80,50,30,0)');vg.addColorStop(1,'rgba(80,50,30,0.18)');ctx.fillStyle=vg;ctx.fillRect(0,0,cw,ch);
   requestAnimationFrame(frame);
 }
 window.__snd=()=>Object.keys(SBUF).length;window.__ps=(k)=>ps(k);window.__obst=(cx,cy)=>obstOf(cx,cy);window.__coast=(x,y)=>coastSD(x,y);window.__markSeen=(x,y,r)=>markSeen(x,y,r);window.__MVhits=()=>(MV.hits||[]).map(h=>({x:h.x,y:h.y,t:h.t,id:h.cp&&h.cp.id}));window.__segPt=segPt;window.__BS=BS;window.__camT=camT;window.__house=()=>openHouse();window.__close=()=>closeSheet();window.__SV=()=>SV;window.__X=()=>X;window.__go=()=>startExpedition();window.__open=k=>openBuilding(k);window.__fix=p=>fixDest(p);

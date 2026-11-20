@@ -52,7 +52,7 @@
   .wgrid{flex:1;display:grid;gap:6px}.wgrid.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
   .wgrid > div{display:flex;line-height:1.1}.wgrid small{font-size:10px;letter-spacing:.12em;opacity:.75}.wgrid b{font-size:16px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
   .cg{color:#ffd36e}.cw{color:#8fe0ee}.wgrid b.warn{color:#ff9a6a}
-  .wchips{display:flex;justify-content:flex-end;margin-top:4px;padding:0 10px}.wchips span{color:rgba(58,42,32,.62);font-size:10.5px;font-weight:500;letter-spacing:.04em;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .wchips{display:flex;justify-content:flex-end;margin-top:4px;padding:0 58px 0 10px}.wchips span{color:rgba(58,42,32,.62);font-size:10.5px;font-weight:500;letter-spacing:.04em;white-space:nowrap;font-variant-numeric:tabular-nums}
   .wchips span:empty{display:none}
   .wgrid.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
   /* base HUD (Robin 20. 11.): what the village makes by itself (water, energy) on top, what you carry home below */
@@ -147,6 +147,7 @@
   .card .gain{font-size:22px;font-weight:600;margin:4px 0}
   .card .lost{font-size:13px;color:var(--wd-warn);margin:2px 0}
   .card .info{font-size:13px;opacity:.7;margin:4px 0 12px}
+  #stage::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(80,50,30,0) 55%,rgba(80,50,30,.18) 100%)}
   #mute{position:absolute;right:12px;top:108px;width:34px;height:34px;border-radius:50%;border:2px solid var(--wd-line);background:var(--wd-bg);
     color:var(--wd-tx);font-size:14px;cursor:pointer;z-index:4}
   #mute .offi{display:none}#mute.off .on{display:none}#mute.off .offi{display:inline-block}
