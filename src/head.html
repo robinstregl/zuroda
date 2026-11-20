@@ -55,6 +55,11 @@
   .wchips{display:flex;justify-content:flex-end;margin-top:4px;padding:0 10px}.wchips span{color:rgba(58,42,32,.62);font-size:10.5px;font-weight:500;letter-spacing:.04em;white-space:nowrap;font-variant-numeric:tabular-nums}
   .wchips span:empty{display:none}
   .wgrid.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  /* base HUD (Robin 20. 11.): what the village makes by itself (water, energy) on top, what you carry home below */
+  .hud2{gap:0;padding:8px 14px}.hrow{display:grid;align-items:center}.hrow.prod{grid-template-columns:1fr 1fr;gap:14px;padding-bottom:7px}
+  .hrow.loot{grid-template-columns:repeat(3,1fr);padding-top:7px;border-top:1px solid rgba(255,226,184,.15)}.hrow b{font-size:16px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .pv{display:flex;align-items:center;gap:8px;min-width:0}.pvt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.pbar{display:block;height:4px;border-radius:3px;background:#3a332e;overflow:hidden}
+  .pbar i{display:block;height:100%;width:0;background:#57b8c8;border-radius:3px;transition:width .3s}.pbar.en i{background:#e8c25a}.ce{color:#f2d27a}
   .wgrid.g5{grid-template-columns:1.35fr 1fr .8fr .8fr 1.05fr;gap:4px}.wgrid.g5 b{font-size:14px}.wgrid.g5 .wi{gap:3px}.wgrid.g5 .wic,.wgrid.g5 .wic svg.ic{width:15px;height:15px}
   .wgrid.g4 b{font-size:15px}
   .cx{color:#7ee0a8}
@@ -79,6 +84,8 @@
   .mtop{position:absolute;left:26px;right:24px;top:24px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
   .mtop b{font-size:20px;font-weight:600;letter-spacing:.06em;color:var(--wd-tx);text-shadow:var(--wd-glow)}.mtop span{display:flex;gap:8px;pointer-events:auto}
   .mbtn{width:40px;height:40px;border-radius:50%;border:2px solid var(--wd-line);background:var(--wd-bg);color:var(--wd-tx);font-size:18px;font-family:inherit;cursor:pointer}
+  .mfil{position:absolute;left:24px;top:76px;display:flex;gap:8px;flex-wrap:wrap}.mfil.hidden{display:none}.mfil button{font:600 12.5px/1 inherit;padding:8px 12px;border-radius:999px;border:2px solid rgba(255,226,184,.35);background:#1d1a18;color:rgba(255,226,184,.6);cursor:pointer}
+  .mfil button.on{border-color:#ffe2b8;color:#1d1a18;background:#ffe2b8}
   #mcard{position:absolute;left:20px;right:20px;bottom:22px;background:#1d1a18;color:#ffe2b8;border:3px solid #ece3cf;border-radius:20px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
   #mcard b{font-size:17px}#mcard p{margin:0;font-size:13px;line-height:1.4;opacity:.9}#mcard .btn{margin-top:4px}
   .mapb{min-width:52px}.mapround{position:absolute;right:54px;top:105px;width:40px;height:40px;border-radius:50%;border:2px solid var(--wd-line);background:var(--wd-bg);box-shadow:0 2px 8px rgba(58,42,32,.2);display:none;align-items:center;justify-content:center;z-index:5;cursor:pointer}
@@ -270,12 +277,16 @@
   <canvas id="o"></canvas>
 
   <div id="bhud" class="fade hidden">
-    <div class="wpanel"><div class="weyes"><i></i><i></i></div><div class="wgrid g5">
-      <div class="wi wwell"><span class="wic" data-ic="water"></span><div><b id="wellTxt" class="cw">0 L</b><span class="mbar"><i id="wellFill"></i></span></div></div>
-      <div class="wi"><span class="wic" data-ic="scrap"></span><b id="rS">0</b></div>
-      <div class="wi"><span class="wic" data-ic="core"></span><b id="rC" class="cg">0</b></div>
-      <div class="wi"><span class="wic" data-ic="chip"></span><b id="rX" class="cx">0</b></div>
-      <div class="wi"><span class="wic" data-ic="energy"></span><b id="rE">0/2</b></div></div></div>
+    <div class="wpanel col hud2">
+      <div class="hrow prod">
+        <div class="pv"><span class="wic" data-ic="water"></span><div class="pvt"><b id="wellTxt" class="cw">0 L</b><span class="pbar"><i id="wellFill"></i></span></div></div>
+        <div class="pv"><span class="wic" data-ic="energy"></span><div class="pvt"><b id="rE" class="ce">0/20</b><span class="pbar en"><i id="eFill"></i></span></div></div>
+      </div>
+      <div class="hrow loot">
+        <div class="wi"><span class="wic" data-ic="scrap"></span><b id="rS">0</b></div>
+        <div class="wi"><span class="wic" data-ic="core"></span><b id="rC" class="cg">0</b></div>
+        <div class="wi"><span class="wic" data-ic="chip"></span><b id="rX" class="cx">0</b></div>
+      </div></div>
     <div class="wchips"><span id="rL" style="display:none"><b id="rT"></b><i id="rLv"></i></span><span id="rWalk"></span><span id="rM" style="display:none!important"></span><span id="wellRate" style="display:none!important">+0.6 L/min</span></div>
   </div>
   <div id="bbar" class="fade hidden">
@@ -289,7 +300,7 @@
   </div>
 
   <div id="xhud" class="fade hidden">
-    <div class="wpanel col"><div class="wrow"><div class="weyes"><i></i><i></i></div><div class="wgrid g4">
+    <div class="wpanel col"><div class="wrow"><div class="wgrid g4">
       <div class="wi"><span class="wic" data-ic="pack"></span><b id="xbag">0/14</b></div>
       <div class="wi"><span class="wic" data-ic="core"></span><b id="xgold" class="cg">0</b></div>
       <div class="wi"><span class="wic" data-ic="chip"></span><b id="xchip" class="cx">0</b></div>
@@ -300,6 +311,7 @@
   <button id="xMap" class="mapround" aria-label="Map"></button>
   <div id="mapv" class="hidden"><canvas id="mapc"></canvas>
     <div class="mtop"><b id="mapTitle">Map</b><span><button id="mapX" class="mbtn" aria-label="Close">&#x2715;</button></span></div>
+    <div id="mfil" class="mfil"><button data-f="water">Water</button><button data-f="wreck">Wrecks</button><button data-f="gold">Gold scrap</button></div>
     <div id="mcard" class="hidden"><b id="mcT"></b><p id="mcS"></p><button id="mcB" class="btn primary"></button></div></div>
   <div id="xact" class="fade hidden"><div class="bubble" id="xactTxt"></div><button id="bAct" class="btn act">Dismantle</button></div>
   <button id="bMelon" class="hidden"><small id="mCnt">0</small></button>

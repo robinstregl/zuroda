@@ -55,6 +55,11 @@
   .wchips{display:flex;justify-content:flex-end;margin-top:4px;padding:0 10px}.wchips span{color:rgba(58,42,32,.62);font-size:10.5px;font-weight:500;letter-spacing:.04em;white-space:nowrap;font-variant-numeric:tabular-nums}
   .wchips span:empty{display:none}
   .wgrid.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  /* base HUD (Robin 20. 11.): what the village makes by itself (water, energy) on top, what you carry home below */
+  .hud2{gap:0;padding:8px 14px}.hrow{display:grid;align-items:center}.hrow.prod{grid-template-columns:1fr 1fr;gap:14px;padding-bottom:7px}
+  .hrow.loot{grid-template-columns:repeat(3,1fr);padding-top:7px;border-top:1px solid rgba(255,226,184,.15)}.hrow b{font-size:16px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .pv{display:flex;align-items:center;gap:8px;min-width:0}.pvt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.pbar{display:block;height:4px;border-radius:3px;background:#3a332e;overflow:hidden}
+  .pbar i{display:block;height:100%;width:0;background:#57b8c8;border-radius:3px;transition:width .3s}.pbar.en i{background:#e8c25a}.ce{color:#f2d27a}
   .wgrid.g5{grid-template-columns:1.35fr 1fr .8fr .8fr 1.05fr;gap:4px}.wgrid.g5 b{font-size:14px}.wgrid.g5 .wi{gap:3px}.wgrid.g5 .wic,.wgrid.g5 .wic svg.ic{width:15px;height:15px}
   .wgrid.g4 b{font-size:15px}
   .cx{color:#7ee0a8}
@@ -79,6 +84,8 @@
   .mtop{position:absolute;left:26px;right:24px;top:24px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
   .mtop b{font-size:20px;font-weight:600;letter-spacing:.06em;color:var(--wd-tx);text-shadow:var(--wd-glow)}.mtop span{display:flex;gap:8px;pointer-events:auto}
   .mbtn{width:40px;height:40px;border-radius:50%;border:2px solid var(--wd-line);background:var(--wd-bg);color:var(--wd-tx);font-size:18px;font-family:inherit;cursor:pointer}
+  .mfil{position:absolute;left:24px;top:76px;display:flex;gap:8px;flex-wrap:wrap}.mfil.hidden{display:none}.mfil button{font:600 12.5px/1 inherit;padding:8px 12px;border-radius:999px;border:2px solid rgba(255,226,184,.35);background:#1d1a18;color:rgba(255,226,184,.6);cursor:pointer}
+  .mfil button.on{border-color:#ffe2b8;color:#1d1a18;background:#ffe2b8}
   #mcard{position:absolute;left:20px;right:20px;bottom:22px;background:#1d1a18;color:#ffe2b8;border:3px solid #ece3cf;border-radius:20px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
   #mcard b{font-size:17px}#mcard p{margin:0;font-size:13px;line-height:1.4;opacity:.9}#mcard .btn{margin-top:4px}
   .mapb{min-width:52px}.mapround{position:absolute;right:54px;top:105px;width:40px;height:40px;border-radius:50%;border:2px solid var(--wd-line);background:var(--wd-bg);box-shadow:0 2px 8px rgba(58,42,32,.2);display:none;align-items:center;justify-content:center;z-index:5;cursor:pointer}
@@ -270,12 +277,16 @@
   <canvas id="o"></canvas>
 
   <div id="bhud" class="fade hidden">
-    <div class="wpanel"><div class="weyes"><i></i><i></i></div><div class="wgrid g5">
-      <div class="wi wwell"><span class="wic" data-ic="water"></span><div><b id="wellTxt" class="cw">0 L</b><span class="mbar"><i id="wellFill"></i></span></div></div>
-      <div class="wi"><span class="wic" data-ic="scrap"></span><b id="rS">0</b></div>
-      <div class="wi"><span class="wic" data-ic="core"></span><b id="rC" class="cg">0</b></div>
-      <div class="wi"><span class="wic" data-ic="chip"></span><b id="rX" class="cx">0</b></div>
-      <div class="wi"><span class="wic" data-ic="energy"></span><b id="rE">0/2</b></div></div></div>
+    <div class="wpanel col hud2">
+      <div class="hrow prod">
+        <div class="pv"><span class="wic" data-ic="water"></span><div class="pvt"><b id="wellTxt" class="cw">0 L</b><span class="pbar"><i id="wellFill"></i></span></div></div>
+        <div class="pv"><span class="wic" data-ic="energy"></span><div class="pvt"><b id="rE" class="ce">0/20</b><span class="pbar en"><i id="eFill"></i></span></div></div>
+      </div>
+      <div class="hrow loot">
+        <div class="wi"><span class="wic" data-ic="scrap"></span><b id="rS">0</b></div>
+        <div class="wi"><span class="wic" data-ic="core"></span><b id="rC" class="cg">0</b></div>
+        <div class="wi"><span class="wic" data-ic="chip"></span><b id="rX" class="cx">0</b></div>
+      </div></div>
     <div class="wchips"><span id="rL" style="display:none"><b id="rT"></b><i id="rLv"></i></span><span id="rWalk"></span><span id="rM" style="display:none!important"></span><span id="wellRate" style="display:none!important">+0.6 L/min</span></div>
   </div>
   <div id="bbar" class="fade hidden">
@@ -289,7 +300,7 @@
   </div>
 
   <div id="xhud" class="fade hidden">
-    <div class="wpanel col"><div class="wrow"><div class="weyes"><i></i><i></i></div><div class="wgrid g4">
+    <div class="wpanel col"><div class="wrow"><div class="wgrid g4">
       <div class="wi"><span class="wic" data-ic="pack"></span><b id="xbag">0/14</b></div>
       <div class="wi"><span class="wic" data-ic="core"></span><b id="xgold" class="cg">0</b></div>
       <div class="wi"><span class="wic" data-ic="chip"></span><b id="xchip" class="cx">0</b></div>
@@ -300,6 +311,7 @@
   <button id="xMap" class="mapround" aria-label="Map"></button>
   <div id="mapv" class="hidden"><canvas id="mapc"></canvas>
     <div class="mtop"><b id="mapTitle">Map</b><span><button id="mapX" class="mbtn" aria-label="Close">&#x2715;</button></span></div>
+    <div id="mfil" class="mfil"><button data-f="water">Water</button><button data-f="wreck">Wrecks</button><button data-f="gold">Gold scrap</button></div>
     <div id="mcard" class="hidden"><b id="mcT"></b><p id="mcS"></p><button id="mcB" class="btn primary"></button></div></div>
   <div id="xact" class="fade hidden"><div class="bubble" id="xactTxt"></div><button id="bAct" class="btn act">Dismantle</button></div>
   <button id="bMelon" class="hidden"><small id="mCnt">0</small></button>
@@ -4181,10 +4193,8 @@ const muteBtn=$('mute');if(muted)muteBtn.classList.add('off');muteBtn.innerHTML=
 function initAudio(){if(AC){if(AC.state==='suspended')AC.resume().catch(()=>{});return;}
   try{AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=muted?0:0.6;master.connect(AC.destination);}catch(e){AC=null;}loadSnd();}
 // real sounds (Kenney audio packs, CC0 – Robin 20. 11.); the synth tones stay as a fallback while files load or if they fail
-const SND={step:['footstep_snow_000','footstep_snow_001','footstep_snow_002','footstep_snow_003','footstep_snow_004'],clink:['impactMetal_light_000','impactMetal_light_001','impactMetal_light_002','impactMetal_light_003'],
-  hit:['impactPlate_heavy_000','impactPlate_heavy_001','impactPlate_heavy_002'],boom:['explosionCrunch_000','explosionCrunch_001'],core:['powerUp3'],zap:['zapThreeToneDown'],thud:['lowFrequency_explosion_000'],alarm:['threeTone1'],
-  sling:['knifeSlice','knifeSlice2'],bark:['pepSound1','pepSound2','pepSound3'],repair:['impactMining_000','impactMining_001'],levelup:['jingles_PIZZI12'],home:['jingles_STEEL13'],fail:['jingles_STEEL07'],
-  place:['drop_001'],creak:['creak1'],coins:['handleCoins'],open:['open_001'],close:['close_001'],select:['select_001'],thrust:['thrusterFire_000']};
+const SND={hit:['impactPlate_heavy_000','impactPlate_heavy_001','impactPlate_heavy_002'],boom:['explosionCrunch_000','explosionCrunch_001'],zap:['zapThreeToneDown'],thud:['lowFrequency_explosion_000'],alarm:['threeTone1'],
+  repair:['impactMining_000','impactMining_001'],levelup:['jingles_PIZZI12'],home:['jingles_STEEL13'],fail:['jingles_STEEL07'],coins:['handleCoins']};
 const SBUF={};let sndLoading=false;
 function loadSnd(){if(sndLoading||!AC)return;sndLoading=true;for(const n of new Set(Object.values(SND).flat()))fetch('sfx/'+n+'.mp3').then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>new Promise((res,rej)=>AC.decodeAudioData(b,res,rej))).then(buf=>{SBUF[n]=buf;}).catch(()=>{});}
 function ps(key,vol,rate,delay){if(!AC||!master)return false;const L=SND[key];if(!L)return false;const b=SBUF[L[Math.floor(Math.random()*L.length)]];if(!b)return false;
@@ -4194,24 +4204,24 @@ function tone(f,t0,dur,vol,type,f2){if(!AC)return;const o=AC.createOscillator(),
   g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);o.connect(g);g.connect(master);o.start(t0);o.stop(t0+dur+0.05);}
 const now=()=>AC?AC.currentTime:0;
 const sfx={
-  clink(){if(ps('clink',0.55))return;const t=now();tone(1500+Math.random()*300,t,0.12,0.06,'triangle',1100);tone(2300,t+0.03,0.08,0.03,'sine');},
-  core(){if(ps('core',0.6,1))return;const t=now();[659,784,988,1319].forEach((f,i)=>tone(f,t+i*0.09,0.8,0.08,'sine'));},
+  clink(){const t=now();tone(1500+Math.random()*300,t,0.12,0.06,'triangle',1100);tone(2300,t+0.03,0.08,0.03,'sine');},
+  core(){const t=now();[659,784,988,1319].forEach((f,i)=>tone(f,t+i*0.09,0.8,0.08,'sine'));},
   drink(){const t=now();tone(820,t,0.22,0.1,'sine',380);},
-  zap(){if(ps('zap',0.8,1)){ps('thud',0.9,1,0.05);return;}const t=now();tone(880,t,0.25,0.08,'sawtooth',120);tone(70,t,0.3,0.15,'sine');},
-  alarm(){if(ps('alarm',0.7,1))return;const t=now();tone(1046,t,0.09,0.07,'square');tone(1046,t+0.14,0.09,0.07,'square');tone(784,t+0.28,0.16,0.07,'square');},
-  sling(){if(ps('sling',0.7))return;const t=now();tone(320,t,0.12,0.06,'triangle',900);},
-  bark(){if(ps('bark',0.7)){ps('bark',0.6,null,0.16);return;}const t=now();tone(520,t,0.07,0.07,'square',300);tone(560,t+0.12,0.07,0.06,'square',320);},
-  repair(){if(ps('repair',0.8)){ps('repair',0.7,null,0.18);ps('levelup',0.55,1,0.42);return;}const t=now();[0,0.12,0.24].forEach(d=>tone(180+Math.random()*40,t+d,0.08,0.12,'square',90));[523,659,784].forEach((f,i)=>tone(f,t+0.4+i*0.1,0.9,0.08,'triangle'));},
-  home(){if(ps('home',0.55,1))return;const t=now();[392,494,587,784].forEach((f,i)=>tone(f,t+i*0.12,1.4,0.07,'sine'));},
-  fail(){if(ps('fail',0.55,1))return;const t=now();[440,392,330,262].forEach((f,i)=>tone(f,t+i*0.2,1.2,0.07,'triangle'));},
-  place(){if(ps('place',0.7))return;const t=now();tone(600,t,0.15,0.08,'sine',900);},
-  crate(){if(ps('creak',0.7)){ps('coins',0.7,null,0.25);return;}const t=now();tone(300,t,0.1,0.1,'square',200);[523,784].forEach((f,i)=>tone(f,t+0.1+i*0.08,0.5,0.07,'triangle'));},
-  hit(){if(ps('hit',0.75))return;this.clink();},
-  boom(){if(ps('boom',0.8))return;this.core();},
-  ui(k){ps(k,0.45,1);},
-  thrust(){ps('thrust',0.5,1);},
+  zap(){if(ps('zap',0.5,1)){ps('thud',0.5,1,0.05);return;}const t=now();tone(880,t,0.25,0.08,'sawtooth',120);tone(70,t,0.3,0.15,'sine');},
+  alarm(){if(ps('alarm',0.35,1))return;const t=now();tone(1046,t,0.09,0.07,'square');tone(1046,t+0.14,0.09,0.07,'square');tone(784,t+0.28,0.16,0.07,'square');},
+  sling(){const t=now();tone(320,t,0.12,0.06,'triangle',900);},
+  bark(){const t=now();tone(520,t,0.07,0.07,'square',300);tone(560,t+0.12,0.07,0.06,'square',320);},
+  repair(){if(ps('repair',0.45)){ps('levelup',0.35,1,0.3);return;}const t=now();[0,0.12,0.24].forEach(d=>tone(180+Math.random()*40,t+d,0.08,0.12,'square',90));[523,659,784].forEach((f,i)=>tone(f,t+0.4+i*0.1,0.9,0.08,'triangle'));},
+  home(){if(ps('home',0.35,1))return;const t=now();[392,494,587,784].forEach((f,i)=>tone(f,t+i*0.12,1.4,0.07,'sine'));},
+  fail(){if(ps('fail',0.35,1))return;const t=now();[440,392,330,262].forEach((f,i)=>tone(f,t+i*0.2,1.2,0.07,'triangle'));},
+  place(){const t=now();tone(600,t,0.15,0.08,'sine',900);},
+  crate(){if(ps('coins',0.45))return;const t=now();tone(300,t,0.1,0.1,'square',200);[523,784].forEach((f,i)=>tone(f,t+0.1+i*0.08,0.5,0.07,'triangle'));},
+  hit(){if(ps('hit',0.45))return;this.clink();},
+  boom(){if(ps('boom',0.5))return;this.core();},
+  ui(k){},
+  thrust(){},
   vanish(){const t=now();tone(1200,t,0.6,0.05,'sine',300);},
-  step(){if(ps('step',0.16,0.85+Math.random()*0.3))return;if(Math.random()<0.5)return;const t=now();tone(150+Math.random()*60,t,0.05,0.012,'triangle');},
+  step(){if(Math.random()<0.5)return;const t=now();tone(150+Math.random()*60,t,0.05,0.012,'triangle');},
 };
 muteBtn.addEventListener('click',e=>{e.stopPropagation();muted=!muted;try{localStorage.setItem('daleko_mute',muted?'1':'0');}catch(_){}muteBtn.classList.toggle('off',muted);initAudio();
   if(master)master.gain.setTargetAtTime(muted?0:0.6,AC.currentTime,0.05);});
@@ -5381,7 +5391,7 @@ document.querySelectorAll('.wic[data-ic],#bDrop [data-ic],#bSling [data-ic]').fo
 $('bMap').innerHTML=icSvg('map');$('xMap').innerHTML=icSvg('map');
 function refreshBaseUI(){
   $('rS').textContent=SV.scrap;$('rC').textContent=SV.cores;$('rX').textContent=SV.chips||0;
-  $('rE').textContent=Math.floor(SV.energy||0)+'/'+energyCap();
+  $('rE').textContent=Math.floor(SV.energy||0)+'/'+energyCap();$('eFill').style.width=(clamp((SV.energy||0)/energyCap(),0,1)*100).toFixed(1)+'%';
   $('rM').style.display='none';
   $('rLv').innerHTML=icx('{hero} '+heroLv()+' &nbsp;{paw} '+dogLv());$('rWalk').textContent=Math.round(SV.meters||0).toLocaleString('en').replace(/,/g,' ')+' m walked';
   // Zuro speaks the hint
@@ -5404,7 +5414,7 @@ function refreshBaseUI(){
 }
 let _wellKey='';
 function updWellUI(force){const cap=wellCap(),w=SV.well;const k=Math.floor(w*10)+'|'+cap;if(!force&&k===_wellKey)return;_wellKey=k;
-  $('wellFill').style.width=(clamp(w/cap,0,1)*100).toFixed(1)+'%';$('wellTxt').textContent=Math.floor(w)+'/'+cap+' L';$('wellRate').innerHTML=icx('{water} well +'+wellRate()+' L/min');}
+  $('wellFill').style.width=(clamp(w/cap,0,1)*100).toFixed(1)+'%';$('rE').textContent=Math.floor(SV.energy||0)+'/'+energyCap();$('eFill').style.width=(clamp((SV.energy||0)/energyCap(),0,1)*100).toFixed(1)+'%';$('wellTxt').textContent=Math.floor(w)+'/'+cap+' L';$('wellRate').innerHTML=icx('{water} well +'+wellRate()+' L/min');}
 function sendWolt(){if(!SV.bags.length||dogLv()<3||SV.fetch)return;if(SV.well<3){toast('{water}','Not enough water','Zuro needs 3 L for the trip.');return;}
   SV.well-=3;let bi=0;SV.bags.forEach((b,i)=>{if(b.s+b.c*3>SV.bags[bi].s+SV.bags[bi].c*3)bi=i;});const b=SV.bags.splice(bi,1)[0];
   const keep=Math.min(1,0.6+0.03*dogLv());const dur=(25+Math.hypot(b.x,b.y)/40)*1000/(window.SPD||1);
@@ -6090,45 +6100,47 @@ function drawMap(){const cv=$('mapc'),g=cv.getContext('2d'),dpr=Math.min(2,windo
   // inked coastline with little wave strokes (only where explored)
   {const P=coastPts();g.strokeStyle='#8fe0ee';g.lineWidth=1.8*dpr;for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1];if(!isSeen((a[0]+b[0])/2,(a[1]+b[1])/2))continue;const [ax,ay]=toS(a[0],a[1]),[bx,by]=toS(b[0],b[1]);g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();
     const n=coastSD((a[0]+b[0])/2,(a[1]+b[1])/2);const wx=(ax+bx)/2-n.nx*10*dpr,wy=(ay+by)/2-n.ny*10*dpr;g.lineWidth=1.2*dpr;g.beginPath();g.moveTo(wx-5*dpr,wy);g.quadraticCurveTo(wx-2.5*dpr,wy-3*dpr,wx,wy);g.quadraticCurveTo(wx+2.5*dpr,wy+3*dpr,wx+5*dpr,wy);g.stroke();g.lineWidth=1.8*dpr;}}
-  // discoveries (Robin 20. 11.): what you or the drone have seen shows on the map – wrecks, water, gold, chests, your bottles. Holes don't.
-  {const ico=(n,sx,sy,r,ring)=>{g.fillStyle='rgba(29,26,24,0.88)';g.beginPath();g.arc(sx,sy,r,0,6.283);g.fill();g.lineWidth=1.6*dpr;g.strokeStyle=ring||MINK;g.stroke();const im=ICIMG[n],iz=r*1.45;if(im&&im.complete)g.drawImage(im,sx-iz/2,sy-iz/2,iz,iz);};
+  const FULL=MV.mode==='view'||MV.mode==='exp',F=SV.mapF||{water:1},NEAR=sc>=0.14*dpr;
+  // discoveries: only on the explorer's map, filtered (Robin 20. 11.: too many dots) – wrecks and gold only when zoomed in
+  if(FULL){const ico=(n,sx,sy,r,ring)=>{g.fillStyle='rgba(29,26,24,0.88)';g.beginPath();g.arc(sx,sy,r,0,6.283);g.fill();g.lineWidth=1.6*dpr;g.strokeStyle=ring||MINK;g.stroke();const im=ICIMG[n],iz=r*1.45;if(im&&im.complete)g.drawImage(im,sx-iz/2,sy-iz/2,iz,iz);};
    const R0=11*dpr,on=(sx,sy)=>sx>-20&&sx<W+20&&sy>-20&&sy<H+20;
    for(let cy=Math.floor(y0/CH)-1;cy<=Math.floor(y1/CH)+1;cy++)for(let cx=Math.floor(x0/CH)-1;cx<=Math.floor(x1/CH)+1;cx++){
      const ox=cx*CH,oy=cy*CH;if(!(isSeen(ox+60,oy+60)||isSeen(ox+180,oy+60)||isSeen(ox+60,oy+180)||isSeen(ox+180,oy+180)))continue;const c=mapChunk(cx,cy);
-     for(const w of c.waters){if(w.taken||!isSeen(w.x,w.y))continue;const [sx,sy]=toS(w.x,w.y);if(!on(sx,sy))continue;ico('water',sx,sy,R0*0.85,'#8fe0ee');MV.hits.push({x:sx,y:sy,t:'poi',k:'water',o:w});}
-     for(const w of c.wrecks){if(!isSeen(w.x,w.y))continue;const [sx,sy]=toS(w.x,w.y);if(!on(sx,sy))continue;const ok=gearLv('kladivo')>=WRECK[w.kind].need;ico('cog',sx,sy,R0*(w.kind===3?1.25:w.kind===1?1.1:1),ok?'#ffd36e':'rgba(255,226,184,0.55)');MV.hits.push({x:sx,y:sy,t:'poi',k:'wreck',o:w});}
-     for(const r of c.ruins){if(!r.core||!isSeen(r.x,r.y))continue;const [sx,sy]=toS(r.x,r.y);if(!on(sx,sy))continue;ico('core',sx,sy,R0,'#ff6e5a');MV.hits.push({x:sx,y:sy,t:'poi',k:'gold',o:r});}
+     if(F.water)for(const w of c.waters){if(w.taken||!isSeen(w.x,w.y))continue;const [sx,sy]=toS(w.x,w.y);if(!on(sx,sy))continue;if(sc>=0.07*dpr)ico('water',sx,sy,R0*0.85,'#8fe0ee');else{g.fillStyle='#8fe0ee';g.beginPath();g.arc(sx,sy,3*dpr,0,6.283);g.fill();}MV.hits.push({x:sx,y:sy,t:'poi',k:'water',o:w});}
+     if(F.wreck&&NEAR)for(const w of c.wrecks){if(!isSeen(w.x,w.y))continue;const [sx,sy]=toS(w.x,w.y);if(!on(sx,sy))continue;const ok=gearLv('kladivo')>=WRECK[w.kind].need;ico('cog',sx,sy,R0*(w.kind===3?1.25:w.kind===1?1.1:1),ok?'#ffd36e':'rgba(255,226,184,0.55)');MV.hits.push({x:sx,y:sy,t:'poi',k:'wreck',o:w});}
+     if(F.gold&&NEAR)for(const r of c.ruins){if(!r.core||!isSeen(r.x,r.y))continue;const [sx,sy]=toS(r.x,r.y);if(!on(sx,sy))continue;ico('core',sx,sy,R0,'#ff6e5a');MV.hits.push({x:sx,y:sy,t:'poi',k:'gold',o:r});}
      // chests stay off the map – they'd clutter it (they sparkle in the desert instead)
      }
-   for(const k of (SV.caches||[])){const [sx,sy]=toS(k.x,k.y);ico('bottle',sx,sy,R0*0.9,'#57a6b6');MV.hits.push({x:sx,y:sy,t:'poi',k:'cache',o:k});}}
+   if(F.water)for(const k of (SV.caches||[])){const [sx,sy]=toS(k.x,k.y);ico('bottle',sx,sy,R0*0.9,'#57a6b6');MV.hits.push({x:sx,y:sy,t:'poi',k:'cache',o:k});}}
   // planned route (tap anywhere to check if your water reaches)
-  if(MV.plan){const P=MV.plan,[ax,ay]=toS(P.sx,P.sy),[bx,by]=toS(P.tx,P.ty),[hx,hy]=toS(0,0);g.setLineDash([7*dpr,5*dpr]);g.lineWidth=2.6*dpr;g.strokeStyle=P.col;g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();
+  if(FULL&&(F.wreck||F.gold)&&!NEAR){g.font=`italic ${12*dpr}px ${FF}`;g.textAlign='center';g.textBaseline='top';g.fillStyle='rgba(255,226,184,0.7)';g.fillText('Zoom in to see '+(F.wreck&&F.gold?'wrecks and gold':F.wreck?'wrecks':'gold'),W/2,118*dpr);}
+  if(FULL&&MV.plan){const P=MV.plan,[ax,ay]=toS(P.sx,P.sy),[bx,by]=toS(P.tx,P.ty),[hx,hy]=toS(0,0);g.setLineDash([7*dpr,5*dpr]);g.lineWidth=2.6*dpr;g.strokeStyle=P.col;g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();
     if(P.sx||P.sy){g.globalAlpha=0.55;g.beginPath();g.moveTo(bx,by);g.lineTo(hx,hy);g.stroke();g.globalAlpha=1;}g.setLineDash([]);g.fillStyle=P.col;g.beginPath();g.arc(bx,by,5*dpr,0,6.283);g.fill();}
   // last trip (dashed ink)
-  if(SV.lastPath&&SV.lastPath.length>1){g.setLineDash([5*dpr,4*dpr]);g.lineWidth=1.8*dpr;g.strokeStyle='rgba(255,154,106,0.9)';g.beginPath();SV.lastPath.forEach((p,i)=>{const [sx,sy]=toS(p[0],p[1]);i?g.lineTo(sx,sy):g.moveTo(sx,sy);});g.stroke();g.setLineDash([]);}
+  if(FULL&&SV.lastPath&&SV.lastPath.length>1){g.setLineDash([5*dpr,4*dpr]);g.lineWidth=1.8*dpr;g.strokeStyle='rgba(255,154,106,0.9)';g.beginPath();SV.lastPath.forEach((p,i)=>{const [sx,sy]=toS(p[0],p[1]);i?g.lineTo(sx,sy):g.moveTo(sx,sy);});g.stroke();g.setLineDash([]);}
   const label=(t,sx,sy,col,b)=>{g.font=`${b?'600 ':''}${12*dpr}px ${FF}`;g.textAlign='center';g.textBaseline='top';g.lineWidth=3.5*dpr;g.strokeStyle='rgba(29,26,24,0.92)';g.strokeText(t,sx,sy);g.shadowColor='rgba(255,176,96,0.6)';g.shadowBlur=6*dpr;g.fillStyle=col||MINK;g.fillText(t,sx,sy);g.shadowBlur=0;};
   // home
   {const [sx,sy]=toS(0,0),s=11*dpr;g.fillStyle='#c8643c';g.strokeStyle=MINK;g.lineWidth=1.8*dpr;g.beginPath();g.moveTo(sx-s,sy);g.lineTo(sx,sy-s);g.lineTo(sx+s,sy);g.closePath();g.fill();g.stroke();
    g.fillStyle='#ffe2b8';g.fillRect(sx-s*0.75,sy,s*1.5,s*0.9);g.strokeRect(sx-s*0.75,sy,s*1.5,s*0.9);label('Home',sx,sy+s+3*dpr,MINK,1);MV.hits.push({x:sx,y:sy,t:'home'});}
   // camps
-  for(const cp of CAMPS){const built=!!SV.camps[cp.id],seen=isSeen(cp.x,cp.y);if(!built&&!seen)continue;const [sx,sy]=toS(cp.x,cp.y),s=10*dpr;
+  for(const cp of CAMPS){const built=!!SV.camps[cp.id],seen=isSeen(cp.x,cp.y);if(!built&&(!seen||MV.mode==='go'))continue;const [sx,sy]=toS(cp.x,cp.y),s=10*dpr;
     g.beginPath();g.moveTo(sx-s,sy+s*0.6);g.lineTo(sx,sy-s);g.lineTo(sx+s,sy+s*0.6);g.closePath();g.lineWidth=1.8*dpr;g.strokeStyle=MINK;
     if(built){g.fillStyle='#c8643c';g.fill();g.stroke();g.beginPath();g.moveTo(sx,sy-s);g.lineTo(sx,sy-s*1.9);g.stroke();g.fillStyle='#57a6b6';g.fillRect(sx,sy-s*1.9,s*0.8,s*0.5);label(cp.name,sx,sy+s,MINK,1);}
     else{g.setLineDash([3*dpr,3*dpr]);g.stroke();g.setLineDash([]);label('camp site',sx,sy+s,'rgba(255,226,184,0.7)');}
     MV.hits.push({x:sx,y:sy,t:'camp',cp});}
   // lost bags
-  for(const b of SV.bags){const [sx,sy]=toS(b.x,b.y),s=6*dpr;g.strokeStyle='#b2402a';g.lineWidth=2.6*dpr;g.beginPath();g.moveTo(sx-s,sy-s);g.lineTo(sx+s,sy+s);g.moveTo(sx+s,sy-s);g.lineTo(sx-s,sy+s);g.stroke();label('lost bag',sx,sy+s+2*dpr,'#b2402a');}
+  if(FULL)for(const b of SV.bags){const [sx,sy]=toS(b.x,b.y),s=6*dpr;g.strokeStyle='#b2402a';g.lineWidth=2.6*dpr;g.beginPath();g.moveTo(sx-s,sy-s);g.lineTo(sx+s,sy+s);g.moveTo(sx+s,sy-s);g.lineTo(sx-s,sy+s);g.stroke();label('lost bag',sx,sy+s+2*dpr,'#b2402a');}
   // you (on an expedition)
   if(MV.mode==='exp'&&X){const [sx,sy]=toS(X.x,X.y),fa=Math.atan2(Math.cos(X.face),Math.sin(X.face)),cr=34*dpr;
     const cg=g.createRadialGradient(sx,sy,0,sx,sy,cr);cg.addColorStop(0,'rgba(232,69,58,0.55)');cg.addColorStop(1,'rgba(232,69,58,0)');g.fillStyle=cg;g.beginPath();g.moveTo(sx,sy);g.arc(sx,sy,cr,fa-0.5,fa+0.5);g.closePath();g.fill();
     g.fillStyle='#e8453a';g.strokeStyle='#ffe2b8';g.lineWidth=2.2*dpr;g.beginPath();g.arc(sx,sy,6*dpr,0,6.283);g.fill();g.stroke();}
   // drone: where it is mapping right now / where it can fly
-  if(SV.scout){const [sx,sy]=toS(SV.scout.x,SV.scout.y);g.setLineDash([4*dpr,4*dpr]);g.strokeStyle='rgba(255,211,110,0.85)';g.lineWidth=1.6*dpr;g.beginPath();g.arc(sx,sy,SV.scout.r*sc,0,6.283);g.stroke();g.setLineDash([]);label('drone is mapping…',sx,sy,'#ffd36e',1);}
+  if(SV.scout&&MV.mode!=='go'){const [sx,sy]=toS(SV.scout.x,SV.scout.y);g.setLineDash([4*dpr,4*dpr]);g.strokeStyle='rgba(255,211,110,0.85)';g.lineWidth=1.6*dpr;g.beginPath();g.arc(sx,sy,SV.scout.r*sc,0,6.283);g.stroke();g.setLineDash([]);label('drone is mapping…',sx,sy,'#ffd36e',1);}
   if(MV.mode==='scout'&&SV.b.dron){const [hx,hy]=toS(0,0),R=DRONE.range[SV.b.dron]*sc;g.fillStyle='rgba(255,211,110,0.05)';g.strokeStyle='rgba(255,211,110,0.7)';g.lineWidth=1.6*dpr;g.setLineDash([6*dpr,5*dpr]);g.beginPath();g.arc(hx,hy,R,0,6.283);g.fill();g.stroke();g.setLineDash([]);
     if(MV.pick){const [px,py]=toS(MV.pick.x,MV.pick.y);g.fillStyle='rgba(255,211,110,0.16)';g.strokeStyle='#ffd36e';g.lineWidth=2*dpr;g.beginPath();g.arc(px,py,DRONE.r[SV.b.dron]*sc,0,6.283);g.fill();g.stroke();
       g.beginPath();g.moveTo(px-6*dpr,py);g.lineTo(px+6*dpr,py);g.moveTo(px,py-6*dpr);g.lineTo(px,py+6*dpr);g.stroke();}}
   // signal direction at the paper edge
-  if(SV.b.radio){const a=Math.atan2(SIG.y-MV.cy,SIG.x-MV.cx),m=34*dpr;let ex=W/2+Math.cos(a)*W,ey=H/2+Math.sin(a)*H;const k=Math.min((W/2-m)/Math.abs(ex-W/2||1),(H/2-m)/Math.abs(ey-H/2||1));ex=W/2+(ex-W/2)*k;ey=clamp(H/2+(ey-H/2)*k,80*dpr,H-140*dpr);
+  if(SV.b.radio&&MV.mode!=='go'){const a=Math.atan2(SIG.y-MV.cy,SIG.x-MV.cx),m=34*dpr;let ex=W/2+Math.cos(a)*W,ey=H/2+Math.sin(a)*H;const k=Math.min((W/2-m)/Math.abs(ex-W/2||1),(H/2-m)/Math.abs(ey-H/2||1));ex=W/2+(ex-W/2)*k;ey=clamp(H/2+(ey-H/2)*k,80*dpr,H-140*dpr);
     g.save();g.translate(ex,ey);g.rotate(a);g.fillStyle='#c9a7e8';g.beginPath();g.moveTo(12*dpr,0);g.lineTo(-6*dpr,-7*dpr);g.lineTo(-6*dpr,7*dpr);g.closePath();g.fill();g.restore();label('faint signal',ex,ey+10*dpr,'#c9a7e8',1);}
   // compass rose
   {const cx=W-38*dpr,cy=H-118*dpr,s=16*dpr;g.strokeStyle=MINK;g.lineWidth=1.2*dpr;g.beginPath();g.arc(cx,cy,s*1.1,0,6.283);g.stroke();
@@ -6141,9 +6153,9 @@ function drawMap(){const cv=$('mapc'),g=cv.getContext('2d'),dpr=Math.min(2,windo
   const vg=g.createRadialGradient(W/2,H/2,Math.min(W,H)*0.35,W/2,H/2,Math.max(W,H)*0.75);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.45)');g.fillStyle=vg;g.fillRect(0,0,W,H);
 }
 function openMap(mode){sfx.ui('open');MV.open=true;MV.mode=mode;MV.sel=null;const cx=mode==='exp'&&X?X.x:0,cy=mode==='exp'&&X?X.y:0;MV.cx=cx;MV.cy=cy;
-  let R=600;for(const k in SV.seen){const [i,j]=k.split(',').map(Number);R=Math.max(R,Math.hypot((i+0.5)*MC-cx,(j+0.5)*MC-cy)+MC);}for(const cp of CAMPS)if(SV.camps[cp.id])R=Math.max(R,Math.hypot(cp.x-cx,cp.y-cy)+200);if(mode==='scout'&&SV.b.dron)R=DRONE.range[SV.b.dron]*1.12;
+  let R=600;if(mode!=='go')for(const k in SV.seen){const [i,j]=k.split(',').map(Number);R=Math.max(R,Math.hypot((i+0.5)*MC-cx,(j+0.5)*MC-cy)+MC);}for(const cp of CAMPS)if(SV.camps[cp.id])R=Math.max(R,Math.hypot(cp.x-cx,cp.y-cy)+200);if(mode==='scout'&&SV.b.dron)R=DRONE.range[SV.b.dron]*1.12;
   const cv=$('mapc');$('mapv').classList.remove('hidden');MV.sc=clamp(Math.min(cv.clientWidth,cv.clientHeight-120)/(2*R),0.04,1.2);
-  MV.pick=null;MV.plan=null;MAPD.clear();$('mapTitle').textContent=mode==='exp'?'Map':mode==='scout'?'Pick a spot to scout':'Where to?';$('mcard').classList.add('hidden');drawMap();}
+  MV.pick=null;MV.plan=null;MAPD.clear();$('mapTitle').textContent=mode==='go'?'Where to?':mode==='scout'?'Pick a spot to scout':'Map';syncMapFil();$('mcard').classList.add('hidden');drawMap();}
 const MAPD=new Map();
 function mapChunk(cx,cy){const k=cx+','+cy;if(X&&X.chunks&&X.chunks.has(k)&&scene==='exp')return X.chunks.get(k);let c=MAPD.get(k);if(!c){c=genChunk(cx,cy,true);MAPD.set(k,c);}return c;}
 // route planning (Robin 20. 11.): the map knows how much water you can carry and what water you know of on the way
@@ -6167,10 +6179,10 @@ function mapSelect(h){MV.sel=h;const c=$('mcard');if(!h){c.classList.add('hidden
   if(h.t==='scout'){const l=SV.b.dron,d=Math.hypot(MV.pick.x,MV.pick.y),inR=d<=DRONE.range[l],c2=DRONE.cost[l];t=inR?'Scout this area':'Too far for the drone';
     sub=fmtM(d)+' from home'+(inR?' · maps '+fmtM(DRONE.r[l])+' around it':' · range '+fmtM(DRONE.range[l])+'. Upgrade the drone to fly further.');btn='Send the drone · '+c2+' {energy}';ok=inR&&!SV.scout&&(SV.energy||0)>=c2;
     $('mcT').textContent=t;$('mcS').innerHTML=icx(sub);const b=$('mcB');b.style.display='';b.innerHTML=icx(btn);b.disabled=!ok;c.classList.remove('hidden');return;}
-  if(h.t==='home'){t='Home';sub='Your village in the oasis. Well: '+Math.floor(SV.well)+' / '+wellCap()+' L';if(MV.mode==='base'){btn='Fill up &amp; go · '+fmtL(fillAmount())+' L';ok=fillAmount()>=0.5;}}
+  if(h.t==='home'){t='Home';sub='Your village in the oasis. Well: '+Math.floor(SV.well)+' / '+wellCap()+' L';if(MV.mode==='go'){btn='Fill up &amp; go · '+fmtL(fillAmount())+' L';ok=fillAmount()>=0.5;}}
   else{const cp=h.cp;t=SV.camps[cp.id]?cp.name:'Camp site';sub=BIOME_NAME[biomeAt(cp.x,cp.y)]+' · '+fmtM(Math.hypot(cp.x,cp.y))+' from home';
     if(!SV.camps[cp.id])sub+='<br>Walk there and build the camp for '+CAMP_COST+' {scrap}.';
-    else if(MV.mode==='base'){btn='Travel · '+cp.trip+' L + fill up';ok=SV.well>=cp.trip+0.5;if(!ok)sub+='<br>Not enough water in the well yet.';}}
+    else if(MV.mode==='go'){btn='Travel · '+cp.trip+' L + fill up';ok=SV.well>=cp.trip+0.5;if(!ok)sub+='<br>Not enough water in the well yet.';}}
   $('mcT').textContent=t;$('mcS').innerHTML=icx(sub);const b=$('mcB');b.style.display=btn?'':'none';b.innerHTML=btn;b.disabled=!ok;c.classList.remove('hidden');}
 (function(){const cv=()=>$('mapc');let P=new Map(),drag=null,pin=null,moved=0;
   document.addEventListener('DOMContentLoaded',()=>{});
@@ -6183,11 +6195,11 @@ function mapSelect(h){MV.sel=h;const c=$('mcard');if(!h){c.classList.add('hidden
     if(P.size===0){if(moved<6){const dpr=Math.min(2,window.devicePixelRatio||1),r=el.getBoundingClientRect(),x=(e.clientX-r.left)*dpr,y=(e.clientY-r.top)*dpr;
       if(MV.mode==='scout'){const W=el.clientWidth*dpr,H=el.clientHeight*dpr,sc=MV.sc*dpr,wx=MV.cx+(x-W/2)/sc,wy=MV.cy+(y-H/2)/sc;MV.pick={x:wx,y:wy};drawMap();mapSelect({t:'scout'});}
       else{let best=null,bd=30*dpr;for(const h of MV.hits){const d=Math.hypot(h.x-x,h.y-y);if(d<bd){bd=d;best=h;}}
-        if(!best){const W=el.clientWidth*dpr,H=el.clientHeight*dpr,sc=MV.sc*dpr;best={t:'plan',x:MV.cx+(x-W/2)/sc,y:MV.cy+(y-H/2)/sc};}mapSelect(best);}}drag=null;}};
+        if(!best&&(MV.mode==='view'||MV.mode==='exp')){const W=el.clientWidth*dpr,H=el.clientHeight*dpr,sc=MV.sc*dpr;best={t:'plan',x:MV.cx+(x-W/2)/sc,y:MV.cy+(y-H/2)/sc};}mapSelect(best);}}drag=null;}};
   el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
   el.addEventListener('wheel',e=>{e.preventDefault();MV.sc=clamp(MV.sc*Math.exp(-e.deltaY*0.0015),0.04,1.2);drawMap();},{passive:false});
   $('mapX').addEventListener('click',closeMap);
-  $('mcB').addEventListener('click',()=>{const h=MV.sel;if(h&&h.t==='scout'&&MV.pick){if(startScout(MV.pick.x,MV.pick.y)){closeMap();openBuilding('dron');}return;}if(!h||MV.mode!=='base')return;closeMap();if(h.t==='home')startExpedition();else startExpedition(h.cp.id);});
+  $('mcB').addEventListener('click',()=>{const h=MV.sel;if(h&&h.t==='scout'&&MV.pick){if(startScout(MV.pick.x,MV.pick.y)){closeMap();openBuilding('dron');}return;}if(!h||MV.mode!=='go')return;closeMap();if(h.t==='home')startExpedition();else startExpedition(h.cp.id);});
   window.addEventListener('resize',()=>{if(MV.open)drawMap();});
 })();
 
@@ -6216,8 +6228,11 @@ addEventListener('pointerup',e=>{ptr=false;PTRS.delete(e.pointerId);if(PTRS.size
 const KM={ArrowUp:'u',w:'u',W:'u',ArrowDown:'d',s:'d',S:'d',ArrowLeft:'l',a:'l',A:'l',ArrowRight:'r',d:'r',D:'r'};
 addEventListener('keydown',e=>{if(KM[e.key]){kb[KM[e.key]]=1;if(scene==='exp')e.preventDefault();}});
 addEventListener('keyup',e=>{if(KM[e.key])kb[KM[e.key]]=0;});
-$('bGo').addEventListener('click',()=>{if(CAMPS.some(c=>SV.camps[c.id]))openMap('base');else startExpedition();});
-$('bMap').addEventListener('click',()=>openMap('base'));
+// two maps (Robin 20. 11.): 'go' = clean departure map (home + your camps only), 'view'/'exp' = the explorer's map with filters
+$('bGo').addEventListener('click',()=>{if(CAMPS.some(c=>SV.camps[c.id]))openMap('go');else startExpedition();});
+$('bMap').addEventListener('click',()=>openMap('view'));
+document.querySelectorAll('#mfil button').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const f=b.dataset.f;SV.mapF=SV.mapF||{water:1};SV.mapF[f]=SV.mapF[f]?0:1;save();syncMapFil();mapSelect(null);drawMap();}));
+function syncMapFil(){const F=SV.mapF||{water:1};document.querySelectorAll('#mfil button').forEach(b=>b.classList.toggle('on',!!F[b.dataset.f]));$('mfil').classList.toggle('hidden',!(MV.mode==='view'||MV.mode==='exp'));}
 $('xMap').addEventListener('click',e=>{e.stopPropagation();if(X&&!X.end&&!X.intro)openMap('exp');});
 $('bFetch').addEventListener('click',sendWolt);
 $('bAct').addEventListener('click',e=>{e.stopPropagation();xAction();});
