@@ -1,0 +1,37 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Zuroda</title>
+<style>
+html,body{margin:0;height:100%}
+body{background:var(--night);color:var(--amber);font-family:var(--font-sans);overflow:hidden}
+.cover{position:relative;height:288px;overflow:hidden}
+.art{position:absolute;top:0;left:480px;width:480px;height:288px;overflow:hidden}
+.art svg{display:block;width:480px;height:288px}
+.sand{fill:var(--sand-lit)}.terra{fill:var(--terra)}.water{fill:var(--water)}.gold{fill:var(--gold)}.frame{fill:var(--frame)}.ink{fill:var(--night)}
+.slab{rx:var(--radius-lg)}.pill{rx:6px}
+.words{position:absolute;left:24px;bottom:24px;max-width:440px}
+.name{margin:0;font-size:84px;line-height:.92;font-weight:700;letter-spacing:.14em;color:var(--amber)}
+.tag{margin:8px 0 0 4px;font-size:14px;line-height:20px;color:var(--amber-dim)}
+</style></head><body><div class="cover">
+<div class="art" aria-hidden="true"><svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      sand-lit 264x232 slab bleeding off the bottom (the world, the biggest identity colour) · terra 96x136 (roofs, brand accent) · water 96x80 (the currency) · gold 40x40 once · frame 16 tall strip (the display edge)
+  arrangement one tall sand slab with satellites, right-aligned, gutters space-4
+  pattern     "a literal motif": wind ripples on the dunes - space-3 tall pills at a space-5 pitch cut into the sand slab in night, thinning upward
+  scales      sides in space-2 multiples; gutters space-4; slab corners radius-lg; ripple rx = half of 12px
+-->
+<rect class="sand slab" x="200" y="40" width="264" height="272" rx="22"/>
+<rect class="terra slab" x="88" y="24" width="96" height="136" rx="22"/>
+<rect class="water slab" x="88" y="176" width="96" height="80" rx="22"/>
+<rect class="gold slab" x="40" y="216" width="40" height="40" rx="12"/>
+<rect class="frame" x="200" y="16" width="264" height="8" rx="4"/>
+<rect class="ink pill" x="224" y="244" width="120" height="12" rx="6"/>
+<rect class="ink pill" x="360" y="244" width="80" height="12" rx="6"/>
+<rect class="ink pill" x="248" y="212" width="152" height="12" rx="6"/>
+<rect class="ink pill" x="232" y="180" width="72" height="12" rx="6"/>
+<rect class="ink pill" x="320" y="180" width="104" height="12" rx="6"/>
+<rect class="ink pill" x="272" y="148" width="96" height="12" rx="6"/>
+<rect class="ink pill" x="296" y="116" width="56" height="12" rx="6"/>
+</svg></div>
+<div class="words"><h1 class="name">Zuroda</h1><p class="tag">A wanderer. A robot dog. A desert that remembers.</p></div>
+</div></body></html>

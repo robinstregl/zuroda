@@ -1,0 +1,23 @@
+<!-- @dsCard group="Displej" height=120 subtitle="Horní bar ve vesnici" -->
+<!doctype html><html><head><meta charset="utf-8"><title>HUD bar</title><style>html,body{margin:0}body{font-family:var(--font-sans);color:var(--amber)}*{box-sizing:border-box}
+.btn{font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:100%;min-height:52px;padding:10px 16px;border-radius:var(--radius-pill);font-size:17px;font-weight:600;letter-spacing:.03em;cursor:pointer}
+.btn small{font-size:11.5px;font-weight:500;opacity:.88;letter-spacing:0}
+.meta{margin-top:10px;font-size:12px;line-height:1.45;color:var(--ink)}
+.meta b{display:block;font-size:13px}
+.ok{color:#1f5f2a;font-weight:600}.bad{color:#9c2f16;font-weight:600}
+.ground{background-color:var(--sand-lit);background-image:radial-gradient(rgba(120,80,45,.28) 1px,transparent 1.6px),radial-gradient(rgba(255,250,240,.45) 1px,transparent 1.7px),repeating-linear-gradient(176deg,rgba(150,105,60,.10) 0 2px,transparent 2px 26px);background-size:23px 23px,31px 31px,auto;background-position:0 0,11px 7px,0 0;padding:var(--space-4) var(--space-4) var(--space-3);min-height:120px}
+.bar{display:flex;align-items:center;gap:var(--space-3);background:var(--night);border:3px solid var(--frame);border-radius:var(--radius-lg);padding:9px 14px}
+.eyes{display:flex;gap:5px}.eyes i{width:9px;height:16px;border-radius:5px;background:var(--amber);box-shadow:0 0 8px rgba(255,176,96,.6)}
+.sep{width:1px;height:22px;background:rgba(255,226,184,.14)}
+.grid{flex:1;display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;align-items:center}
+.it{display:flex;align-items:center;justify-content:center;gap:var(--space-1);font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
+.it .d{width:12px;height:12px;border-radius:50%}
+.wv{position:relative}.wv::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--water) 68%,rgba(143,224,238,.18) 68%)}
+.walk{text-align:right;font-size:10.5px;letter-spacing:.04em;color:rgba(58,42,32,.62);margin-top:5px;padding-right:10px}
+</style></head><body><div class="ground">
+<div class="bar"><div class="eyes"><i></i><i></i></div><div class="sep"></div><div class="grid">
+<div class="it" style="color:var(--water)"><span style="display:inline-flex"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 3c3 5 6 8 6 11.5A6 6 0 0 1 6 14.5C6 11 9 8 12 3z" fill="currentColor"/></svg></span><span class="wv">27/40 L</span></div>
+<div class="it"><span class="d" style="background:#9aa0a8"></span>9</div>
+<div class="it"><span class="d" style="background:var(--gold)"></span>1</div>
+<div class="it"><span class="d" style="background:var(--act)"></span>3/4</div></div></div>
+<div class="walk">1 389 m walked</div></div></body></html>

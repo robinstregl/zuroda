@@ -1,0 +1,25 @@
+{
+ "v": 3,
+ "layout": "files",
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-20T16:09:45Z"
+ },
+ "title": "Zuroda",
+ "namespace": "Zuroda",
+ "libraries": [],
+ "sections": {},
+ "groups": [],
+ "assetGroups": {},
+ "blobs": {},
+ "docs": {
+  "readme": "project/README.md",
+  "sections": []
+ },
+ "lastChange": {
+  "by": "Robin Štrégl",
+  "at": "2026-11-20T16:09:45Z",
+  "via": "Claude chat",
+  "note": "Brand manual from the game's current code + proposals for the primary button, action button and world labels"
+ }
+}
