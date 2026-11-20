@@ -235,7 +235,7 @@ const grain=ctx.createPattern(grainC,'repeat');
 const C=h=>new T.Color(h).convertSRGBToLinear();
 const matCache={};
 const TOON=(()=>{const gr=ST.grad||[100,178,255];const d=new Uint8Array(gr);const t=new T.DataTexture(d,gr.length,1,T.LuminanceFormat);t.minFilter=t.magFilter=ST.gradSmooth?T.LinearFilter:T.NearestFilter;t.generateMipmaps=false;t.needsUpdate=true;return t;})();
-const PATS={'#d6cfbf':3,'#4d7392':3,'#e6d2ad':1,'#dcc7a3':1,'#8f5b36':2,'#5d4632':2,'#5d4a3a':2,'#6e5a48':2,'#7d6a58':2,'#86765a':2,'#9c8a6a':2,'#b07a48':2,'#8a7a5c':2,
+const PATS={'#c4875a':5,'#b97a50':5,'#7f6046':2,'#d6cfbf':3,'#4d7392':3,'#e6d2ad':1,'#dcc7a3':1,'#8f5b36':2,'#5d4632':2,'#5d4a3a':2,'#6e5a48':2,'#7d6a58':2,'#86765a':2,'#9c8a6a':2,'#b07a48':2,'#8a7a5c':2,
   '#8b8f96':3,'#7d8188':3,'#5d6168':3,'#6f8f9a':3,'#a0623c':3,'#b98a62':5,'#3d4f74':7,'#efe2c4':8,'#c8643c':9};
 function patOf(c){if(typeof c!=='string')return 9;c=c.toLowerCase();if(PATS[c]!==undefined)return PATS[c];const q={};new T.Color(c).getHSL(q);const h=q.h,s=q.s,l=q.l;
   if(s<0.12)return l>0.78?1:3;if(h>0.2&&h<0.47)return 9;if(h>0.5&&h<0.75)return s>0.4?9:3;if(h<0.15||h>0.94){if(l>0.7)return 1;if(l<0.4)return 2;return 5;}return 9;}
@@ -1144,6 +1144,13 @@ function obstOf(cx,cy){const k=cx+','+cy;let o=OBST.get(k);if(o)return o;o=[];
         const R=38+r()*22;const D=2.0+R/50;o.push({t:'crater',x0:ccx,y0:ccy,x1:ccx,y1:ccy,r:R,D});const nl=2+Math.floor(r()*2);
         for(let i=0;i<nl;i++){const a=r()*Math.PI*2,d=R*(0.5+r()*0.3),rr=R*(0.5+r()*0.25),a2=a+(r()-0.5)*1.2,e=r()<0.5?rr*0.6:0;
           const x0=ccx+Math.cos(a)*d,y0=ccy+Math.sin(a)*d,x1=x0+Math.cos(a2)*e,y1=y0+Math.sin(a2)*e;if(fit(x0,y0,rr)&&fit(x1,y1,rr))o.push({t:'crater',x0,y0,x1,y1,r:rr,D});}}}}
+  // solid desert props (Robin 20. 11.): dead trees and big rocks you have to walk around – real obstacles, unlike the old rocks
+  if(dist>230&&!nearCamp&&coastSD(mx,my).d>140){const r=mulberry32(hash3((SV.seed^0x2c1b3c6d)>>>0,cx,cy));const bio=biomeAt(mx,my);
+    const nT=bio===0?(r()<0.55?1+Math.floor(r()*2):0):bio===3?(r()<0.3?1:0):bio===2?(r()<0.25?1:0):0;
+    const nR=bio===2?1+Math.floor(r()*3):bio===1?(r()<0.25?1:0):(r()<0.45?1:0);
+    const put=(t,rr)=>{for(let tr=0;tr<6;tr++){const x=ox+30+r()*(CH-60),y=oy+30+r()*(CH-60);if(Math.hypot(x,y)<200)continue;
+        if(o.some(q=>segPt(x,y,q).d<q.r+rr+28))continue;o.push({t,solid:1,x0:x,y0:y,x1:x,y1:y,r:rr,D:0,sd:Math.floor(r()*1e6)});return;}};
+    for(let i=0;i<nT;i++)put('tree',6+r()*3);for(let i=0;i<nR;i++)put('rock',9+r()*7);}
   OBST.set(k,o);return o;}
 function segPt(px,py,o){const dx=o.x1-o.x0,dy=o.y1-o.y0,l2=dx*dx+dy*dy;let t=l2?((px-o.x0)*dx+(py-o.y0)*dy)/l2:0;t=t<0?0:t>1?1:t;const qx=o.x0+dx*t,qy=o.y0+dy*t;return {x:qx,y:qy,d:Math.hypot(px-qx,py-qy)};}
 function obstNear(px,py,fn){const cx=Math.floor(px/CH),cy=Math.floor(py/CH);for(let j=-1;j<=1;j++)for(let i=-1;i<=1;i++)for(const o of obstOf(cx+i,cy+j))fn(o);}
@@ -1181,6 +1188,22 @@ function makeBrine(rr){const g=grp();part(G.disc24,M('#f3efe6'),0,0.02,0,rr*2.3,
   part(G.disc24,M('#f4fbfb'),-rr*0.25,0.05,-rr*0.15,rr*0.7,1,rr*0.25,g,true);return g;}
 function makeBoulder(s,seed){const g=grp();const r=mulberry32((seed|0)+3);const n=2+Math.floor(r()*2);let y=0;
   for(let i=0;i<n;i++){const k=s*(1-i*0.28);const m=part(G.sph,i%2?'#b06c45':'#c58456',(r()-0.5)*s*0.5,y+k*0.45,(r()-0.5)*s*0.4,k*2.1,k*1.1,k*1.7,g);m.rotation.y=r()*3;y+=k*0.85;}return g;}
+// dead tree: a bare, twisted trunk with forked branches (game-made, wood texture from the pattern shader)
+// props from the Stylized Nature MegaKit (Quaternius, CC0): geometry only, painted with the game's own toon materials
+const NGEO={};
+function natGeo(k){if(NGEO[k])return NGEO[k];if(typeof NATURE==='undefined'||!NATURE[k])return null;const D=NATURE[k];const dec=b=>{const s2=atob(b),u=new Uint8Array(s2.length);for(let i=0;i<s2.length;i++)u[i]=s2.charCodeAt(i);return u.buffer;};
+  const q=new Int16Array(dec(D.p)),ix=new Uint16Array(dec(D.i)),pos=new Float32Array(q.length);for(let i=0;i<q.length;i++)pos[i]=q[i]/32767*D.s;
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pos,3));g.setIndex(new T.BufferAttribute(ix,1));g.computeVertexNormals();g.computeBoundingBox();NGEO[k]=g;return g;}
+function makeNatRock(rad,seed){const k='rock'+(1+seed%3),geo=natGeo(k);if(!geo)return makeBoulder(rad,seed);const g=grp();PART_OL=0.012;const sc=rad/1.25;
+  part(geo,seed%2?'#c4875a':'#b97a50',0,0,0,sc,sc*(0.8+(seed%5)*0.08),sc,g);PART_OL=0;return g;}
+function makeNatTree(s,seed){const geo=natGeo(seed%2?'tree1':'tree3');if(!geo)return makeDeadTree(s,seed);const g=grp();PART_OL=0;const sc=0.3*s;part(geo,'#7f6046',0,0,0,sc,sc,sc,g);return g;}
+function makeDeadTree(s,seed){if(!G.limb){G.limb=new T.CylinderGeometry(0.3,0.5,1,7);G.limb.translate(0,0.5,0);}
+  const g=grp();const r=mulberry32((seed|0)+17);PART_OL=0.012;const col=r()<0.5?'#7a5a3a':'#86684a';const T0=grp(0,0,0,g);T0.scale.setScalar(s);T0.rotation.set((r()-0.5)*0.25,0,(r()-0.5)*0.25);
+  const br=(par,len,rad,d)=>{part(G.limb,col,0,0,0,rad*2,len,rad*2,par);if(d<=0)return;const top=grp(0,len*0.9,0,par);const n=(d===3?2:1)+(r()<0.45?1:0);
+    for(let i=0;i<n;i++){const c=grp(0,0,0,top);c.rotation.set((r()-0.5)*0.9,r()*6.28,(i%2?-1:1)*(0.45+r()*0.55));br(c,len*(0.5+r()*0.25),rad*0.6,d-1);}};
+  part(G.cone5,col,0,0.35,0,1.0,0.7,1.0,T0);br(T0,2.2+r()*0.8,0.3,3);
+  for(let i=0;i<3;i++){const a=i*2.1+r(),rt=grp(Math.cos(a)*0.25,0.05,Math.sin(a)*0.25,T0);rt.rotation.set(0,-a,1.25);part(G.limb,col,0,0,0,0.22,0.7,0.22,rt);}
+  PART_OL=0;return g;}
 function makeRubble(seed){const g=grp();const r=mulberry32((seed|0)+9);
   const sl=part(G.box,'#aaa296',0,0.25,0,2.4,0.3,1.6,g);sl.rotation.set(0.12,r()*3,0.18);
   const pl=part(G.cyl,'#b8b0a2',1.2,0.8,-0.4,0.6,1.6,0.6,g);pl.rotation.z=0.08;part(G.box,'#9a9286',1.2,1.65,-0.4,0.75,0.12,0.75,g);
@@ -1551,7 +1574,7 @@ function H2(x,y){return Hd(x*S,y*S);}
 function buildChunkMeshes(c){
   const g=grp(0,0,0,X.scene);c.g=g;
   const size=CH*S,ox=c.cx*size,oz=c.cy*size;
-  const hasOb=c.obst&&c.obst.length;const shore=coastSD(c.cx*CH+CH/2,c.cy*CH+CH/2).d;const SEG=hasOb||Math.abs(shore)<CH*1.0?72:24,geo=new T.PlaneGeometry(size,size,SEG,SEG);geo.rotateX(-Math.PI/2);geo.translate(ox+size/2,0,oz+size/2);
+  const hasOb=c.obst&&c.obst.some(o=>o.D>0);const shore=coastSD(c.cx*CH+CH/2,c.cy*CH+CH/2).d;const SEG=hasOb||Math.abs(shore)<CH*1.0?72:24,geo=new T.PlaneGeometry(size,size,SEG,SEG);geo.rotateX(-Math.PI/2);geo.translate(ox+size/2,0,oz+size/2);
   const pos=geo.attributes.position;for(let i=0;i<pos.count;i++)pos.setY(i,Hd(pos.getX(i),pos.getZ(i)));
   const gn=geo;const gp=gn.attributes.position;const cols=new Float32Array(gp.count*3);
   const BC=BIOME_COL.map(C),dust=C(DUSTC),home=C(PLAZA),OB_WALL=C('#8e6648'),OB_FLOOR=C('#a88663'),WET=C('#b88f5c'),FOAM=C('#f4f8f2'),SHAL=C('#6fc2c6'),DEEP=C('#2f7f95');
@@ -1567,6 +1590,7 @@ function buildChunkMeshes(c){
   {const nr=gn.attributes.normal,e=0.25;for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i);const dx=Hd(x+e,z)-Hd(x-e,z),dz=Hd(x,z+e)-Hd(x,z-e);const v=new T.Vector3(-dx,2*e,-dz).normalize();nr.setXYZ(i,v.x,v.y,v.z);}nr.needsUpdate=true;}
   const gm=new T.Mesh(gn,X.groundMat);gm.receiveShadow=true;gm.castShadow=!!hasOb;g.add(gm);c.ground=gm;
   const at=(m,x,y)=>{m.position.set(x*S,H2(x,y),y*S);g.add(m);return m;};
+  for(const o of c.obst)if(o.solid){const m=o.t==='tree'?makeNatTree(1.15+(o.r-6)*0.18,o.sd):makeNatRock(o.r*S,o.sd);m.rotation.y=(o.sd%628)/100;at(m,o.x0,o.y0);}
   for(const r of c.rocks)at(r.big?makeBoulder(r.r*S*0.9,r.x):makeRock(r.r*S*1.2,r.x),r.x,r.y);
   for(const p of c.props){if(p.t==='salt')at(makeSaltCrystals(p.sd),p.x,p.y);else if(p.t==='brine')at(makeBrine(p.r*S),p.x,p.y);else if(p.t==='rubble'){const m=at(makeRubble(p.sd),p.x,p.y);m.rotation.y=p.sd;}}
   for(const cp of c.camps){cp.m=at(makeCamp(!!SV.camps[cp.id]),cp.x,cp.y);}

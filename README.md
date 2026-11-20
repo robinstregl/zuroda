@@ -24,4 +24,5 @@ Web se nasazuje ze složky `site/` (Cloudflare Pages, bez build příkazu).
 ## Zdroje třetích stran (vše CC0)
 
 - **Zvuky:** Kenney – Impact Sounds, Interface Sounds, RPG Audio, Sci-fi Sounds, Digital Audio, Music Jingles (kenney.nl), v `site/sfx/`.
+- **Suché stromy a velké kameny:** Quaternius – Stylized Nature MegaKit (jen geometrie, barví je hra vlastními materiály), v `src/nature.js` přes `tools/pack_models.py`.
 - **Animace postavy:** Quaternius – Universal Animation Library 1 a 2 (quaternius.com). Pohyby jsou převedené na klouby naší postavy nástrojem `tools/retarget.py` a uložené v `src/anims.js`.

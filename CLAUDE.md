@@ -10,3 +10,4 @@
 - Budovy se stavějí okamžitě (Robin nechce čekací časovače). Všechny budovy mají 10 úrovní, předměty taky (kromě Kompasu).
 - Animace postavy: `src/anims.js` vzniká z Quaternius Universal Animation Library (GLB na Robinově Macu ve složce Desktop/Animace) příkazem `python3 tools/retarget.py UAL1.glb UAL2.glb '{"klíč":["1|2","Název_klipu",loop]}' src/anims.js`. Postava nemá kostru – převod nastavuje rotace kloubů (hips, spine, neck, sh/el/hand, leg/knee/foot). Akce (`heroPlay(H,'smash')`) hrají jen na horní polovině těla.
 - Zvuky jsou v `site/sfx/*.mp3`, mapování v `SND` v game.js; syntetické tóny jsou záloha.
+- Suché stromy a kameny (pevné překážky v poušti, `o.solid` v `obstOf`) používají geometrii ze Stylized Nature MegaKit v `src/nature.js` (`tools/pack_models.py`); bez ní se kreslí vlastní náhradní modely.
