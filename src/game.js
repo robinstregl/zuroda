@@ -1546,7 +1546,8 @@ function genChunk(cx,cy,noMesh){
   if(dist>160&&rng()<0.28){const p=Pp(20),sid=id('c',0),ph=rng()*6;if(!tk(sid))c.crates.push({id:sid,...p,ph});}
   // puddles are rare now (Robin 20. 11.) – but worth more, and the drone/map shows them so you can plan a route
   if(rng()<(bio===1?0.04:0.09)){const p=Pp(),wid=id('p',0);c.waters.push({id:wid,...p,r:12+rng()*4,v:0.8,ph:rng()*6,taken:SV.scrapT[wid]!==undefined&&SV.exp-SV.scrapT[wid]<4});}
-  if(rng()<(bio===0?0.34:0.16)){const p=Pp();c.cacti.push({...p,h:16+rng()*10,arms:[0,0],dry:false});}
+  // cacti removed from the desert (Robin 20. 11.: the dead trees and rocks do that job now); rng call kept so the rest of the chunk stays put
+  rng();
   // mirages removed (Robin 20. 11.)
   // dead zones removed (Robin 20. 11.)
   if(dist>380&&rng()<(bio===3?0.3:0.15)){const p=Pp(60),walls=[];const nwl=4+Math.floor(rng()*3);
@@ -1650,8 +1651,8 @@ function startExpedition(campId){
   $('bhud').classList.add('hidden');$('bbar').classList.add('hidden');$('decorBar').classList.add('hidden');$('sum').classList.add('hidden');
   $('xhud').classList.remove('hidden');updateMelonBtn();X._act='';
 }
-function updCombatBtns(){const b=$('bSling'),l=gearLv('prak'),f=X.foeNear;const show=scene==='exp'&&X&&!X.end&&l&&f&&!f.dead&&X.foeNearD<=SLING.range(l);
-  b.classList.toggle('hidden',!show);if(show){b.classList.toggle('cd',X.slingCd>0||X.scrap<1);$('slCnt').textContent=X.scrap;}
+function updCombatBtns(){const b=$('bSling'),show=false;
+  b.classList.add('hidden');
   const d=$('bDrop'),sd=scene==='exp'&&X&&!X.end&&X.bottles>0&&Math.hypot(X.x,X.y)>140;d.classList.toggle('hidden',!sd);}
 function updateMelonBtn(){const b=$('bMelon');if(scene==='exp'&&X&&!X.end&&X.bottles>0){b.classList.remove('hidden');$('mCnt').textContent=X.bottles;}else b.classList.add('hidden');}
 $('bSling').addEventListener('click',e=>{e.stopPropagation();slingShoot();});
@@ -1668,8 +1669,10 @@ function sightR(){return 220*(ZOOM/14)*(1-0.28*DAY.n);}
 
 const WATER_PER_U=0.00042;// litres per game unit walked (≈ 2.4 km per litre out and back… with weight and heat less)
 function safePoint(){let best={x:0,y:0,d:Math.hypot(X.x,X.y)};for(const cp of CAMPS)if(SV.camps[cp.id]){const d=Math.hypot(X.x-cp.x,X.y-cp.y);if(d<best.d)best={x:cp.x,y:cp.y,d};}return best;}
+const slingReady=()=>{const l=gearLv('prak'),f=X.foeNear;return l&&f&&!f.dead&&X.foeNearD<=SLING.range(l);};
 function xAction(){if(!X||X.end||X.intro)return;
   if(X.nearFoe&&gearLv('kladivo')){smash();return;}
+  if(slingReady()){slingShoot();return;}
   if(X.nearWreck&&!X.dis){const W=WRECK[X.nearWreck.kind];if(gearLv('kladivo')<W.need){xText('Needs {hammer} Hammer '+ROMAN[W.need],'#c8643c');return;}if(room()<=0){fullMsg();return;}X.dis={w:X.nearWreck,c:X.nearWreckC,t:0};X.dest=null;sfx.clink();return;}
   if(X.nearCamp&&!SV.camps[X.nearCamp.id]){const cp=X.nearCamp;if(X.scrap<CAMP_COST){xText('Need '+CAMP_COST+' {scrap}','#c0532f');return;}
     X.scrap-=CAMP_COST;SV.camps[cp.id]=1;save();sfx.repair();xBurst(cp.x,cp.y,'#e0b04c',20,100);
@@ -1699,7 +1702,7 @@ function autopilotX(dt){
     const con=(o,w)=>{if(Math.hypot(o.x,o.y)<180)return;const d=Math.hypot(o.x-X.x,o.y-X.y);if(d<sr&&d*w<bd){bd=d*w;tgt=o;}};
     for(const s of c.scrap)con(s,1);for(const w of c.wrecks)if(gearLv('kladivo')>=WRECK[w.kind].need)con(w,0.7);for(const k of c.crates)con(k,0.8);for(const cp of c.camps)if(!SV.camps[cp.id]&&X.scrap>=CAMP_COST+4)con(cp,0.5);
     if(X.water/X.cap<0.6){for(const w of c.waters)if(!w.taken)con(w,0.5);}
-    for(const r of c.ruins)if(r.core)con(r.core,0.7);for(const b of SV.bags)con(b,0.4);});
+    for(const r of c.ruins)if(r.core)con(r.core,0.7);for(const b of SV.bags)con(b,0.4);for(const d of (X.drops||[]))con(d,1.5);});
   if(tgt){X.dest={x:tgt.x,y:tgt.y};}
   else{X.botT-=dt;if(X.botT<=0){X.botT=2+Math.random()*2;const out=Math.atan2(X.y,X.x);X.botDir=lerp(X.botDir,out,0.4)+(Math.random()-0.5)*1.2;}X.dest={x:X.x+Math.cos(X.botDir)*100,y:X.y+Math.sin(X.botDir)*100};}
   forX(X.x-160,X.y-160,X.x+160,X.y+160,c=>{for(const f of c.foes){if(f.dead||f.stun>0)continue;const dx=X.x-f.x,dy=X.y-f.y,dd=Math.hypot(dx,dy);if(dd<f.R+30&&X.dest){X.dest.x+=dx/dd*110;X.dest.y+=dy/dd*110;}}},true);
@@ -1728,8 +1731,15 @@ function knockout(f,msg){if(X.end)return;X.ko=msg+' Zuro dragged you home.';X.de
 function hitFoe(f,dmg,src){if(f.dead)return;f.hp-=dmg;f.stun=src==='hammer'?1.1:1.3;f.hitT=0.3;f.aware=1;f.alert=Math.max(f.alert,0.5);xBurst(f.x,f.y,'#ffd36e',10,90);sfx.hit();
   if(f.hp<=0)killFoe(f);else xText(f.type==='drone'?'Hit! It wobbles…':'Hit! It\'s stunned…','#9a6a14');}
 function killFoe(f){f.dead=true;SV.scrapT[f.id]=SV.exp;xBurst(f.x,f.y,'#ff6a4a',22,140);xBurst(f.x,f.y,'#8b8f96',18,110);sfx.boom();
-  let n=FOE[f.type].chip+(f.type==='bot'&&Math.random()<0.4?1:0),got=0;while(n>0&&room()>=1){X.chips++;n--;got++;}
-  xText(got?'Destroyed! +'+got+' {chip}':'Destroyed! …but your backpack is full','#2f7a52');X.events.push({x:f.x,y:f.y,t:'chip'});}
+  const n=FOE[f.type].chip+(f.type==='bot'&&Math.random()<0.4?1:0);dropChip(f.x,f.y,n);xText('Destroyed! A circuit fell out','#2f7a52');X.events.push({x:f.x,y:f.y,t:'chip'});}
+// circuits fall on the ground where the robot broke – you have to walk over and pick them up (Robin 20. 11.)
+function makeChipDrop(){const g=grp();PART_OL=0.01;const b=grp(0,0.12,0,g);b.rotation.set(0.15,0.6,0.1);part(G.box,'#3f8a5a',0,0,0,0.9,0.1,0.9,b);part(G.box,'#2b3436',0,0.07,0,0.42,0.06,0.42,b);
+  for(let i=0;i<4;i++)for(const sd of [-1,1]){part(G.box,'#d9a441',-0.3+i*0.2,0,sd*0.5,0.07,0.05,0.14,b);part(G.box,'#d9a441',sd*0.5,0,-0.3+i*0.2,0.14,0.05,0.07,b);}PART_OL=0;
+  g.userData.ring=part(G.ring,new T.MeshBasicMaterial({color:C('#7ee0a8'),transparent:true,opacity:0.8,depthWrite:false}),0,0.06,0,1.6,1,1.6,g,true);g.userData.b=b;return g;}
+function dropChip(x,y,n){const a=Math.random()*6.28,d=X.drops||(X.drops=[]);const o={x:x+Math.cos(a)*6,y:y+Math.sin(a)*6,n,m:makeChipDrop(),t:X.t};o.m.position.set(o.x*S,H2(o.x,o.y),o.y*S);X.scene.add(o.m);d.push(o);}
+function updDrops(){const D=X.drops;if(!D)return;for(let i=D.length-1;i>=0;i--){const o=D[i];const k=1.6*(1+Math.sin(X.t*4+i)*0.12);o.m.userData.ring.scale.set(k,1,k);o.m.userData.b.position.y=0.12+Math.abs(Math.sin(X.t*3+i))*0.15;
+  if(X.end||Math.hypot(o.x-X.x,o.y-X.y)>14)continue;if(room()<1){if(X.fullCd<=0){fullMsg();X.fullCd=2;}continue;}const t=Math.min(o.n,room());X.chips+=t;o.n-=t;sfx.core();xText('+'+t+' {chip} circuit','#2f7a52');
+  if(o.n<=0){X.scene.remove(o.m);D.splice(i,1);}}}
 function slingShoot(){const l=gearLv('prak'),f=X.foeNear;if(!l||!f||f.dead||X.end)return false;if(X.slingCd>0)return false;const d=Math.hypot(f.x-X.x,f.y-X.y);if(d>SLING.range(l))return false;
   if(X.scrap<1){xText('No scrap left to shoot','#c0532f');return false;}X.scrap--;X.slingCd=SLING.cd(l);X.face=Math.atan2(f.x-X.x,f.y-X.y);heroPlay(X.hero,'throw',1.9);
   const m=part(G.sph,'#8b8f96',X.x*S,1.2,X.y*S,0.16,0.16,0.16,X.scene,true);X.shots.push({f,x0:X.x,y0:X.y,t:0,dur:Math.max(0.12,d/430),m,dmg:SLING.dmg(l)});sfx.sling();return true;}
@@ -1755,11 +1765,12 @@ function updateExp(dt){
   if(X.intro){X.intro.t+=dt;if(X.intro.t>2.6){X.intro=null;if(X.introLine){X.scene.remove(X.introLine);X.introLine=null;}}else{updateExpCam(dt);animExp(dt);return;}}
   X.fullCd=Math.max(0,X.fullCd-dt);X.hitCd=Math.max(0,X.hitCd-dt);
   if(BOT)autopilotX(dt);
-  let mx=kb.r-kb.l,my=kb.d-kb.u;
+  let mx=kb.r-kb.l,my=kb.d-kb.u,joyK=1;
+  if(JOY&&JOY.on){const dx=JOY.x-JOY.x0,dy=JOY.y-JOY.y0,L=Math.hypot(dx,dy);if(L>8){mx=dx/L;my=dy/L;joyK=clamp(L/42,0.4,1);}}
   if(mx||my)X.dest=null;else if(X.dest){mx=X.dest.x-X.x;my=X.dest.y-X.y;const dd=Math.hypot(mx,my);if(dd<4){X.dest=null;mx=my=0;}
     else if(!BOT){const D=X.dest;if(D._b===undefined||dd<D._b-3){D._b=dd;D._t=X.t;}else if(X.t-D._t>2.2&&!ptr){X.dest=null;mx=my=0;}}}
   const ml=Math.hypot(mx,my),wr=weight()/bagCap();
-  const spd=(X.dis?0:78)*bootsMul(gearLv('boty'))*heroSpeedMul()*(1-0.32*Math.min(1.3,wr));
+  const spd=(X.dis?0:78)*joyK*bootsMul(gearLv('boty'))*heroSpeedMul()*(1-0.32*Math.min(1.3,wr));
   let moved=0;
   if(ml>0.001){const vx=mx/ml*spd,vy=my/ml*spd;const ox=X.x,oy=X.y;X.x+=vx*dt;X.y+=vy*dt;
     forX(X.x-80,X.y-80,X.x+80,X.y+80,c=>{for(const r of c.ruins)for(const w of r.walls){const nx=clamp(X.x,w.x-w.w/2,w.x+w.w/2),ny=clamp(X.y,w.y-w.h/2,w.y+w.h/2);const dx=X.x-nx,dy=X.y-ny,d=Math.hypot(dx,dy);
@@ -1790,7 +1801,7 @@ function updateExp(dt){
     }
   });
   for(let i=SV.bags.length-1;i>=0;i--){const b=SV.bags[i];if(Math.hypot(b.x-X.x,b.y-X.y)<16){X.scrap+=b.s;X.cores+=b.c;X.chips+=(b.k||0);if(b._m)X.scene.remove(b._m);SV.bags.splice(i,1);sfx.core();xText('Lost bag found! +'+b.s+' {scrap}'+(b.c?' +'+b.c+' {core}':''),'#8f5b36');save();}}
-  updFoes(dt);updShots(dt);updCaches(dt);
+  updFoes(dt);updShots(dt);updCaches(dt);updDrops();
   if(X.dis){if(X.nearWreck!==X.dis.w)X.dis=null;else{X.dis.t+=dt;if(X.dis.t>=1.3){finishDismantle();X.dis=null;}}}
   const hd=Math.hypot(X.x,X.y);if(hd>X.maxD)X.maxD=hd;if(X.camp?Math.hypot(X.x-X.start.x,X.y-X.start.y)>130:hd>130)X.leftHome=true;
   if(X.leftHome){if(hd<78)endExp('home');else for(const cp of CAMPS)if(SV.camps[cp.id]&&Math.hypot(X.x-cp.x,X.y-cp.y)<34){endExp('camp',cp);break;}}
@@ -1983,13 +1994,14 @@ function updExpHUD(){const cap=X.cap,can=canteenCap(),w=clamp(X.water,0,cap);
   let st='',txt='',btn='',dis=false;
   if(X.intro){}
   else if(X.nearFoe&&gearLv('kladivo')){const f=X.nearFoe;st='f'+f.id+(X.smashCd>0);txt=f.stun>0?'It\'s stunned – hit it again!':f.alert<0.3?'It hasn\'t seen you. Hit it from behind!':'Careful, it sees you!';btn='{hammer} Smash';dis=X.smashCd>0;}
-  else if(X.dis){st='dis';txt='Clang, clang… taking it apart!';btn='Dismantling…';dis=true;}
+  else if(slingReady()){const f=X.foeNear;st='s'+f.id+(X.slingCd>0)+(X.scrap<1);txt=X.scrap<1?'No scrap left to shoot!':f.stun>0?'It\'s stunned – again!':'Shoot it with the slingshot!';btn='{sling} Shoot · 1 {scrap}';dis=X.slingCd>0||X.scrap<1;}
+  else if(X.dis){st='dis';txt='Clang, clang… taking it apart!';btn='{hammer} Working…';dis=true;}
   else if(X.nearWreck){const W=WRECK[X.nearWreck.kind],hl=gearLv('kladivo');st='w'+X.nearWreck.id+hl+room();
     if(hl>=W.need){txt='Woof! '+W.name+'. Your {hammer} Hammer '+ROMAN[hl]+' can take it apart.';btn='{hammer} Dismantle';dis=room()<=0;if(dis)txt='Your backpack is full – nothing more fits.';}
-    else{txt=W.name+'. We need {hammer} Hammer '+ROMAN[W.need]+' from the Workshop.';btn='Needs Hammer '+ROMAN[W.need];dis=true;}}
-  else if(X.nearCamp&&!SV.camps[X.nearCamp.id]){st='c'+X.nearCamp.id+(X.scrap>=CAMP_COST);txt='A good spot for '+X.nearCamp.name+'. Build it and you can travel here from home.';btn='Build camp · '+CAMP_COST+' {scrap}';dis=X.scrap<CAMP_COST;}
+    else{txt=W.name+'. We need {hammer} Hammer '+ROMAN[W.need]+' from the Workshop.';btn='{hammer} Needs Hammer '+ROMAN[W.need];dis=true;}}
+  else if(X.nearCamp&&!SV.camps[X.nearCamp.id]){st='c'+X.nearCamp.id+(X.scrap>=CAMP_COST);txt='A good spot for '+X.nearCamp.name+'. Build it and you can travel here from home.';btn='{home} Build camp · '+CAMP_COST+' {scrap}';dis=X.scrap<CAMP_COST;}
   updCombatBtns();
-  if(st!==X._act){X._act=st;const el=$('xact');if(!st)el.classList.add('hidden');else{el.classList.remove('hidden');$('xactTxt').innerHTML=icx(txt);const b=$('bAct');b.innerHTML=icx(btn);b.disabled=dis;}}}
+  if(st!==X._act){X._act=st;const el=$('xact');if(!st)el.classList.add('hidden');else{el.classList.remove('hidden');$('xactTxt').innerHTML=icx(txt);const b=$('bAct'),m=btn.match(/^\{(\w+)\}\s*(.*)$/);b.innerHTML=icx(m?`<span class="ai">{${m[1]}}</span><small>${m[2]}</small>`:`<small>${btn}</small>`);b.disabled=dis;}}}
 function drawFloaters(){
   ctx.textAlign='center';ctx.font=`600 ${13*dpr}px ${FF}`;
   for(let i=floaters.length-1;i>=0;i--){const f=floaters[i];const e=tNow-f.b;if(e>1.4){floaters.splice(i,1);continue;}const p=proj(f.x3,f.y3+e*1.2,f.z3);if(p.z>1)continue;
@@ -2153,13 +2165,17 @@ const ray=new T.Raycaster(),ndc=new T.Vector2(),plane=new T.Plane(new T.Vector3(
 function setNdc(e){const r=canvas.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(ndc,cam);}
 function groundPoint(e,h){setNdc(e);plane.constant=-(h||0);if(!ray.ray.intersectPlane(plane,hit))return null;return {x:hit.x/S,y:hit.z/S};}
 let ptr=false;const PTRS=new Map();let pinch=null;
+// floating joystick (Robin 20. 11.): put a thumb anywhere and drag to walk; a quick tap still walks to that spot
+let JOY=null;const joyEl=()=>$('joy');
+function joyShow(on){const j=joyEl();if(!j)return;if(!on){j.classList.add('hidden');return;}j.classList.remove('hidden');j.style.left=JOY.x0+'px';j.style.top=JOY.y0+'px';}
+function joyKnob(){const k=joyEl()&&joyEl().firstElementChild;if(!k)return;let dx=JOY.x-JOY.x0,dy=JOY.y-JOY.y0;const L=Math.hypot(dx,dy),M=46;if(L>M){dx*=M/L;dy*=M/L;}k.style.transform=`translate(${dx}px,${dy}px)`;}
 const pdist=()=>{const v=[...PTRS.values()];return Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y)||1;};
 canvas.addEventListener('wheel',e=>{if(scene==='exp')e.preventDefault();},{passive:false});// no manual zoom – the view is fixed
 canvas.addEventListener('pointerdown',e=>{
   PTRS.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(PTRS.size===2&&scene==='exp'){ptr=false;if(X&&!X.end)X.dest=null;return;}
   if(PTRS.size>2)return;
-  if(scene==='exp'&&X&&!X.end){ptr=true;const p=groundPoint(e,H2(X.x,X.y));if(p)X.dest=fixDest(p);return;}
+  if(scene==='exp'&&X&&!X.end){if(!JOY)JOY={id:e.pointerId,x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,t0:performance.now(),on:false};return;}
   if(scene==='base'){
     if(B.decorMode){const p=groundPoint(e,0);if(p)placeDecor(p.x,p.y);return;}
     setNdc(e);const hits=ray.intersectObjects(BS.clickables,true);
@@ -2168,8 +2184,9 @@ canvas.addEventListener('pointerdown',e=>{
     closeSheet();
   }
 });
-addEventListener('pointermove',e=>{if(PTRS.has(e.pointerId))PTRS.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pinch&&PTRS.size===2){ZOOM=clamp(pinch.z*pinch.d/pdist(),ZMIN,ZMAX);SV.zoom=ZOOM;return;}if(ptr&&scene==='exp'&&X&&!X.end){const p=groundPoint(e,H2(X.x,X.y));if(p)X.dest=fixDest(p);}});
-addEventListener('pointerup',e=>{ptr=false;PTRS.delete(e.pointerId);if(PTRS.size<2)pinch=null;});addEventListener('pointercancel',e=>{ptr=false;PTRS.delete(e.pointerId);if(PTRS.size<2)pinch=null;});
+addEventListener('pointermove',e=>{if(PTRS.has(e.pointerId))PTRS.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pinch&&PTRS.size===2){ZOOM=clamp(pinch.z*pinch.d/pdist(),ZMIN,ZMAX);SV.zoom=ZOOM;return;}if(JOY&&e.pointerId===JOY.id){JOY.x=e.clientX;JOY.y=e.clientY;if(!JOY.on&&Math.hypot(JOY.x-JOY.x0,JOY.y-JOY.y0)>12){JOY.on=true;joyShow(true);if(X)X.dest=null;}if(JOY.on)joyKnob();}});
+function joyEnd(e,tap){if(!JOY||e.pointerId!==JOY.id)return;if(tap&&!JOY.on&&performance.now()-JOY.t0<450&&scene==='exp'&&X&&!X.end){const p=groundPoint({clientX:JOY.x0,clientY:JOY.y0},H2(X.x,X.y));if(p)X.dest=fixDest(p);}JOY=null;joyShow(false);}
+addEventListener('pointerup',e=>{joyEnd(e,true);ptr=false;PTRS.delete(e.pointerId);if(PTRS.size<2)pinch=null;});addEventListener('pointercancel',e=>{joyEnd(e,false);ptr=false;PTRS.delete(e.pointerId);if(PTRS.size<2)pinch=null;});
 const KM={ArrowUp:'u',w:'u',W:'u',ArrowDown:'d',s:'d',S:'d',ArrowLeft:'l',a:'l',A:'l',ArrowRight:'r',d:'r',D:'r'};
 addEventListener('keydown',e=>{if(KM[e.key]){kb[KM[e.key]]=1;if(scene==='exp')e.preventDefault();}});
 addEventListener('keyup',e=>{if(KM[e.key])kb[KM[e.key]]=0;});

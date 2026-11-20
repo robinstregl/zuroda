@@ -91,7 +91,14 @@
   .mapb{min-width:52px}.mapround{position:absolute;right:54px;top:105px;width:40px;height:40px;border-radius:50%;border:2px solid var(--wd-line);background:var(--wd-bg);box-shadow:0 2px 8px rgba(58,42,32,.2);display:none;align-items:center;justify-content:center;z-index:5;cursor:pointer}
   #xMap svg.ic,#bMap svg.ic{width:22px;height:22px}
   #xhud:not(.hidden) ~ #xMap{display:flex}
-  #xact{position:absolute;left:76px;right:14px;bottom:16px;display:flex;flex-direction:column;gap:10px;z-index:4;pointer-events:none}
+  #xact{position:absolute;right:14px;bottom:18px;max-width:70%;display:flex;flex-direction:column;align-items:flex-end;gap:10px;z-index:4;pointer-events:none}
+  #xact .bubble{font-size:13px}
+  /* one round action button bottom-right, under the thumb (Robin 20. 11.) */
+  #bAct{width:88px;height:88px;border-radius:50%;border:3px solid #3a2a20;background:#f2c14e;color:#3a2a20;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px;cursor:pointer;box-shadow:0 5px 16px rgba(58,42,32,.35);touch-action:manipulation}
+  #bAct .ai svg.ic{width:38px;height:38px}#bAct small{font-size:10.5px;font-weight:700;line-height:1.1;text-align:center}#bAct small svg.ic{width:12px;height:12px;vertical-align:-2px}
+  #bAct:disabled{opacity:.6}#bAct:active{transform:scale(.95)}
+  #joy{position:absolute;width:112px;height:112px;margin:-56px 0 0 -56px;border-radius:50%;border:3px solid rgba(255,248,232,.75);background:rgba(29,26,24,.18);z-index:6;pointer-events:none}
+  #joy.hidden{display:none}#joy i{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;background:rgba(255,248,232,.92);box-shadow:0 2px 8px rgba(0,0,0,.25)}
   #xact:not(.hidden) > *{pointer-events:auto}
   .btn.act{background:#f2c14e;color:#3a2a20;border-color:transparent;font-weight:700;font-size:17px;padding:15px;box-shadow:0 4px 14px rgba(58,42,32,.25)}
   #decorBar{position:absolute;left:0;right:0;bottom:0;padding:10px 12px 14px;background:rgba(255,248,232,.96);border-top:1.5px solid rgba(58,42,32,.12);
@@ -313,7 +320,8 @@
     <div class="mtop"><b id="mapTitle">Map</b><span><button id="mapX" class="mbtn" aria-label="Close">&#x2715;</button></span></div>
     <div id="mfil" class="mfil"><button data-f="water">Water</button><button data-f="wreck">Wrecks</button><button data-f="gold">Gold scrap</button></div>
     <div id="mcard" class="hidden"><b id="mcT"></b><p id="mcS"></p><button id="mcB" class="btn primary"></button></div></div>
-  <div id="xact" class="fade hidden"><div class="bubble" id="xactTxt"></div><button id="bAct" class="btn act">Dismantle</button></div>
+  <div id="xact" class="fade hidden"><div class="bubble" id="xactTxt"></div><button id="bAct" class="act">Dismantle</button></div>
+  <div id="joy" class="hidden"><i></i></div>
   <button id="bMelon" class="hidden"><small id="mCnt">0</small></button>
   <button id="bDrop" class="hidden" aria-label="Leave a bottle here"><span data-ic="bottle"></span>Leave</button>
   <button id="bSling" class="hidden" aria-label="Slingshot"><span data-ic="sling"></span><small id="slCnt">0</small></button>
@@ -327,7 +335,7 @@
     <h1>Zuroda</h1>
     <div class="story">The planet dried up. People vanished.<br>All that is left is you, an abandoned village… and Zuro.</div>
     <div class="tbtns" id="tbtns"></div>
-    <div class="small">Progress is saved in this browser.<br>Tap or drag where the wanderer should walk (mouse or WASD on desktop).</div>
+    <div class="small">Progress is saved in this browser.<br>Drag anywhere to walk, tap to go to a spot (mouse or WASD on desktop).</div>
   </div>
   <button id="mute" class="hidden" aria-label="Sound"></button>
 </div>
