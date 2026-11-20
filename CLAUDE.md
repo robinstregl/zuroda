@@ -2,6 +2,7 @@
 
 - Hra (texty ve hře) je **anglicky**, komunikace s Robinem a dokumentace **česky**.
 - **Nikdy nepoužívej Robinovy fotky / Midjourney obrázky** – ani ve hře, ani jako náhledy, ani na webu. Veškerá grafika musí pocházet z renderů hry samotné.
+- **Nasazení:** push do `main` → Cloudflare Pages projekt `zuroda-git` (výstup `site/`, bez build příkazu) → https://zuroda.com a www. Starý projekt `zuroda` (ruční nahrávání zipu) už domény nemá.
 - Celá hra je jeden soubor: upravuj `src/*`, pak `sh build.sh` → `site/index.html`. Do commitu patří i sestavený `site/index.html` (web se nasazuje přímo ze `site/`, bez build kroku).
 - three.js r128 (z cdnjs), MeshToonMaterial + vlastní `brawlify` shader, ortografická kamera. Jednotky: S=0.1 (2D → 3D), M_PER_U=0.1 m.
 - Ladicí háčky v konzoli: `__SV()`, `__X()`, `__go()`, `__open(k)`, `__close()`, `__house()`, `__markSeen(x,y,r)`, `__obst(cx,cy)`. Automat: `#bot` v URL, `window.SPD` zrychlení.

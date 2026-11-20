@@ -19,7 +19,7 @@ Hraj na **https://zuroda.com**.
 sh build.sh            # vytvoří site/index.html
 ```
 
-Web se nasazuje ze složky `site/` (Cloudflare Pages, bez build příkazu).
+Každý push do větve `main` se sám nasadí na zuroda.com (Cloudflare Pages, projekt `zuroda-git`, složka `site/`, bez build příkazu).
 
 ## Zdroje třetích stran (vše CC0)
 
