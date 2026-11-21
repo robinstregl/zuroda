@@ -4078,6 +4078,7 @@ const fmtM=u=>fmtMeters(u*M_PER_U);
 const fmtL=l=>Math.max(0,l).toFixed(1);
 const BOT=location.hash==='#bot';
 const $=id=>document.getElementById(id);
+const onPressLater=[];
 const S=0.1; // 2D game units -> 3D units
 
 // ================= data =================
@@ -5723,8 +5724,8 @@ function updCombatBtns(){const b=$('bSling'),show=false;
   const d=$('bDrop'),sd=scene==='exp'&&X&&!X.end&&X.bottles>0&&Math.hypot(X.x,X.y)>140;d.classList.toggle('hidden',!sd);}
 function updateMelonBtn(){const b=$('bMelon');if(scene==='exp'&&X&&!X.end&&X.bottles>0){b.classList.remove('hidden');$('mCnt').textContent=X.bottles;}else b.classList.add('hidden');}
 $('bSling').addEventListener('click',e=>{e.stopPropagation();slingShoot();});
-$('bDrop').addEventListener('click',e=>{e.stopPropagation();dropCache();});
-$('bMelon').addEventListener('click',e=>{e.stopPropagation();if(!X||X.end||X.bottles<=0)return;if(X.cap-X.water<0.15){xText('Flask is full','#3f8fa1');return;}X.bottles--;X.water=Math.min(X.cap,X.water+BOTTLE);sfx.drink();heroPlay(X.hero,'drink',1.5);xText('+0.5 L {bottle}','#3f8fa1');updateMelonBtn();});
+onPressLater.push(()=>onPress($('bDrop'),()=>dropCache()));
+onPressLater.push(()=>onPress($('bMelon'),()=>{if(!X||X.end||X.bottles<=0)return;if(X.cap-X.water<0.15){xText('Flask is full','#3f8fa1');return;}X.bottles--;X.water=Math.min(X.cap,X.water+BOTTLE);sfx.drink();heroPlay(X.hero,'drink',1.5);xText('+0.5 L {bottle}','#3f8fa1');updateMelonBtn();}));
 function xText(t,c){float3(X.x*S,H2(X.x,X.y)+3.2,X.y*S,t,c);}
 function xBurst(x,y,col,n,s){burst3(X.scene,x*S,H2(x,y)+0.6,y*S,col,n,(s||80)/22);}
 const weight=()=>X.scrap+X.cores*2+(X.chips||0);
@@ -6127,20 +6128,21 @@ function drawMap(){const cv=$('mapc'),g=cv.getContext('2d'),dpr=Math.min(2,windo
   // inked coastline with little wave strokes (only where explored)
   {const P=coastPts();g.strokeStyle='#8fe0ee';g.lineWidth=1.8*dpr;for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1];if(!isSeen((a[0]+b[0])/2,(a[1]+b[1])/2))continue;const [ax,ay]=toS(a[0],a[1]),[bx,by]=toS(b[0],b[1]);g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();
     const n=coastSD((a[0]+b[0])/2,(a[1]+b[1])/2);const wx=(ax+bx)/2-n.nx*10*dpr,wy=(ay+by)/2-n.ny*10*dpr;g.lineWidth=1.2*dpr;g.beginPath();g.moveTo(wx-5*dpr,wy);g.quadraticCurveTo(wx-2.5*dpr,wy-3*dpr,wx,wy);g.quadraticCurveTo(wx+2.5*dpr,wy+3*dpr,wx+5*dpr,wy);g.stroke();g.lineWidth=1.8*dpr;}}
-  const FULL=MV.mode==='view'||MV.mode==='exp',F=SV.mapF||{water:1},NEAR=sc>=0.14*dpr;
+  const FULL=MV.mode==='view'||MV.mode==='exp',F=SV.mapF||{water:1},NEAR=sc>=0.09*dpr;
   // discoveries: only on the explorer's map, filtered (Robin 20. 11.: too many dots) – wrecks and gold only when zoomed in
+  let budget={n:6},pend=false;
   if(FULL){const ico=(n,sx,sy,r,ring)=>{g.fillStyle='rgba(29,26,24,0.88)';g.beginPath();g.arc(sx,sy,r,0,6.283);g.fill();g.lineWidth=1.6*dpr;g.strokeStyle=ring||MINK;g.stroke();const im=ICIMG[n],iz=r*1.45;if(im&&im.complete)g.drawImage(im,sx-iz/2,sy-iz/2,iz,iz);};
    const R0=11*dpr,on=(sx,sy)=>sx>-20&&sx<W+20&&sy>-20&&sy<H+20;
    for(let cy=Math.floor(y0/CH)-1;cy<=Math.floor(y1/CH)+1;cy++)for(let cx=Math.floor(x0/CH)-1;cx<=Math.floor(x1/CH)+1;cx++){
-     const ox=cx*CH,oy=cy*CH;if(!(isSeen(ox+60,oy+60)||isSeen(ox+180,oy+60)||isSeen(ox+60,oy+180)||isSeen(ox+180,oy+180)))continue;const c=mapChunk(cx,cy);
+     const ox=cx*CH,oy=cy*CH;if(!(isSeen(ox+60,oy+60)||isSeen(ox+180,oy+60)||isSeen(ox+60,oy+180)||isSeen(ox+180,oy+180)))continue;const c=mapChunk(cx,cy,budget);if(!c){pend=true;continue;}
      if(F.water)for(const w of c.waters){if(w.taken||!isSeen(w.x,w.y))continue;const [sx,sy]=toS(w.x,w.y);if(!on(sx,sy))continue;if(sc>=0.07*dpr)ico('water',sx,sy,R0*0.85,'#8fe0ee');else{g.fillStyle='#8fe0ee';g.beginPath();g.arc(sx,sy,3*dpr,0,6.283);g.fill();}MV.hits.push({x:sx,y:sy,t:'poi',k:'water',o:w});}
-     if(F.wreck&&NEAR)for(const w of c.wrecks){if(!isSeen(w.x,w.y))continue;const [sx,sy]=toS(w.x,w.y);if(!on(sx,sy))continue;const ok=gearLv('kladivo')>=WRECK[w.kind].need;ico('cog',sx,sy,R0*(w.kind===3?1.25:w.kind===1?1.1:1),ok?'#ffd36e':'rgba(255,226,184,0.55)');MV.hits.push({x:sx,y:sy,t:'poi',k:'wreck',o:w});}
-     if(F.gold&&NEAR)for(const r of c.ruins){if(!r.core||!isSeen(r.x,r.y))continue;const [sx,sy]=toS(r.x,r.y);if(!on(sx,sy))continue;ico('core',sx,sy,R0,'#ff6e5a');MV.hits.push({x:sx,y:sy,t:'poi',k:'gold',o:r});}
+     if(F.wreck)for(const w of c.wrecks){if(!isSeen(w.x,w.y))continue;const [sx,sy]=toS(w.x,w.y);if(!on(sx,sy))continue;if(!NEAR){g.fillStyle='#ffd36e';g.fillRect(sx-2.5*dpr,sy-2.5*dpr,5*dpr,5*dpr);MV.hits.push({x:sx,y:sy,t:'poi',k:'wreck',o:w});continue;}const ok=gearLv('kladivo')>=WRECK[w.kind].need;ico('cog',sx,sy,R0*(w.kind===3?1.25:w.kind===1?1.1:1),ok?'#ffd36e':'rgba(255,226,184,0.55)');MV.hits.push({x:sx,y:sy,t:'poi',k:'wreck',o:w});}
+     if(F.gold)for(const r of c.ruins){if(!r.core||!isSeen(r.x,r.y))continue;const [sx,sy]=toS(r.x,r.y);if(!on(sx,sy))continue;if(!NEAR){g.fillStyle='#ff6e5a';g.beginPath();g.arc(sx,sy,3*dpr,0,6.283);g.fill();MV.hits.push({x:sx,y:sy,t:'poi',k:'gold',o:r});continue;}ico('core',sx,sy,R0,'#ff6e5a');MV.hits.push({x:sx,y:sy,t:'poi',k:'gold',o:r});}
      // chests stay off the map – they'd clutter it (they sparkle in the desert instead)
      }
    if(F.water)for(const k of (SV.caches||[])){const [sx,sy]=toS(k.x,k.y);ico('bottle',sx,sy,R0*0.9,'#57a6b6');MV.hits.push({x:sx,y:sy,t:'poi',k:'cache',o:k});}}
+  if(pend&&MV.rd)setTimeout(MV.rd,16);
   // planned route (tap anywhere to check if your water reaches)
-  if(FULL&&(F.wreck||F.gold)&&!NEAR){g.font=`italic ${12*dpr}px ${FF}`;g.textAlign='center';g.textBaseline='top';g.fillStyle='rgba(255,226,184,0.7)';g.fillText('Zoom in to see '+(F.wreck&&F.gold?'wrecks and gold':F.wreck?'wrecks':'gold'),W/2,118*dpr);}
   if(FULL&&MV.plan){const P=MV.plan,[ax,ay]=toS(P.sx,P.sy),[bx,by]=toS(P.tx,P.ty),[hx,hy]=toS(0,0);g.setLineDash([7*dpr,5*dpr]);g.lineWidth=2.6*dpr;g.strokeStyle=P.col;g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();
     if(P.sx||P.sy){g.globalAlpha=0.55;g.beginPath();g.moveTo(bx,by);g.lineTo(hx,hy);g.stroke();g.globalAlpha=1;}g.setLineDash([]);g.fillStyle=P.col;g.beginPath();g.arc(bx,by,5*dpr,0,6.283);g.fill();}
   // last trip (dashed ink)
@@ -6184,7 +6186,7 @@ function openMap(mode){sfx.ui('open');MV.open=true;MV.mode=mode;MV.sel=null;cons
   const cv=$('mapc');$('mapv').classList.remove('hidden');MV.sc=clamp(Math.min(cv.clientWidth,cv.clientHeight-120)/(2*R),0.04,1.2);
   MV.pick=null;MV.plan=null;MAPD.clear();$('mapTitle').textContent=mode==='go'?'Where to?':mode==='scout'?'Pick a spot to scout':'Map';syncMapFil();$('mcard').classList.add('hidden');drawMap();}
 const MAPD=new Map();
-function mapChunk(cx,cy){const k=cx+','+cy;if(X&&X.chunks&&X.chunks.has(k)&&scene==='exp')return X.chunks.get(k);let c=MAPD.get(k);if(!c){c=genChunk(cx,cy,true);MAPD.set(k,c);}return c;}
+function mapChunk(cx,cy,budget){const k=cx+','+cy;if(X&&X.chunks&&X.chunks.has(k)&&scene==='exp')return X.chunks.get(k);let c=MAPD.get(k);if(!c){if(budget&&budget.n--<=0)return null;c=genChunk(cx,cy,true);MAPD.set(k,c);}return c;}
 // route planning (Robin 20. 11.): the map knows how much water you can carry and what water you know of on the way
 function planTo(tx,ty){const ex=MV.mode==='exp'&&X&&!X.end,sx=ex?X.x:0,sy=ex?X.y:0;const d=Math.hypot(tx-sx,ty-sy),back=Math.hypot(tx,ty);
   const needT=d*WATER_PER_U*1.1,needB=back*WATER_PER_U*1.35;const have=ex?X.water+X.bottles*BOTTLE:fillAmount()+bottleFill()*BOTTLE;
@@ -6214,17 +6216,20 @@ function mapSelect(h){MV.sel=h;const c=$('mcard');if(!h){c.classList.add('hidden
 (function(){const cv=()=>$('mapc');let P=new Map(),drag=null,pin=null,moved=0;
   document.addEventListener('DOMContentLoaded',()=>{});
   const el=document.getElementById('mapc');
-  el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);P.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=0;if(P.size===1)drag={x:e.clientX,y:e.clientY,cx:MV.cx,cy:MV.cy};if(P.size===2){const a=[...P.values()];pin={d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),sc:MV.sc};drag=null;}});
+  const rd=()=>{if(!MV._raf)MV._raf=requestAnimationFrame(()=>{MV._raf=0;if(MV.open)drawMap();});};MV.rd=rd;
+  const mid=a=>({x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2});
+  const startPin=()=>{const a=[...P.values()],m=mid(a),r=el.getBoundingClientRect();pin={d:Math.max(20,Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)),sc:MV.sc,m,wx:MV.cx+(m.x-r.left-r.width/2)/MV.sc,wy:MV.cy+(m.y-r.top-r.height/2)/MV.sc};drag=null;};
+  el.addEventListener('pointerdown',e=>{e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(_){}P.set(e.pointerId,{x:e.clientX,y:e.clientY});if(P.size===1){moved=0;drag={x:e.clientX,y:e.clientY,cx:MV.cx,cy:MV.cy};}if(P.size===2){moved=99;startPin();}});
   el.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(pin&&P.size===2){const a=[...P.values()];MV.sc=clamp(pin.sc*Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)/pin.d,0.04,1.2);moved=99;drawMap();}
-    else if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;moved=Math.max(moved,Math.hypot(dx,dy));MV.cx=drag.cx-dx/MV.sc;MV.cy=drag.cy-dy/MV.sc;drawMap();}});
-  const up=e=>{if(!P.has(e.pointerId))return;P.delete(e.pointerId);if(P.size<2)pin=null;
+    if(pin&&P.size>=2){const a=[...P.values()],m=mid(a),r=el.getBoundingClientRect();MV.sc=clamp(pin.sc*Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)/pin.d,0.04,1.2);MV.cx=pin.wx-(m.x-r.left-r.width/2)/MV.sc;MV.cy=pin.wy-(m.y-r.top-r.height/2)/MV.sc;rd();}
+    else if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;moved=Math.max(moved,Math.hypot(dx,dy));MV.cx=drag.cx-dx/MV.sc;MV.cy=drag.cy-dy/MV.sc;rd();}});
+  const up=e=>{if(!P.has(e.pointerId))return;P.delete(e.pointerId);if(P.size===2)startPin();if(P.size===1){pin=null;const q=[...P.values()][0];drag={x:q.x,y:q.y,cx:MV.cx,cy:MV.cy};}
     if(P.size===0){if(moved<6){const dpr=Math.min(2,window.devicePixelRatio||1),r=el.getBoundingClientRect(),x=(e.clientX-r.left)*dpr,y=(e.clientY-r.top)*dpr;
       if(MV.mode==='scout'){const W=el.clientWidth*dpr,H=el.clientHeight*dpr,sc=MV.sc*dpr,wx=MV.cx+(x-W/2)/sc,wy=MV.cy+(y-H/2)/sc;MV.pick={x:wx,y:wy};drawMap();mapSelect({t:'scout'});}
       else{let best=null,bd=30*dpr;for(const h of MV.hits){const d=Math.hypot(h.x-x,h.y-y);if(d<bd){bd=d;best=h;}}
         if(!best&&(MV.mode==='view'||MV.mode==='exp')){const W=el.clientWidth*dpr,H=el.clientHeight*dpr,sc=MV.sc*dpr;best={t:'plan',x:MV.cx+(x-W/2)/sc,y:MV.cy+(y-H/2)/sc};}mapSelect(best);}}drag=null;}};
   el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
-  el.addEventListener('wheel',e=>{e.preventDefault();MV.sc=clamp(MV.sc*Math.exp(-e.deltaY*0.0015),0.04,1.2);drawMap();},{passive:false});
+  el.addEventListener('wheel',e=>{e.preventDefault();const r=el.getBoundingClientRect(),ox=e.clientX-r.left-r.width/2,oy=e.clientY-r.top-r.height/2,wx=MV.cx+ox/MV.sc,wy=MV.cy+oy/MV.sc;MV.sc=clamp(MV.sc*Math.exp(-e.deltaY*0.0015),0.04,1.2);MV.cx=wx-ox/MV.sc;MV.cy=wy-oy/MV.sc;rd();},{passive:false});
   $('mapX').addEventListener('click',closeMap);
   $('mcB').addEventListener('click',()=>{const h=MV.sel;if(h&&h.t==='scout'&&MV.pick){if(startScout(MV.pick.x,MV.pick.y)){closeMap();openBuilding('dron');}return;}if(!h||MV.mode!=='go')return;closeMap();if(h.t==='home')startExpedition();else startExpedition(h.cp.id);});
   window.addEventListener('resize',()=>{if(MV.open)drawMap();});
@@ -6267,7 +6272,13 @@ document.querySelectorAll('#mfil button').forEach(b=>b.addEventListener('click',
 function syncMapFil(){const F=SV.mapF||{water:1};document.querySelectorAll('#mfil button').forEach(b=>b.classList.toggle('on',!!F[b.dataset.f]));$('mfil').classList.toggle('hidden',!(MV.mode==='view'||MV.mode==='exp'));}
 $('xMap').addEventListener('click',e=>{e.stopPropagation();if(X&&!X.end&&!X.intro)openMap('exp');});
 $('bFetch').addEventListener('click',sendWolt);
-$('bAct').addEventListener('click',e=>{e.stopPropagation();xAction();});
+const onPress=(el,fn)=>{el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(!el.disabled)fn(e);});el.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();});};
+onPress($('bAct'),()=>xAction());onPressLater.forEach(f=>f());
+// no browser zoom inside the game (Robin 21. 11.: rapid taps on the slingshot zoomed the page on iPhone)
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
+{let lastTE=0;document.addEventListener('touchend',e=>{const n=e.timeStamp;if(n-lastTE<380&&!e.target.closest('input,textarea,select'))e.preventDefault();lastTE=n;},{passive:false});}
+document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault();},{passive:false});
 
 // ================= title & loop =================
 buildBase();scene3=BS.scene;
