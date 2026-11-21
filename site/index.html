@@ -44,6 +44,22 @@
   .story{font-family:var(--ff);font-style:italic;font-size:15.5px;line-height:1.6;max-width:300px;opacity:.8;margin:10px 0 24px}
   .tbtns{display:flex;flex-direction:column;gap:10px;width:min(260px,80%)}
   .small{font-size:12px;opacity:.55;margin-top:16px;line-height:1.5;max-width:300px}
+
+  /* ===== look H (Robin 22. 11.): frosted light glass HUD, warm ink text, haze and tilt-shift ===== */
+  body.lookH{--wd-bg:rgba(255,247,238,.74);--wd-bg2:rgba(255,241,228,.85);--wd-line:rgba(255,255,255,.9);--wd-tx:#4a3530;--wd-dim:rgba(74,53,48,.6);--wd-sep:rgba(74,53,48,.14);--wd-glow:none;--wd-water:#3d93a3;--wd-gold:#bf8420;--wd-warn:#cf5a3e;--wd-act:#ec9a7c}
+  body.lookH .wpanel{color:var(--wd-tx);text-shadow:none;border-width:1px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(140,80,50,.14)}
+  body.lookH .cg{color:#b47a1a}body.lookH .cw{color:#3d93a3}body.lookH .ce{color:#b88a1c}body.lookH .cx{color:#3f9a68}
+  body.lookH .pbar,body.lookH .mbar,body.lookH .hbar{background:rgba(74,53,48,.12)}body.lookH .hbar i{background:#62b7c4}body.lookH .hbar em{background:rgba(74,53,48,.5)}
+  body.lookH .hrow.loot{border-top-color:rgba(74,53,48,.12)}body.lookH .wwater{border-top-color:rgba(74,53,48,.12)}
+  body.lookH .wic{filter:none}body.lookH .wchips span{color:rgba(74,53,48,.6)}
+  body.lookH #bAct{border:1.5px solid rgba(74,53,48,.55);background:#ec9a7c;color:#fff7ee;box-shadow:3px 3px 0 rgba(74,53,48,.4)}
+  body.lookH .mbtn,body.lookH .mapround,body.lookH #mute,body.lookH #xMap{-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  body.lookH .sh-in{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 -10px 30px rgba(140,80,50,.18)}
+  body.lookH .bubble{background:rgba(255,247,238,.92);color:#4a3530}
+  body.lookH #stage::after{background:radial-gradient(ellipse at center,rgba(246,220,198,0) 58%,rgba(246,220,198,.35) 100%)}
+  .ts{position:absolute;left:0;right:0;pointer-events:none;-webkit-backdrop-filter:blur(2.6px);backdrop-filter:blur(2.6px)}
+  .ts.tsTop{top:0;height:24%;-webkit-mask-image:linear-gradient(#000,transparent);mask-image:linear-gradient(#000,transparent)}
+  .ts.tsBot{bottom:0;height:16%;-webkit-mask-image:linear-gradient(transparent,#000);mask-image:linear-gradient(transparent,#000)}
   /* base hud – Zuro's display (HUD D) */
   #bhud,#xhud{position:absolute;left:0;right:0;top:0;padding:12px 12px 0;pointer-events:none}
   .wpanel{display:flex;align-items:center;gap:12px;background:var(--wd-bg);border:3px solid var(--wd-line);border-radius:var(--wd-r);padding:9px 14px;min-height:30px;color:#ffe2b8;box-shadow:0 6px 18px rgba(58,42,32,.33);text-shadow:0 0 8px rgba(255,176,96,.5)}
@@ -4255,11 +4271,14 @@ const STYLES={
  dusk:    {name:'Golden hour',px:0,mat:'toon',grad:[90,170,255],ol:1.5,olc:'#3a1f30',sh:'pcf',cam:'ortho',sun:[-45,11,-4],sunC:'#ffb878',sunI:1.15,hemi:['#ffd2b0','#5a4a7a'],hemiI:0.55,bg:'#e8a88a',css:'saturate(0.95)'},
  night:   {name:'Moonlit night',px:0,mat:'toon',grad:[80,165,255],ol:1.5,olc:'#0a0c1a',sh:'pcf',cam:'ortho',sun:[-18,40,-12],sunC:'#c8d6ff',sunI:0.75,hemi:['#8094d0','#202444'],hemiI:0.55,bg:'#38406a',tint:['#5a6fb8',0.6],css:'contrast(1.12) saturate(1.25) brightness(1.1)'},
  duotone: {name:'Duotone print',px:0,mat:'toon',grad:[110,190,255],ol:2,olc:'#2b1d33',sh:'basic',cam:'ortho',svg:'duo',paper:0.45},
+ // look H (Robin 22. 11.): sun-bleached haze + thin warm ink and soft hatching in the shadows
+ sun:     {name:'Sun-bleached ink',px:0,mat:'toon',grad:[150,255],ol:0.8,olc:'#8a5f4c',sh:'pcf',cam:'ortho',haze:1,chunky:1,sunink:1,bg:'#f6dcc6',hemiK:1.18,sunK:0.66},
  sketch:  {name:'Pencil sketch',px:0,mat:'toon',grad:[150,255],ol:2,olc:'#2a2420',sh:'basic',cam:'ortho',paper:0.7,css:'grayscale(0.82) sepia(0.25) contrast(1.15) brightness(1.08)'},
 };
 // one art style for the whole game: Brawl-like (Robin, 19. 11.)
 const STN=(window.FORCE_STYLE)||(new URLSearchParams(location.search).get('s'))||'brawl';const ST=STYLES[STN]||STYLES.brawl;
-if(/notex/.test(location.hash))ST.tex=false;// compare: open with #notex for the untextured look
+if(/notex/.test(location.hash))ST.tex=false;
+if(ST.sunink)document.body.classList.add('lookH');// compare: open with #notex for the untextured look
 
 
 const T=window.THREE;
@@ -4276,8 +4295,10 @@ if(ST.css)canvas.style.filter=ST.css;
 if(ST.svg){const d=document.createElement('div');d.innerHTML='<svg width="0" height="0" style="position:absolute"><filter id="wc" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.028" numOctaves="3" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="11" xChannelSelector="R" yChannelSelector="G" result="d"/><feGaussianBlur in="d" stdDeviation="0.9" result="b"/><feComposite in="b" in2="d" operator="arithmetic" k1="0" k2="0.6" k3="0.4" k4="0"/></filter><filter id="duo"><feColorMatrix type="matrix" values="0.3 0.55 0.15 0 0  0.3 0.55 0.15 0 0  0.3 0.55 0.15 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.12 0.74 0.98"/><feFuncG type="table" tableValues="0.07 0.36 0.88"/><feFuncB type="table" tableValues="0.16 0.26 0.68"/></feComponentTransfer></filter></svg>';document.body.appendChild(d);canvas.style.filter='url(#'+ST.svg+') '+(ST.css||'');}
 if(ST.tilt){for(const top of [1,0]){const d=document.createElement('div');d.style.cssText=`position:absolute;left:0;right:0;${top?'top:0':'bottom:0'};height:${ST.tiltH||'38%'};pointer-events:none;backdrop-filter:blur(${ST.tilt}px);-webkit-backdrop-filter:blur(${ST.tilt}px);-webkit-mask-image:linear-gradient(${top?'to bottom':'to top'},#000 10%,transparent);mask-image:linear-gradient(${top?'to bottom':'to top'},#000 10%,transparent)`;canvas.insertAdjacentElement('afterend',d);}}
 if(ST.tint){const d=document.createElement('div');d.style.cssText=`position:absolute;inset:0;pointer-events:none;background:${ST.tint[0]};mix-blend-mode:multiply;opacity:${ST.tint[1]}`;canvas.insertAdjacentElement('afterend',d);}
-const HAZE=document.createElement('div');HAZE.style.cssText='position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:0;background:linear-gradient(to bottom,#a88a68 0%,rgba(168,138,104,0.35) 45%,rgba(168,138,104,0) 85%)';if(ST.haze)canvas.insertAdjacentElement('afterend',HAZE);
+const HAZE=document.createElement('div');HAZE.style.cssText='position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:0;background:'+(ST.sunink?'linear-gradient(to bottom,#f3c9a8 0%,rgba(243,201,168,0.45) 30%,rgba(243,201,168,0) 62%,rgba(246,226,207,0.35) 100%)':'linear-gradient(to bottom,#a88a68 0%,rgba(168,138,104,0.35) 45%,rgba(168,138,104,0) 85%)')+'';if(ST.haze)canvas.insertAdjacentElement('afterend',HAZE);
 const TINT=document.createElement('div');TINT.style.cssText='position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:0';canvas.insertAdjacentElement('afterend',TINT);
+// look H: shallow depth of field at the top and bottom of the screen (tilt-shift), drawn by the browser over the canvas
+if(ST.sunink){for(const k of ['tsTop','tsBot']){const d=document.createElement('div');d.className='ts '+k;canvas.insertAdjacentElement('afterend',d);}}
 // glow texture computed per pixel – a canvas gradient gets dithered by some browsers (Chrome on Mac),
 // which showed up as coloured dots in the light around the hero (Robin, 20. 11.)
 function radialTex(n,rgb,fall){const c=document.createElement('canvas');c.width=c.height=n;const g=c.getContext('2d'),id=g.createImageData(n,n),h=(n-1)/2;
@@ -4359,7 +4380,7 @@ function brawlify(m,isChar){if(!ST.brawl||!m.isMeshToonMaterial)return m;const l
  gl_FragColor.rgb=c;}
 #include <dithering_fragment>`);};
   m.customProgramCacheKey=()=>'br'+(isChar?1:0)+(m.vertexColors?'v':'')+((!isChar&&!m.map&&!m.vertexColors&&m.userData.pat)?'p':'');return m;}
-function rimify(m){if(!m.isMeshToonMaterial)return m;if(ST.brawl)return brawlify(m,1);m.onBeforeCompile=sh=>{sh.uniforms.uRim=RIM;sh.fragmentShader='uniform vec3 uRim;\n'+sh.fragmentShader.replace('#include <dithering_fragment>','{float rr=1.0-clamp(dot(normal,normalize(vViewPosition)),0.0,1.0);gl_FragColor.rgb+=uRim*smoothstep(0.5,0.72,rr);}\n#include <dithering_fragment>');};m.customProgramCacheKey=()=>'rim';return m;}
+function rimify(m){if(!m.isMeshToonMaterial||ST.sunink)return m;if(ST.brawl)return brawlify(m,1);m.onBeforeCompile=sh=>{sh.uniforms.uRim=RIM;sh.fragmentShader='uniform vec3 uRim;\n'+sh.fragmentShader.replace('#include <dithering_fragment>','{float rr=1.0-clamp(dot(normal,normalize(vViewPosition)),0.0,1.0);gl_FragColor.rgb+=uRim*smoothstep(0.5,0.72,rr);}\n#include <dithering_fragment>');};m.customProgramCacheKey=()=>'rim';return m;}
 function TMR(c){const k='R|'+c;return matCache[k]||(matCache[k]=rimify(MAT({color:C(c)})));}
 function MAT(o){o=Object.assign({},o);const k=ST.mat;
   if(k==='flat')return new T.MeshStandardMaterial(Object.assign({flatShading:true,roughness:0.92,metalness:0},o));
@@ -4367,7 +4388,14 @@ function MAT(o){o=Object.assign({},o);const k=ST.mat;
   if(k==='soft')return new T.MeshStandardMaterial(Object.assign({roughness:0.82,metalness:0},o));
   delete o.roughness;delete o.metalness;
   if(k==='lambert')return new T.MeshLambertMaterial(o);
+  if(ST.sunink)return sunify(new T.MeshToonMaterial(Object.assign({gradientMap:TOON},o)));
   return brawlify(new T.MeshToonMaterial(Object.assign({gradientMap:TOON},o)),0);}
+// look H: every colour drifts a little toward the peach haze (one palette for everything), and shadowed parts get fine diagonal hatching that fades in the haze
+const PEACH={value:C('#f6e2cf')};
+function sunify(m){const pk=(m.map?0.58:0.17).toFixed(2);m.onBeforeCompile=sh=>{sh.uniforms.uPeach=PEACH;sh.fragmentShader='uniform vec3 uPeach;\n'+sh.fragmentShader
+  .replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb=mix(diffuseColor.rgb,uPeach,'+pk+');')
+  .replace('#include <dithering_fragment>','#include <dithering_fragment>\n{float lr=dot(gl_FragColor.rgb,vec3(.299,.587,.114))/max(.001,dot(diffuseColor.rgb,vec3(.299,.587,.114)));if(lr<.8&&mod(gl_FragCoord.x-gl_FragCoord.y,9.)<1.7)gl_FragColor.rgb*=.84;}');};
+  m.customProgramCacheKey=()=>'sun'+(m.vertexColors?'v':'')+(m.map?'m':'');return m;}
 const TM=M;
 const OUTC=C(ST.olc||'#3a261a'),omc={};
 function OL(th){const k=(th/0.014).toFixed(3);if(omc[k])return omc[k];
@@ -4428,10 +4456,10 @@ let dayIcon='';
 function applyDay(scn,sun){if(!scn||!sun)return;const d=dayEval(SV.tod||0);DAY.off=d.off;DAY.n=d.n;
   const lin=c=>c.clone().convertSRGBToLinear();
   sun.color.copy(lin(d.sun));sun.intensity=d.sI*0.8*(ST.sunK||1);const h=sun.userData.hemi;if(h){h.color.copy(lin(d.sky));h.groundColor.copy(lin(d.gnd));h.intensity=d.hI*0.85*(ST.hemiK||1);}
-  const bg=lin(d.bg);if(scn.background)scn.background.copy(bg);if(scn.fog)scn.fog.color.copy(bg);
+  const bg=lin(d.bg);if(ST.sunink)bg.lerp(C(ST.bg),0.85*(1-d.n));if(scn.background)scn.background.copy(bg);if(scn.fog)scn.fog.color.copy(bg);
   DAY.haze=Math.round(d.bg.r*255)+','+Math.round(d.bg.g*255)+','+Math.round(d.bg.b*255);
   RIM.value.copy(lin(d.rim)).multiplyScalar(d.rI);BR_EDGE.value.copy(lin(d.rim)).multiplyScalar(0.10+0.12*d.n);
-  TINT.style.background='#'+d.tint.getHexString();TINT.style.opacity=d.tO.toFixed(3);HAZE.style.opacity=(0.34*(1-d.n)).toFixed(3);
+  TINT.style.background='#'+d.tint.getHexString();TINT.style.opacity=d.tO.toFixed(3);HAZE.style.opacity=((ST.sunink?0.55:0.34)*(1-d.n)).toFixed(3);
   for(const m of EMIS)m.emissiveIntensity=m.userData.e0*d.em;
   for(const g of GLOWS)g.material.opacity=d.gl*(g.userData.g0||1);
   const t=SV.tod||0;const ic=t<0.07||t>0.955?'dawn':t<0.58?'sun':t<0.66?'dusk':'moon';if(ic!==dayIcon){dayIcon=ic;const e=$('rT');if(e)e.innerHTML=icSvg(ic)+' ';}}
@@ -5430,7 +5458,12 @@ function biomeW(x,y){const d=Math.hypot(x,y);const f=smooth(600,1300,d);if(f<=0)
   return [1-f*(wn+we+ww)/sum,f*wn/sum,f*we/sum,f*ww/sum];}
 function biomeAt(x,y){const w=biomeW(x,y);let bi=0;for(let i=1;i<4;i++)if(w[i]>w[bi])bi=i;return w[bi]>0.45?bi:0;}
 // tileable sand texture (wind ripples + specks), multiplied with the biome colour
-function sandTex(){return canTex('sand',256,256,(g,w,h)=>{g.fillStyle='#ffffff';g.fillRect(0,0,w,h);const r=mulberry32(77);
+function sandTex(){if(ST.sunink)return canTex('sandH',256,256,(g,w,h)=>{g.fillStyle='#ffffff';g.fillRect(0,0,w,h);const r=mulberry32(77);
+  for(let row=0;row<6;row++){const y0=row*43+10,k=1+(row%3),ph=r()*6.283;g.lineWidth=1.4;g.strokeStyle='rgba(150,100,80,0.16)';g.beginPath();
+    for(let x=0;x<=w;x+=4){const y=y0+Math.sin(x/w*6.283*k+ph)*6;x?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();}
+  for(let i=0;i<120;i++){const x=r()*w,y=r()*h;g.fillStyle=`rgba(150,105,80,${0.06+r()*0.08})`;for(const ox of [-w,0,w])for(const oy of [-h,0,h]){g.beginPath();g.arc(x+ox,y+oy,0.9,0,6.283);g.fill();}}
+},[1,1]);
+  return canTex('sand',256,256,(g,w,h)=>{g.fillStyle='#ffffff';g.fillRect(0,0,w,h);const r=mulberry32(77);
   for(let row=0;row<8;row++){const y0=row*32+8;const k=1+(row%3);const ph=r()*6.283;
     g.lineWidth=3;g.strokeStyle='rgba(150,105,60,0.13)';g.beginPath();for(let x=0;x<=w;x+=4){const y=y0+Math.sin(x/w*6.283*k+ph)*5;x?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();
     g.lineWidth=2;g.strokeStyle='rgba(255,250,240,0.55)';g.beginPath();for(let x=0;x<=w;x+=4){const y=y0-3+Math.sin(x/w*6.283*k+ph)*5;x?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();}
@@ -5730,7 +5763,7 @@ function placeDecor(x,y){
 }
 function baseCamera(){
   const w=36;const H=w/ASP;const el=0.95;const tz=1+(H/Math.sin(el))*0.04;
-  orthoView(0,tz,w,el);placeSun(BS.sun,0,0);BS.scene.fog.near=CAMDIST+60;BS.scene.fog.far=CAMDIST+160;
+  orthoView(0,tz,w,el);placeSun(BS.sun,0,0);if(ST.sunink){BS.scene.fog.near=CAMDIST+4;BS.scene.fog.far=CAMDIST+90;}else{BS.scene.fog.near=CAMDIST+60;BS.scene.fog.far=CAMDIST+160;}
 }
 function droneMini(){const g=grp();part(G.box,'#3a3430',0,0,0,0.9,0.25,0.9,g);part(G.box,'#b8322b',0,0.16,0,0.5,0.12,0.5,g);
   for(const [x,z] of [[-0.6,-0.6],[0.6,-0.6],[-0.6,0.6],[0.6,0.6]]){part(G.cyl,'#5d6168',x,0.05,z,0.08,0.18,0.08,g);const r=part(G.box,'#c9c2b4',x,0.15,z,0.9,0.02,0.1,g);r.userData.rotor=1;}
@@ -6122,8 +6155,8 @@ function showSummary(){
   $('bHome').addEventListener('click',()=>enterBase());
   if(BOT)setTimeout(()=>{if(scene==='exp')enterBase();},700);
 }
-const EL=0.88;let ZOOM=14;const ZMIN=10,ZMAX=18;
-function setCam(tx,tz,w,el){orthoView(tx,tz,w,el);X.camD=(w/ASP)/Math.sin(el)*0.55;X.scene.fog.near=CAMDIST+20;X.scene.fog.far=CAMDIST+90+w*1.5;}
+const EL=0.88;let ZOOM=ST.sunink?11.5:14;const ZMIN=10,ZMAX=18;
+function setCam(tx,tz,w,el){orthoView(tx,tz,w,el);X.camD=(w/ASP)/Math.sin(el)*0.55;if(ST.sunink){X.scene.fog.near=CAMDIST-4;X.scene.fog.far=CAMDIST+44+w*1.6;}else{X.scene.fog.near=CAMDIST+20;X.scene.fog.far=CAMDIST+90+w*1.5;}}
 function updateExpCam(dt){
   const d0=ZOOM;
   if(X.intro&&X.camp){const k=easeInOut(clamp((X.intro.t-0.3)/2.0,0,1));const cx0=X.camp.x*S/2,cz0=X.camp.y*S/2+4,w0=Math.max(40,Math.hypot(X.camp.x,X.camp.y)*S*1.3);
