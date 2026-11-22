@@ -4752,7 +4752,7 @@ function sunify(m){m.onBeforeCompile=sh=>{const gr=!!(m.map&&m.vertexColors),ch=
   if(gr){sh.vertexShader='varying vec3 vWP;\n'+sh.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
     sh.fragmentShader='varying vec3 vWP;\n'+sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n{float w=sin(vWP.x*0.11+sin(vWP.z*0.07)*2.3+vWP.z*0.035);float c=smoothstep(0.82,0.97,w);diffuseColor.rgb*=0.95+0.05*w;diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.0,0.98,0.95),c*0.35);}');}
   sh.fragmentShader='uniform vec3 uPeach;uniform vec3 uGround;uniform vec3 uLit;uniform vec3 uShade;uniform float uSunL;uniform float uPR;\n'+sh.fragmentShader
-  .replace('#include <color_fragment>','#include <color_fragment>\n{float lum=dot(diffuseColor.rgb,vec3(.3,.59,.11));'+(gr?'diffuseColor.rgb=mix(diffuseColor.rgb,uGround,0.8);':ch?'':'diffuseColor.rgb=mix(diffuseColor.rgb,uPeach,0.06+0.14*(1.0-smoothstep(0.02,0.25,lum)));')+'}')
+  .replace('#include <color_fragment>','#include <color_fragment>\n{float lum=dot(diffuseColor.rgb,vec3(.3,.59,.11));'+(gr?'diffuseColor.rgb=mix(diffuseColor.rgb,uGround,0.55);':ch?'':'diffuseColor.rgb=mix(diffuseColor.rgb,uPeach,0.06+0.14*(1.0-smoothstep(0.02,0.25,lum)));')+'}')
   .replace('vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;',
 `vec3 alb=diffuseColor.rgb;float kL=clamp(dot(reflectedLight.directDiffuse,vec3(1.0))/max(1e-4,dot(alb,vec3(1.0))*uSunL),0.0,1.0);
  float lit=smoothstep(0.40,0.60,kL);vec3 wn=normalize((vec4(normal,0.0)*viewMatrix).xyz);
@@ -4781,7 +4781,7 @@ G.dode=new T.DodecahedronGeometry(0.5,0);G.oct=new T.OctahedronGeometry(0.5,0);
 G.disc=new T.CircleGeometry(0.5,9);G.disc.rotateX(-Math.PI/2);G.disc16=new T.CircleGeometry(0.5,16);G.disc16.rotateX(-Math.PI/2);
 G.ring=new T.RingGeometry(0.42,0.5,24);G.ring.rotateX(-Math.PI/2);
 G.disc96=new T.CircleGeometry(0.5,96);G.disc96.rotateX(-Math.PI/2);G.ring96=new T.RingGeometry(0.494,0.5,96,1);G.ring96.rotateX(-Math.PI/2);G.disc24=new T.CircleGeometry(0.5,24);G.disc24.rotateX(-Math.PI/2);
-const SAND='#d0aa70',PLAZA='#dcc08c',DUSTC='#ad9ca4';
+const SAND=ST.sunink?'#f9dec3':'#d0aa70',PLAZA=ST.sunink?'#fbe6d2':'#dcc08c',DUSTC='#ad9ca4';
 G.dome=new T.SphereGeometry(0.5,10,6,0,Math.PI*2,0,Math.PI/2);G.half=new T.SphereGeometry(0.5,8,4,0,Math.PI*2,0,Math.PI/2);
 G.domeEdges=new T.EdgesGeometry(G.dome);
 G.roof=(()=>{const s=new T.Shape();s.moveTo(-0.5,0);s.lineTo(0.5,0);s.lineTo(0,1);s.closePath();const e=new T.ExtrudeGeometry(s,{depth:1,bevelEnabled:false});e.translate(0,0,-0.5);return e;})();
@@ -4825,8 +4825,9 @@ function applyDay(scn,sun){if(!scn||!sun)return;const d=dayEval(SV.tod||0);DAY.o
   sun.color.copy(lin(d.sun));sun.intensity=d.sI*0.8*(ST.sunK||1);const h=sun.userData.hemi;if(h){h.color.copy(lin(d.sky));h.groundColor.copy(lin(d.gnd));h.intensity=d.hI*0.85*(ST.hemiK||1);}
   if(ST.sunink){const L=HU.lit.value;L.copy(sun.color).multiplyScalar(sun.intensity);const hc=h?h.color:sun.color,hi=h?h.intensity:0;L.r=(L.r+hc.r*hi)*0.92;L.g=(L.g+hc.g*hi)*1.01;L.b=(L.b+hc.b*hi)*1.045;
     HU.shade.value.setRGB(L.r*0.50,L.g*0.43,L.b*0.47);HU.sunL.value=Math.max(0.02,(sun.color.r+sun.color.g+sun.color.b)/3*sun.intensity);HU.pr.value=R.getPixelRatio();}
-  const bg=lin(d.bg);if(ST.sunink)bg.lerp(C(ST.bg),0.85*(1-d.n));if(scn.background)scn.background.copy(bg);if(scn.fog)scn.fog.color.copy(bg);
-  DAY.haze=Math.round(d.bg.r*255)+','+Math.round(d.bg.g*255)+','+Math.round(d.bg.b*255);
+  const bg=lin(d.bg);if(ST.sunink)bg.lerp(C(ST.bg),0.85*(1-d.n));
+  if(ST.sunink){const hb=bg.clone().convertLinearToSRGB();DAY.haze=Math.round(hb.r*255)+','+Math.round(hb.g*255)+','+Math.round(hb.b*255);}// the edge of sight fades into the same peach haze as the distanceif(scn.background)scn.background.copy(bg);if(scn.fog)scn.fog.color.copy(bg);
+  if(!ST.sunink)DAY.haze=Math.round(d.bg.r*255)+','+Math.round(d.bg.g*255)+','+Math.round(d.bg.b*255);
   RIM.value.copy(lin(d.rim)).multiplyScalar(d.rI);BR_EDGE.value.copy(lin(d.rim)).multiplyScalar(0.10+0.12*d.n);
   TINT.style.background='#'+d.tint.getHexString();TINT.style.opacity=d.tO.toFixed(3);HAZE.style.opacity=((ST.sunink?0.42:0.34)*(1-d.n)).toFixed(3);
   for(const m of EMIS)m.emissiveIntensity=m.userData.e0*d.em;
@@ -5821,7 +5822,7 @@ function walkable(x,y){if(coastSD(x,y).d<9)return false;let ok=true;obstNear(x,y
 function fixDest(p){if(!p||!X)return null;if(walkable(p.x,p.y))return p;const dx=X.x-p.x,dy=X.y-p.y,L=Math.hypot(dx,dy);if(L<1)return null;
   for(let t=5;t<L;t+=5){const x=p.x+dx/L*t,y=p.y+dy/L*t;if(walkable(x,y))return Math.hypot(X.x-x,X.y-y)<10?null:{x,y};}return null;}
 // ---- biomes: every direction leads somewhere (2D game units) ----
-const BIOME_COL=['#d0aa70','#ebe3d3','#c4906a','#b3a596'];// sand, salt flats (north), red rocks (east), old town (west)
+const BIOME_COL=ST.sunink?['#f9dec3','#dff6fc','#f2b6a6','#d2d3d4']:['#d0aa70','#ebe3d3','#c4906a','#b3a596'];// sand, salt flats (north), red rocks (east), old town (west)
 const BIOME_NAME=['Dunes','Salt Flats','Red Rocks','Old Town'];
 function biomeW(x,y){const d=Math.hypot(x,y);const f=smooth(600,1300,d);if(f<=0)return [1,0,0,0];const a=Math.atan2(y,x);
   const w=c=>Math.pow(Math.max(0,Math.cos(a-c)),3);const ws=w(Math.PI/2),wn=w(-Math.PI/2),we=w(0),ww=w(Math.PI),sum=ws+wn+we+ww||1;
@@ -6240,7 +6241,7 @@ function buildChunkMeshes(c){
   const hasOb=c.obst&&c.obst.some(o=>o.D>0);const shore=coastSD(c.cx*CH+CH/2,c.cy*CH+CH/2).d;const SEG=hasOb||Math.abs(shore)<CH*1.0?72:24,geo=new T.PlaneGeometry(size,size,SEG,SEG);geo.rotateX(-Math.PI/2);geo.translate(ox+size/2,0,oz+size/2);
   const pos=geo.attributes.position;for(let i=0;i<pos.count;i++)pos.setY(i,Hd(pos.getX(i),pos.getZ(i)));
   const gn=geo;const gp=gn.attributes.position;const cols=new Float32Array(gp.count*3);
-  const BC=BIOME_COL.map(C),dust=C(DUSTC),home=C(PLAZA),OB_WALL=C('#8e6648'),OB_FLOOR=C('#a88663'),WET=C('#b88f5c'),FOAM=C('#f4f8f2'),SHAL=C('#6fc2c6'),DEEP=C('#2f7f95');
+  const BC=BIOME_COL.map(C),dust=C(DUSTC),home=C(PLAZA),OB_WALL=C('#8e6648'),OB_FLOOR=C('#a88663'),WET=C(ST.sunink?'#d7b497':'#b88f5c'),FOAM=C(ST.sunink?'#ffffff':'#f4f8f2'),SHAL=C(ST.sunink?'#73d1e2':'#6fc2c6'),DEEP=C(ST.sunink?'#089bbf':'#2f7f95');
   const nearSea=coastSD(c.cx*CH+CH/2,c.cy*CH+CH/2).d<CH*1.2;
   for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i);const bw=biomeW(x/S,z/S);let col=new T.Color(0,0,0);for(let b=0;b<4;b++)if(bw[b]>0){col.r+=BC[b].r*bw[b];col.g+=BC[b].g*bw[b];col.b+=BC[b].b*bw[b];}
     for(const d of c.dust){const q=Math.hypot(x-d.x*S,z-d.y*S)/(d.r*S);if(q<1)col.lerp(dust,1-smooth(0.72,1,q));}
@@ -6263,8 +6264,9 @@ function buildChunkMeshes(c){
   for(const k of c.crates){k.m=at(makeCrate(),k.x,k.y);k.m.rotation.y=k.ph;}
   for(const w of c.waters){w.m=at(makePuddle(w.r),w.x,w.y);}
   for(const f of c.fata){f.m=at(makePuddle(f.r),f.x,f.y);if(0){f.m.traverse(o=>{if(o.material){o.material=o.material.clone();o.material.transparent=true;o.material.opacity=0.18;}});}}
-  for(const r of c.ruins){const h=H2(r.x,r.y);const floor=part(G.disc24,'#c4b096',r.x*S,h+0.05,r.y*S,10,1,8,g,true);floor.receiveShadow=true;
-    for(const w of r.walls){const m=part(G.box,'#a68f78',w.x*S,H2(w.x,w.y)+0.9,w.y*S,w.w*S,1.8+((w.x*7)%10)/10,w.h*S,g);part(G.box,'#bba58c',w.x*S,H2(w.x,w.y)+1.85+((w.x*7)%10)/20,w.y*S,w.w*S+0.1,0.15,w.h*S+0.1,g);}
+  for(const r of c.ruins){const h=H2(r.x,r.y);const floor=part(G.disc24,ST.sunink?M('#fffaf3',{depthWrite:false,pat:0}):'#c4b096',r.x*S,h+(ST.sunink?0.03:0.05),r.y*S,10,1,8,g,true);floor.receiveShadow=true;if(ST.sunink)floor.renderOrder=1;
+    if(ST.sunink)for(const w of r.walls){const rd=v=>Math.max(0.3,Math.round(v*20)/20),hh=rd(1.5+((w.x*7)%10)/8),ww=rd(w.w*S),dd=rd(w.h*S),y0=H2(w.x,w.y);part(rbox(ww,hh,dd,0.09),((w.x*3)%10)<3?HP.wallS:HP.wall,w.x*S,y0+hh/2,w.y*S,1,1,1,g);part(rbox(rd(ww+0.14),0.16,rd(dd+0.14),0.05),HP.trim,w.x*S,y0+hh,w.y*S,1,1,1,g);}
+    else for(const w of r.walls){const m=part(G.box,'#a68f78',w.x*S,H2(w.x,w.y)+0.9,w.y*S,w.w*S,1.8+((w.x*7)%10)/10,w.h*S,g);part(G.box,'#bba58c',w.x*S,H2(w.x,w.y)+1.85+((w.x*7)%10)/20,w.y*S,w.w*S+0.1,0.15,w.h*S+0.1,g);}
     if(r.core){r.cm=makeCore();r.cm.position.set(r.x*S,h,r.y*S);g.add(r.cm);}
 }
   for(const f of c.foes){const m=f.type==='drone'?makeDrone(f.R*S,f.A):makeSeeker(f.R*S,f.A);m.g.position.set(f.x*S,0,f.y*S);g.add(m.g);g.add(m.cone);f.m=m;}
@@ -6330,8 +6332,8 @@ const weight=()=>X.scrap+X.cores*2+(X.chips||0);
 const room=()=>Math.max(0,bagCap()-weight());
 function fullMsg(){if(X.fullCd<=0){xText('Backpack full','#c0532f');X.fullCd=1.5;}}
 // fixed exploration view: wider than before; Haze Goggles and the Scout Drone widen it further
-function viewW(){return ST.sunink?12.5:17.5;}
-function sightR(){return 220*((ST.sunink?ZOOM*1.4:ZOOM)/14)*(1-0.28*DAY.n);}
+function viewW(){return ST.sunink?16:17.5;}
+function sightR(){return 220*((ST.sunink?ZOOM*1.094:ZOOM)/14)*(1-0.28*DAY.n);}
 
 const WATER_PER_U=0.00042;// litres per game unit walked (≈ 2.4 km per litre out and back… with weight and heat less)
 function safePoint(){let best={x:0,y:0,d:Math.hypot(X.x,X.y)};for(const cp of CAMPS)if(SV.camps[cp.id]){const d=Math.hypot(X.x-cp.x,X.y-cp.y);if(d<best.d)best={x:cp.x,y:cp.y,d};}return best;}
@@ -6528,7 +6530,7 @@ function showSummary(){
   $('bHome').addEventListener('click',()=>enterBase());
   if(BOT)setTimeout(()=>{if(scene==='exp')enterBase();},700);
 }
-const EL=ST.sunink?0.72:0.88;let ZOOM=ST.sunink?11.5:14;const ZMIN=ST.sunink?8:10,ZMAX=ST.sunink?14:18;
+const EL=ST.sunink?0.72:0.88;let ZOOM=ST.sunink?16:14;const ZMIN=ST.sunink?10:10,ZMAX=ST.sunink?19:18;
 function setCam(tx,tz,w,el){orthoView(tx,tz,w,el);X.camD=(w/ASP)/Math.sin(el)*0.55;if(ST.sunink){X.scene.fog.near=CAMDIST-4;X.scene.fog.far=CAMDIST+44+w*1.6;}else{X.scene.fog.near=CAMDIST+20;X.scene.fog.far=CAMDIST+90+w*1.5;}}
 function updateExpCam(dt){
   const d0=ZOOM;
