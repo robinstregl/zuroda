@@ -4,9 +4,10 @@
 // build.sh pastes this file into game.js right after its first line, so it shares its scope; its functions use game.js helpers
 // (part, grp, M, G, rbox, cyl, glowSprite, gearSign) only when they are called.
 // ===================================================================
-const HP={wall:'#f4e2c8',wallS:'#ecd6b8',trim:'#e3c6a3',clay:'#d98f6a',coral:'#e98a6c',cream:'#f8ece0',teal:'#5ea6aa',tealD:'#3f8289',
-  wood:'#b08360',woodD:'#7f5c43',metal:'#aab2b6',metalD:'#7d878e',panel:'#5d84b6',panelL:'#a9c6e6',sage:'#93b998',sageD:'#729f7e',
-  sand:'#ecc9a6',glass:'#ffd98a',red:'#e0573f',rock:'#d6a895',rockD:'#c08e7a',rust:'#b8735a',ink:'#6b4a40'};
+// palette taken from the look-H reference picture: near-white walls, pale blue-teal, coral, pink rock, periwinkle panels, light wood
+const HP={wall:'#fcf4ec',wallS:'#f6eadf',trim:'#f8ecdf',clay:'#dba58a',coral:'#f4a590',cream:'#fef8f1',teal:'#8ec0cb',tealD:'#6aa3b0',
+  wood:'#c79877',woodD:'#a17c63',metal:'#c3ccd4',metalD:'#8e9aa8',panel:'#9daddf',panelL:'#cdd7f4',sage:'#b4d3b4',sageD:'#98c09f',
+  sand:'#f3dcc6',glass:'#fff1b8',red:'#f0554a',rock:'#f3b8ac',rockD:'#e7a79b',rust:'#cf8f78',ink:'#6f4a3e',tank:'#c7dde8',tankD:'#afcdd7',slate:'#56607a'};
 function hGlass(){return M(HP.glass,{emissive:'#ffb84a',emissiveIntensity:0.5});}
 function hPost(par,x,z,h,c,r){return part(G.cyl6,c||HP.wood,x,h/2,z,r||0.16,h,r||0.16,par);}
 // a slab roof with a parapet: the shape every adobe building here shares
@@ -29,7 +30,7 @@ function makeHouseH(){const h=grp(),g=grp(0,0,0,h);g.rotation.y=-0.42;PART_OL=0.
   hWindow(g,1.35,1.85,2.33,0);hWindow(g,3.13,1.8,0.4,Math.PI/2,0.8,0.75);hWindow(g,1.25,4.4,0.77,0,0.75,0.6);
   hAwning(g,-1.3,2.62,2.3,2.1,1.25);
   hPots(g,2.3,3.0);
-  part(G.cyl,HP.teal,-1.7,4.1,-1.1,1.0,1.0,1.0,g);part(G.cone7,HP.tealD,-1.7,4.78,-1.1,1.1,0.36,1.1,g);
+  part(G.cyl,HP.tank,-1.7,4.1,-1.1,1.0,1.0,1.0,g);part(G.cone7,HP.tankD,-1.7,4.78,-1.1,1.1,0.36,1.1,g);
   part(G.cyl,HP.metal,2.25,5.95,-1.25,0.34,1.0,0.34,g);part(G.cyl,HP.metalD,2.25,6.47,-1.25,0.5,0.1,0.5,g);
   const lad=grp(-3.25,0,-0.9,g);for(const s of [-0.3,0.3])part(G.box,HP.woodD,0,1.8,s,0.1,3.6,0.1,lad);for(let i=0;i<7;i++)part(G.box,HP.wood,0,0.35+i*0.5,0,0.08,0.08,0.62,lad,true);
   PART_OL=0;
@@ -40,7 +41,7 @@ function makeHouseH(){const h=grp(),g=grp(0,0,0,h);g.rotation.y=-0.42;PART_OL=0.
 // ---------------- village buildings (look grows with the level) ----------------
 function hTower(par,x,z,s){const g=grp(x,0,z,par);for(const [a,b] of [[-0.55,-0.55],[0.55,-0.55],[-0.55,0.55],[0.55,0.55]]){const l=hPost(g,a*s,b*s,2.5*s,HP.wood,0.15);l.rotation.z=a*0.05;}
   for(const y of [0.9,1.8])for(let k=0;k<2;k++){const br=part(G.box,HP.woodD,0,y*s,(k?0.55:-0.55)*s,1.1*s,0.08,0.08,g,true);}
-  part(G.cyl,HP.teal,0,3.15*s,0,1.55*s,1.35*s,1.55*s,g);part(G.cyl,HP.tealD,0,3.15*s,0,1.6*s,0.12,1.6*s,g,true);part(G.cone7,HP.tealD,0,4.05*s,0,1.68*s,0.5*s,1.68*s,g);return g;}
+  part(G.cyl,HP.tank,0,3.15*s,0,1.55*s,1.35*s,1.55*s,g);part(G.cyl,HP.tankD,0,3.15*s,0,1.6*s,0.12,1.6*s,g,true);part(G.cone7,HP.tankD,0,4.05*s,0,1.68*s,0.5*s,1.68*s,g);return g;}
 function makeBuildingH(k,lvl){const g=grp();g.userData.anim={};PART_OL=0.012;const L=Math.max(1,lvl|0);
   switch(k){
     case 'cerpadlo':{hBlock(g,-1.1,0,0.2,3.0,2.0,2.4);part(rbox(0.9,1.5,0.12,0.06),HP.tealD,-1.5,0.75,1.42,1,1,1,g);hWindow(g,-0.35,1.25,1.43,0,0.6,0.55);
@@ -123,3 +124,140 @@ function makePuddleH(r){const g=grp();const k=S;
   part(G.disc24,HP.cream,0,0.06,0,r*2.3*k,1,r*1.65*k,g,true);
   const w=part(G.disc24,M(HP.teal),0,0.08,0,r*2*k,1,r*1.4*k,g,true);w.receiveShadow=true;
   part(G.disc24,M('#cfeef0'),-r*0.35*k,0.1,-r*0.22*k,r*0.8*k,1,r*0.28*k,g,true);return g;}
+
+// ===================================================================
+// Ink pass (22. 11.): the scene is drawn into a texture and the pen lines are added on top in one full-screen step.
+// With the orthographic camera the depth of any flat face changes evenly across the screen, so wherever that evenness
+// breaks there is an outer edge or a fold between two faces – exactly where a draughtsman would put a line.
+// One thin, even, warm line on everything (houses, wrecks, robots, Zuro, the wanderer), no doubled outline meshes.
+// ===================================================================
+const HINK={rt:null,w:0,h:0,sc:null,cam:null,mat:null,col:'#6f4a3e',px:1.05,on:true};
+function inkInit(){if(HINK.sc)return;HINK.cam=new T.OrthographicCamera(-1,1,1,-1,0,1);HINK.sc=new T.Scene();
+  HINK.mat=new T.ShaderMaterial({depthTest:false,depthWrite:false,
+    uniforms:{tC:{value:null},tD:{value:null},uPx:{value:new T.Vector2(1,1)},uK:{value:1},uR:{value:1},uInk:{value:new T.Color(HINK.col)},uA:{value:0.92},uFog:{value:new T.Vector3(0,1,0)}},
+    vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.0,1.0);}',
+    fragmentShader:`precision highp float;varying vec2 vUv;uniform sampler2D tC;uniform sampler2D tD;uniform vec2 uPx;uniform float uK;uniform float uR;uniform vec3 uInk;uniform float uA;uniform vec3 uFog;
+float D(vec2 o){return texture2D(tD,vUv+o*uPx).x;}
+void main(){vec4 c=texture2D(tC,vUv);float r=uR;float d0=D(vec2(0.0));
+ float l=D(vec2(-r,0.0)),rr=D(vec2(r,0.0)),u=D(vec2(0.0,r)),dn=D(vec2(0.0,-r));
+ float q=r*0.7071;float a=D(vec2(-q,-q)),b=D(vec2(q,q)),e=D(vec2(-q,q)),f=D(vec2(q,-q));
+ // how sharply the slope of the surface changes here: 0 on any flat face, large on a fold between two faces or at an outer edge
+ float fold=max(max(abs(l+rr-2.0*d0),abs(u+dn-2.0*d0)),max(abs(a+b-2.0*d0),abs(e+f-2.0*d0)))*uK/r;
+ float sens=c.a;float line=smoothstep(mix(1.7,0.30,sens),mix(2.8,0.60,sens),fold);
+ float fogk=1.0-smoothstep(uFog.x,uFog.y,d0)*uFog.z;
+ c.rgb=mix(c.rgb,c.rgb*uInk*(0.55+0.45*dot(c.rgb,vec3(0.333))),line*uA*fogk);
+ gl_FragColor=vec4(c.rgb,1.0);}`});
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array([-1,-1,0,3,-1,0,-1,3,0]),3));g.setAttribute('uv',new T.BufferAttribute(new Float32Array([0,0,2,0,0,2]),2));
+  const m=new T.Mesh(g,HINK.mat);m.frustumCulled=false;HINK.sc.add(m);}
+// draws `scene` with the pen lines to whatever `ren` currently targets (its canvas); `st` keeps one set of buffers per renderer
+function inkRender(ren,scene,camera,st){st=st||HINK;inkInit();const _inkV=HINK.v||(HINK.v=new T.Vector2());ren.getDrawingBufferSize(_inkV);const w=Math.max(2,Math.round(_inkV.x)),h=Math.max(2,Math.round(_inkV.y));
+  if(!st.rt||st.w!==w||st.h!==h){if(st.rt){st.rt.depthTexture.dispose();st.rt.dispose();}
+    const dt=new T.DepthTexture(w,h);dt.type=T.UnsignedIntType;dt.minFilter=dt.magFilter=T.NearestFilter;
+    st.rt=new T.WebGLRenderTarget(w,h,{minFilter:T.LinearFilter,magFilter:T.LinearFilter,format:T.RGBAFormat,depthBuffer:true,stencilBuffer:false,depthTexture:dt});
+    st.rt.texture.encoding=T.sRGBEncoding;st.rt.texture.generateMipmaps=false;st.w=w;st.h=h;}
+  ren.setRenderTarget(st.rt);ren.render(scene,camera);ren.setRenderTarget(null);
+  const U=HINK.mat.uniforms,pr=ren.getPixelRatio();U.tC.value=st.rt.texture;U.tD.value=st.rt.depthTexture;U.uPx.value.set(1/w,1/h);
+  // depth step -> slope: (depth range in world units) / (world units per device pixel)
+  const wpp=camera.isOrthographicCamera?(camera.top-camera.bottom)/camera.zoom/h:0.02;U.uK.value=(camera.far-camera.near)/wpp;
+  U.uR.value=Math.max(1,Math.round(HINK.px*pr*0.5));
+  // the wider the view, the smaller everything is on screen – the pen gets lighter so small things do not drown in ink
+  U.uA.value=camera.isOrthographicCamera?0.92*Math.min(1,Math.max(0.5,Math.sqrt(13/((camera.right-camera.left)/camera.zoom)))):0.92;
+  const fg=scene.fog;if(fg&&camera.isOrthographicCamera){U.uFog.value.set((fg.near-camera.near)/(camera.far-camera.near),(fg.far-camera.near)/(camera.far-camera.near),0.85);}else U.uFog.value.set(0,1,0);
+  ren.render(HINK.sc,HINK.cam);}
+
+// ===================================================================
+// The wanderer in look H (22. 11.): drawn again for this style. Robin: the old head, the goggles and the hair looked generic.
+// At game size a character is three or four colour shapes, so the head is built from a few big clear forms:
+// a tousled mop of dark hair, a simple face (two dark eyes, brows, a small mouth) and one signature piece in the coral
+// of the village awnings. Three versions to choose from (?hero=1|2|3): 1 scarf, 2 headband (the default), 3 desert headwrap.
+// The body keeps the skeleton and all animations; pockets, buckles and other tiny parts are left out (they only made noise).
+// ===================================================================
+const HH={skin:'#eec3a6',hair:'#51342b',hairHi:'#6a463a',shirt:'#fdf3e3',vest:'#6cb2ba',pants:'#73809b',wraps:'#f4e6d4',shoe:'#b08467',boot:'#b98a6b',
+  belt:'#93695a',scarf:'#f2957f',scarfD:'#e58470',wrap:'#fdf2e4',pack:'#e0b898',packD:'#c99b7a',glove:'#c99b7a',eye:'#3b2620'};
+const HFH={};
+let HERO_VAR=(()=>{let v=0;try{v=+(new URLSearchParams(location.search).get('hero')||localStorage.getItem('zuroda_hero')||0);}catch(e){}return v>=1&&v<=3?Math.round(v):2;})();
+// face: two tall dark eyes with a small light, short brows, a little mouth, soft cheeks – readable even when the head is 30 px wide
+function heroFaceH(expr){return faceTex((g,w,h)=>{const ex=[w*0.34,w*0.66],ey=h*0.52,ink=HH.eye;g.lineCap='round';g.lineJoin='round';
+  g.fillStyle='rgba(240,128,108,0.30)';g.beginPath();g.ellipse(w*0.2,h*0.7,22,13,0,0,6.283);g.ellipse(w*0.8,h*0.7,22,13,0,0,6.283);g.fill();
+  const brow=(dy,tilt)=>{g.strokeStyle=HH.hair;g.lineWidth=8;for(const [i,x] of ex.entries()){const s=i?1:-1;g.beginPath();g.moveTo(x-s*17,ey-44+dy+tilt);g.quadraticCurveTo(x,ey-52+dy,x+s*17,ey-45+dy-tilt*0.3);g.stroke();}};
+  const eye=(x,dx,sq)=>{g.fillStyle=ink;g.beginPath();g.ellipse(x+dx,ey+(sq?6:0),15,sq?13:22,0,0,6.283);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(x+dx+5,ey-(sq?0:8),4.6,0,6.283);g.fill();
+    if(sq){g.strokeStyle=ink;g.lineWidth=6;g.beginPath();g.moveTo(x+dx-19,ey-6);g.lineTo(x+dx+19,ey-6);g.stroke();}};
+  const mouth=(k)=>{g.strokeStyle=ink;g.lineWidth=5.5;g.beginPath();g.moveTo(w/2-13,h*0.78);g.quadraticCurveTo(w/2,h*0.78+k,w/2+13,h*0.78);g.stroke();};
+  if(expr==='idle'||expr==='look'){const dx=expr==='look'?7:0;for(const x of ex)eye(x,dx,0);mouth(9);}
+  if(expr==='blink'){g.strokeStyle=ink;g.lineWidth=6.5;for(const x of ex){g.beginPath();g.moveTo(x-16,ey);g.quadraticCurveTo(x,ey+11,x+16,ey);g.stroke();}mouth(9);}
+  if(expr==='happy'){g.strokeStyle=ink;g.lineWidth=7.5;for(const x of ex){g.beginPath();g.moveTo(x-17,ey+8);g.quadraticCurveTo(x,ey-17,x+17,ey+8);g.stroke();}
+    g.fillStyle=ink;g.beginPath();g.moveTo(w/2-19,h*0.74);g.quadraticCurveTo(w/2,h*0.74+32,w/2+19,h*0.74);g.closePath();g.fill();g.fillStyle='#f08a78';g.beginPath();g.ellipse(w/2,h*0.74+15,8,5,0,0,6.283);g.fill();}
+  if(expr==='tired'){for(const x of ex)eye(x,0,1);brow(5,-7);mouth(-6);
+    g.fillStyle='#9fd3e0';g.beginPath();g.moveTo(w*0.88,h*0.26);g.quadraticCurveTo(w*0.925,h*0.4,w*0.88,h*0.44);g.quadraticCurveTo(w*0.835,h*0.4,w*0.88,h*0.26);g.fill();}
+  if(expr==='ko'){g.strokeStyle=ink;g.lineWidth=7;for(const x of ex){g.beginPath();g.moveTo(x-13,ey-13);g.lineTo(x+13,ey+13);g.moveTo(x+13,ey-13);g.lineTo(x-13,ey+13);g.stroke();}brow(0,-4);g.lineWidth=5.5;g.beginPath();g.ellipse(w/2,h*0.8,8,6,0,0,6.283);g.stroke();}
+},300,230);}
+function buildHeadH(H,gear,head,neck){H.head=head;const R=HD_R,V=HERO_VAR,Y=HD_C;
+  {const hm=mk(hdShape(new T.SphereGeometry(R,28,20),R),HH.skin,head,{p:[0,Y,0]});hm.receiveShadow=false;}
+  for(const s of [-1,1]){const e=mk(sph(0.07,14,10),HH.skin,head,{p:[s*0.34,Y-0.03,-0.02]});e.scale.set(0.45,0.82,0.7);}
+  const fg=hdShape(new T.SphereGeometry(R*1.006,30,22,Math.PI/2-0.95,1.9,Math.PI/2-0.75,1.48),R*1.006);
+  H.faceMat=MAT({map:H.F.idle,transparent:true,depthWrite:false});H.faceMat.userData.char=1;const face=new T.Mesh(fg,H.faceMat);face.position.y=Y;face.renderOrder=2;head.add(face);
+  const CL=G.hclump||(G.hclump=new T.SphereGeometry(1,12,9)),TF=G.htuft||(G.htuft=(()=>{const g=new T.ConeGeometry(0.5,1,6,1);g.translate(0,0.5,0);return g;})());
+  const clump=(col,x,y,z,sx,sy,sz,rx,ry,rz)=>{const m=mk(CL,col,head,{p:[x,Y+y,z],r:[rx||0,ry||0,rz||0]});m.scale.set(sx,sy,sz);return m;};
+  const tuft=(col,x,y,z,w,l,d,rx,ry,rz)=>{const m=mk(TF,col,head,{p:[x,Y+y,z],r:[rx||0,ry||0,rz||0]});m.scale.set(w,l,d);return m;};
+  const HC=HH.hair,HI=HH.hairHi;
+  if(V!==3){
+    // the mop: a cap that sits back on the head, big soft clumps over it, a fringe swept to one side and a cowlick on the crown
+    {const cg=hdShape(new T.SphereGeometry(R*1.06,26,14,0,Math.PI*2,0,Math.PI*0.55),R*1.06);mk(cg,HC,head,{p:[0,Y+0.006,-0.02],r:[-0.42,0,0]});}
+    clump(HC,0,0.27,-0.06,0.27,0.17,0.27,0.1);clump(HC,-0.19,0.2,-0.1,0.19,0.17,0.22,0,0,0.5);clump(HC,0.2,0.2,-0.09,0.19,0.17,0.22,0,0,-0.5);
+    clump(HC,0,0.08,-0.27,0.25,0.22,0.16);
+    clump(HC,-0.07,0.27,0.19,0.25,0.105,0.15,0.25,0,-0.3);clump(HC,0.19,0.23,0.15,0.13,0.11,0.13,0.2,0,-0.5);clump(HC,-0.24,0.2,0.1,0.11,0.13,0.13,0,0,0.3);
+    tuft(HC,0.04,0.38,-0.1,0.14,0.2,0.12,-0.45,0,-0.35);tuft(HC,-0.07,0.37,-0.16,0.13,0.16,0.11,-0.8,0,0.45);
+  }
+  if(V===1&&neck){// coral scarf: a thick loop lying on the shoulders under the big head, a knot on the side and two tails down the back
+    const s1=mk(tor(0.215,0.1,10,26),HH.scarf,neck,{p:[0,-0.1,0.0],r:[Math.PI/2,0,0]});s1.scale.set(1.08,0.95,0.8);
+    const kn=mk(sph(0.085,12,9),HH.scarfD,neck,{p:[-0.2,-0.11,0.2]});kn.scale.set(1,0.9,0.9);
+    const t1=cgrp(neck,[-0.1,-0.14,-0.24],[0.3,0.2,0.12]);mk(rbox(0.14,0.36,0.045,0.02),HH.scarf,t1,{p:[0,-0.17,0]});
+    const t2=cgrp(neck,[0.05,-0.14,-0.25],[0.45,-0.15,-0.1]);mk(rbox(0.13,0.27,0.045,0.02),HH.scarfD,t2,{p:[0,-0.13,0]});H.scarf=t1;}
+  if(V===2){// coral headband tied at the back
+    const b=mk(tor(0.338,0.05,8,40),HH.scarf,head,{p:[0,Y+0.12,-0.015],r:[Math.PI/2-0.16,0,0]});b.scale.set(1,1,1.25);
+    mk(sph(0.06,10,8),HH.scarfD,head,{p:[0.05,Y+0.07,-0.36]});
+    const t1=cgrp(head,[0.09,Y+0.06,-0.37],[0.75,0,-0.25]);mk(rbox(0.09,0.3,0.035,0.016),HH.scarf,t1,{p:[0,-0.14,0]});
+    const t2=cgrp(head,[0.0,Y+0.06,-0.38],[1.0,0,0.2]);mk(rbox(0.085,0.22,0.035,0.016),HH.scarfD,t2,{p:[0,-0.1,0]});}
+  if(V===3){// desert headwrap: light cloth wound round the head in two turns with a coral stripe, one end hanging down; only the fringe shows
+    {const cg=hdShape(new T.SphereGeometry(R*1.07,26,14,0,Math.PI*2,0,Math.PI*0.56),R*1.07);mk(cg,HH.wrap,head,{p:[0,Y+0.01,-0.02],r:[-0.36,0,0]});}
+    const w1=mk(tor(0.33,0.085,10,40),HH.wrap,head,{p:[0,Y+0.13,-0.02],r:[Math.PI/2-0.22,0,0.12]});w1.scale.set(1,1,1.15);
+    const w2=mk(tor(0.26,0.09,10,36),'#f6e6d2',head,{p:[0,Y+0.25,-0.04],r:[Math.PI/2+0.2,0,-0.18]});w2.scale.set(1,1,1.1);
+    clump(HH.wrap,0,0.32,-0.05,0.2,0.1,0.2);
+    const st=mk(tor(0.345,0.03,8,40),HH.scarf,head,{p:[0,Y+0.075,-0.02],r:[Math.PI/2-0.22,0,0.12]});st.scale.set(1,1,1.2);
+    const tl=cgrp(head,[-0.3,Y+0.02,-0.12],[0.12,0,0.12]);mk(rbox(0.13,0.36,0.05,0.022),HH.wrap,tl,{p:[0,-0.17,0]});mk(rbox(0.135,0.05,0.055,0.02),HH.scarf,tl,{p:[0,-0.3,0]});
+    clump(HC,-0.05,0.17,0.26,0.17,0.07,0.09,0.3,0,-0.25);clump(HC,0.15,0.14,0.23,0.09,0.07,0.08,0.2,0,-0.4);}
+}
+// a simple pack for look H: one rounded bag with a darker flap; the big one carries a bedroll
+function buildBackH(par,type,H){const SZ={bundle:[0.4,0.4,0.2],satchel:[0.44,0.46,0.23],pack:[0.48,0.54,0.26]}[type]||[0.44,0.46,0.23];const [w,h,d]=SZ;
+  const pk=cgrp(par,[0,-0.05,-0.29-d/2]);H.pack=pk;mk(rbox(w,h,d,0.07),HH.pack,pk);mk(rbox(w*1.04,h*0.36,d*1.06,0.05),HH.packD,pk,{p:[0,h*0.33,0]});
+  if(type==='pack'){mk(cyl(0.1,0.1,w*1.2,12),HH.wrap,pk,{p:[0,h/2+0.1,0],r:[0,0,Math.PI/2]});}
+  return pk;}
+
+// colours of the older models (wrecks, scrap, robots, crates …) brought into the look-H range: very dark tones are lifted so nothing
+// reads as a black blob on the bleached ground, strong colours are calmed a little. Reds, golds and lights keep their punch.
+const HMAP={'#2f2c2a':'#5d6076','#3a3836':'#5d6076','#2b3436':'#56607a','#3a3430':'#6b6672','#3a2a20':'#7a5a4e','#5d6470':'#7f8aa0','#5d6168':'#8c95a6','#4a4e55':'#6f788c','#3a3e44':'#5f677c',
+  '#6d7279':'#99a2b0','#7d8188':'#aab3bf','#8b8f96':'#b7bfca','#9aa0a6':'#c5ccd5','#6f9a96':'#9cc7c4','#5f8682':'#86b5b2','#c8643c':'#ee9b82','#b84a3a':'#ea7f6c','#c0432f':'#ea6f5c',
+  '#d6cfbf':'#f6efe6','#4d7392':'#8fb0cf','#e8e0c8':'#fdf6ea','#8a5a34':'#c79877','#a06a3c':'#d6a988','#8f5e36':'#cfa181','#3f8a5a':'#8fc7a2','#d9a441':'#f0c468','#3f6fb0':'#8fa9dc'};
+function hCol(c){if(typeof c!=='string')return c;const k=c.toLowerCase();if(HMAP[k])return HMAP[k];const q={h:0,s:0,l:0},t=new T.Color(k);t.getHSL(q);
+  const u=Math.min(1,Math.max(0,(0.75-q.l)/0.5)),sm=u*u*(3-2*u);q.l=q.l+0.24*(1-q.l)*sm;q.s*=(q.h<0.06||q.h>0.94||(q.h>0.1&&q.h<0.16))?0.95:0.82;t.setHSL(q.h,q.s,q.l);return '#'+t.getHexString();}
+
+// ---------------- small pictures of game models in look H (portraits on the Home page, building pictures) ----------------
+// own little renderer, orthographic camera, plain daylight, the same pen lines as the game; fill(sc) puts the models in and says what to frame
+function hSnap(w,h,fill,pr){let r2=null;try{pr=pr||2;r2=new T.WebGLRenderer({antialias:false,alpha:false,preserveDrawingBuffer:true});r2.setPixelRatio(pr);r2.setSize(w,h);r2.outputEncoding=T.sRGBEncoding;r2.shadowMap.enabled=true;r2.shadowMap.type=T.PCFShadowMap;
+    const sc=new T.Scene();sc.background=C('#fbeee2');const sun=setupLights(sc);const v=fill(sc);if(!v){r2.dispose();return null;}
+    const gm=MAT({color:C('#fef4ea')}),gd=new T.Mesh(new T.PlaneGeometry(240,240),gm);gd.rotation.x=-Math.PI/2;gd.position.y=-0.001;gd.receiveShadow=true;sc.add(gd);
+    sun.position.set(v.c.x-9,v.c.y+24,v.c.z+13);sun.target.position.copy(v.c);const s=sun.shadow.camera,e=Math.max(4,v.half*2.4);s.left=-e;s.right=e;s.top=e;s.bottom=-e;s.near=1;s.far=80;s.updateProjectionMatrix();sun.shadow.mapSize.set(1024,1024);
+    const cam=new T.OrthographicCamera(-v.half*w/h,v.half*w/h,v.half,-v.half,1,200),az=v.az===undefined?0.5:v.az,el=v.el===undefined?0.5:v.el;
+    cam.position.set(v.c.x+Math.sin(az)*Math.cos(el)*80,v.c.y+Math.sin(el)*80,v.c.z+Math.cos(az)*Math.cos(el)*80);cam.lookAt(v.c);cam.updateMatrixWorld();
+    const keep=[HU.lit.value.clone(),HU.shade.value.clone(),HU.sunL.value,HU.pr.value];
+    HU.lit.value.setRGB(1.03,1.0,0.97);HU.shade.value.setRGB(1.03*0.5,0.43,0.97*0.47);HU.sunL.value=(sun.color.r+sun.color.g+sun.color.b)/3*sun.intensity;HU.pr.value=pr;
+    const st={};inkRender(r2,sc,cam,st);const url=r2.domElement.toDataURL('image/png');
+    HU.lit.value.copy(keep[0]);HU.shade.value.copy(keep[1]);HU.sunL.value=keep[2];HU.pr.value=keep[3];
+    if(st.rt){st.rt.depthTexture.dispose();st.rt.dispose();}r2.dispose();r2.forceContextLoss&&r2.forceContextLoss();return url;}
+  catch(e){try{r2&&r2.dispose();}catch(_){}console.warn('hSnap',e);return null;}}
+function hSnapChars(kind,w,h){return hSnap(w,h,sc=>{
+  if(kind==='dog'){if(!WOLT)return null;const D=makeDog(dogGear());D.root.rotation.y=-0.35;sc.add(D.root);return {c:new T.Vector3(0,0.8,0),half:1.15,az:0.25,el:0.3};}
+  if(kind==='trio'){if(!WOLT)return null;const b=makeHero(heroGear()),D=makeDog(dogGear());b.root.position.set(-0.6,0,0);b.root.rotation.y=0.3;D.root.position.set(0.85,0,0.35);D.root.rotation.y=-0.4;sc.add(b.root,D.root);return {c:new T.Vector3(0.05,1.2,0),half:1.8,az:0.1,el:0.32};}
+  const H=makeHero(heroGear());H.root.rotation.y=0.3;sc.add(H.root);return {c:new T.Vector3(0,1.45,0),half:1.72,az:0.1,el:0.3};});}
+function hSnapBld(k,lvl){return hSnap(300,230,sc=>{const g=lvl?makeBuilding(k,lvl):makeRuin(k);sc.add(g);const bb=new T.Box3().setFromObject(g),c=bb.getCenter(new T.Vector3()),sz=bb.getSize(new T.Vector3());
+  return {c,half:Math.max(sz.x*0.42,sz.z*0.42,sz.y*0.62)+0.9,az:0.62,el:0.58};});}

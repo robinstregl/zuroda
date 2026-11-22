@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Zuroda</title>
 <meta name="description" content="A wanderer and his robot dog Zuro rebuild a forgotten desert village. Early prototype – play in your browser.">
-<meta property="og:title" content="Zuroda"><meta property="og:description" content="A wanderer and his robot dog Zuro rebuild a forgotten desert village."><meta property="og:image" content="img/og.png"><meta name="theme-color" content="#1d1a18">
+<meta property="og:title" content="Zuroda"><meta property="og:description" content="A wanderer and his robot dog Zuro rebuild a forgotten desert village."><meta property="og:image" content="img/og.png"><meta name="theme-color" content="#fbeee2">
 <style>
 @font-face{font-family:'Jost';font-style:normal;font-weight:300;font-display:swap;src:url(fonts/jost-latin-300-normal.woff2) format('woff2')}
 @font-face{font-family:'Jost';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/jost-latin-400-normal.woff2) format('woff2')}
@@ -14,12 +14,14 @@
 @font-face{font-family:'Jost';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/jost-latin-700-normal.woff2) format('woff2')}
 @font-face{font-family:'Jost';font-style:italic;font-weight:400;font-display:swap;src:url(fonts/jost-latin-400-italic.woff2) format('woff2')}
 @font-face{font-family:'Jost';font-style:italic;font-weight:500;font-display:swap;src:url(fonts/jost-latin-500-italic.woff2) format('woff2')}
-:root{--ff:Jost,'Century Gothic',system-ui,sans-serif}
+@font-face{font-family:'Fraunces';font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/fraunces-latin-wght-normal.woff2) format('woff2')}
+@font-face{font-family:'Fraunces';font-style:italic;font-weight:100 900;font-display:swap;src:url(fonts/fraunces-latin-wght-italic.woff2) format('woff2')}
+:root{--ff:Jost,'Century Gothic',system-ui,sans-serif;--fs:Fraunces,Georgia,'Times New Roman',serif;--hink:#5a3d34;--hcoral:#f2957f;--hpaper:#fbeee2}
   :root{--ink:#3a2a20;--paper:#f4e6c8;--terra:#c8643c;--sage:#6f8a5a;--water:#4f9fb0}
   /* Zuro display = the one UI style of the game (Robin 20. 11.) */
   :root{--wd-bg:#1d1a18;--wd-bg2:#2a2420;--wd-line:#ece3cf;--wd-tx:#ffe2b8;--wd-dim:rgba(255,226,184,.62);--wd-sep:rgba(255,226,184,.14);--wd-glow:0 0 8px rgba(255,176,96,.45);
         --wd-water:#8fe0ee;--wd-gold:#ffd36e;--wd-warn:#ff9a6a;--wd-act:#f2c14e;--wd-r:22px}
-  html,body{margin:0;height:100%;background:#2a2019;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;
+  html,body{margin:0;height:100%;background:#fbeee2;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;
     font-family:var(--ff);color:var(--ink);-webkit-tap-highlight-color:transparent}
   #wrap{position:fixed;inset:0;display:flex;justify-content:center}
   #stage{position:relative;height:100%;overflow:hidden}
@@ -34,16 +36,21 @@
   .btn.primary{background:var(--terra);color:#fff7ea;border-color:transparent;box-shadow:0 6px 18px rgba(200,100,60,.3)}
   .btn.sm{font-size:14px;padding:11px 14px}
   .btn:disabled{opacity:.45;cursor:default}
-  /* title */
-  #title{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;box-sizing:border-box;
-    background:linear-gradient(180deg,rgba(244,230,200,.88),rgba(244,230,200,.35) 45%,rgba(244,230,200,.9))}
-  .tart{width:min(54%,225px);aspect-ratio:4/5;object-fit:cover;object-position:50% 16%;border-radius:22px;box-shadow:0 14px 30px -14px rgba(58,42,32,.55);margin-bottom:14px;border:3px solid #fff8ea}
+  /* title (22. 11.): wordmark on top, name and Start at the bottom, the live village shows in between – no pre-rendered pictures */
+  #title{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;padding:max(34px,6vh) 24px max(22px,3.5vh);box-sizing:border-box;color:var(--hink);
+    background:linear-gradient(180deg,rgba(251,238,226,.96) 0%,rgba(251,238,226,.82) 20%,rgba(251,238,226,0) 40%,rgba(251,238,226,0) 58%,rgba(251,238,226,.86) 76%,rgba(251,238,226,.97) 100%)}
+  .thead,.tfoot{display:flex;flex-direction:column;align-items:center;width:100%}
+  .tag{font-size:10.5px;letter-spacing:.34em;opacity:.62;padding-left:.34em;font-weight:500}
+  .wordmark{font-family:var(--fs);font-weight:600;font-variation-settings:'wght' 600;letter-spacing:-.012em;line-height:1;color:var(--hink);margin:0;white-space:nowrap}
+  .wordmark i{display:inline-block;width:.6em;height:.6em;margin:0 .035em 0 .05em;border-radius:50%;background:var(--hcoral);box-shadow:inset 0 0 0 .05em var(--hink),.085em .075em 0 -.012em rgba(90,61,52,.22);vertical-align:-.03em}
+  h1.wordmark{font-size:clamp(50px,15.5vw,72px);margin:8px 0 0}
+  .story{font-family:var(--fs);font-style:italic;font-weight:400;font-size:16.5px;line-height:1.45;max-width:300px;opacity:.86;margin:10px 0 0}
+  .tbtns{display:flex;flex-direction:column;gap:10px;width:min(270px,82%)}
+  .tbtns .lab{font-size:10.5px;letter-spacing:.2em;opacity:.62;text-transform:uppercase;font-weight:500}
+  .tbtns input{font:inherit;font-size:16px;text-align:center;padding:11px 14px;border-radius:999px;border:1.5px solid rgba(90,61,52,.55);background:rgba(255,251,246,.92);color:var(--hink);outline:none;box-shadow:3px 3px 0 rgba(90,61,52,.14)}
+  .tbtns .btn.primary{background:var(--hcoral);color:#fffaf4;border:1.5px solid var(--hink);box-shadow:3px 3px 0 rgba(90,61,52,.32);font-size:17px;letter-spacing:.04em}
+  .small{font-size:11.5px;opacity:.6;margin-top:12px;line-height:1.5;max-width:300px}
   .portraits{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:2px 0 12px}.portraits figure{margin:0}.portraits img{width:100%;aspect-ratio:1;object-fit:cover;object-position:50% 22%;border-radius:14px;display:block}.portraits figcaption{font-size:12px;font-weight:600;text-align:center;margin-top:4px;opacity:.75}
-  .tag{font-size:10.5px;letter-spacing:.42em;opacity:.55;padding-left:.42em}
-  h1{font-family:var(--ff);font-weight:700;letter-spacing:.02em;font-size:clamp(42px,12vw,60px);margin:4px 0 0;color:var(--terra)}
-  .story{font-family:var(--ff);font-style:italic;font-size:15.5px;line-height:1.6;max-width:300px;opacity:.8;margin:10px 0 24px}
-  .tbtns{display:flex;flex-direction:column;gap:10px;width:min(260px,80%)}
-  .small{font-size:12px;opacity:.55;margin-top:16px;line-height:1.5;max-width:300px}
 
   /* ===== look H (Robin 22. 11.): frosted light glass HUD, warm ink text, haze and tilt-shift ===== */
   body.lookH{--wd-bg:rgba(255,247,238,.74);--wd-bg2:rgba(255,241,228,.85);--wd-line:rgba(255,255,255,.9);--wd-tx:#4a3530;--wd-dim:rgba(74,53,48,.6);--wd-sep:rgba(74,53,48,.14);--wd-glow:none;--wd-water:#3d93a3;--wd-gold:#bf8420;--wd-warn:#cf5a3e;--wd-act:#ec9a7c}
@@ -75,6 +82,13 @@
   body.lookH #mapc{border-width:1px}
   body.lookH #bSling{background:rgba(255,247,238,.9);color:#4a3530}
   body:has(#title:not(.hidden)) .ts{display:none}
+  body.lookH .sh-in h2,body.lookH .dt h3,body.lookH .card .big,body.lookH .mtop b,body.lookH #mcard b,body.lookH #toast b{font-family:var(--fs);font-weight:600;letter-spacing:-.005em}
+  body.lookH .sh-in h2{font-size:27px}body.lookH .card h3,body.lookH .msg{font-family:var(--fs);font-style:italic}
+  body.lookH .portraits img,body.lookH .bimg{box-shadow:0 0 0 1.5px rgba(90,61,52,.5),4px 4px 0 rgba(90,61,52,.1);border:0}
+  body.lookH .btn.primary{background:var(--hcoral);color:#fffaf4;border:1.5px solid var(--hink);box-shadow:3px 3px 0 rgba(90,61,52,.3)}
+  body.lookH .btn.primary:disabled{box-shadow:none}
+  body.lookH .ii.big{background:#fffaf3;border-color:rgba(90,61,52,.35)}
+  body.lookH #bbar{background:linear-gradient(180deg,rgba(251,238,226,0),rgba(251,238,226,.75) 55%)}
   body.lookH #mapv{background:rgba(246,226,207,.94)}body.lookH #sheet.page .sh-in{background:rgba(255,247,238,.97)}
   /* base hud – Zuro's display (HUD D) */
   #bhud,#xhud{position:absolute;left:0;right:0;top:0;padding:12px 12px 0;pointer-events:none}
@@ -187,58 +201,27 @@
   #bMelon svg.ic{width:30px;height:30px;vertical-align:middle}#mute svg.ic{width:20px;height:20px;vertical-align:middle}
   #toast .ic svg.ic{width:30px;height:30px}#toast #tTx svg.ic{width:15px!important;height:15px!important;vertical-align:-3px}.crow .ic svg.ic{width:30px;height:30px}
 
-  /* ---- desktop frame (Robin 20. 11.: on desktop the game must not look like a phone app with empty sides) ---- */
-  #bg{display:none;position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;
-    background:radial-gradient(90% 55% at 50% 80%,rgba(255,150,80,.30),rgba(255,150,80,0) 62%),linear-gradient(180deg,#110e0d 0%,#1d1a18 38%,#3a2618 76%,#4a2e1c 100%)}
-  #bg svg{position:absolute;left:0;width:100%}
-  #bg .stars{top:0;height:62%;fill:#ffe2b8}
-  #bg .sun{position:absolute;left:50%;bottom:30%;width:46vh;height:46vh;transform:translate(-50%,50%);border-radius:50%;
-    background:radial-gradient(circle,rgba(255,190,120,.55) 0%,rgba(255,150,80,.22) 38%,rgba(255,150,80,0) 70%)}
-  #bg .dunes{bottom:0;height:46%}
+  /* ---- desktop frame (22. 11.): the page is the same sun-bleached paper as the game – a few pen lines of dunes and a pale sun,
+     the wordmark on one side, nothing else. No pictures, no instructions. ---- */
+  #bg{display:none;position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:linear-gradient(180deg,#f7dfcd 0%,#fbeadc 34%,#fdf4ea 72%,#fef8f1 100%)}
+  #bg svg{position:absolute;left:0;top:0;width:100%;height:100%}
   body.framed #bg{display:block}
-  body.framed #wrap{align-items:center;gap:clamp(28px,4vw,72px);z-index:1}
-  body.framed #stage{border-radius:30px;flex:none;box-shadow:0 0 0 3px var(--wd-line),0 0 0 9px rgba(29,26,24,.85),0 34px 90px rgba(0,0,0,.6),0 0 140px rgba(255,160,80,.14)}
-  aside.side{display:none;flex-direction:column;gap:18px;width:clamp(260px,24vw,360px);color:var(--wd-tx);font-family:var(--ff);flex:none}
+  body.framed #wrap{align-items:center;gap:clamp(28px,4.5vw,84px);z-index:1}
+  body.framed #stage{border-radius:28px;flex:none;box-shadow:0 0 0 1.5px var(--hink),14px 16px 0 -1px rgba(90,61,52,.13),0 30px 70px -30px rgba(140,80,50,.35)}
+  aside.side{display:none;flex-direction:column;gap:16px;width:clamp(250px,23vw,340px);color:var(--hink);font-family:var(--ff);flex:none}
   body.wide aside.side{display:flex}
-  .side .kick{font-size:11px;letter-spacing:.32em;color:var(--wd-dim)}
-  .side h1.logo{margin:0;font-size:clamp(46px,4.6vw,70px);font-weight:700;letter-spacing:.14em;line-height:1;color:#ffe2b8;
-    text-shadow:0 0 18px rgba(255,170,90,.45),0 2px 0 #c8643c}
-  .side .tagline{font-size:19px;font-style:italic;line-height:1.35;color:#ffe9cc;margin:-4px 0 0}
-  .side p{margin:0;font-size:14.5px;line-height:1.6;color:rgba(255,226,184,.82)}
-  .side .card{margin:0;text-align:left;background:var(--wd-bg);border:3px solid var(--wd-line);border-radius:22px;padding:16px 18px;box-shadow:0 14px 40px rgba(0,0,0,.35)}
-  .side .card h3{margin:0 0 10px;font-size:11px;letter-spacing:.24em;font-weight:600;color:var(--wd-dim)}
-  .side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
-  .side li{display:flex;gap:11px;align-items:flex-start;font-size:14px;line-height:1.4}
-  .side li b{display:block;font-weight:600;color:#ffe2b8}
-  .side li span{color:rgba(255,226,184,.7);font-size:13px}
-  .side .wic{width:20px;height:20px;margin-top:1px}.side .wic svg.ic{width:20px;height:20px}
-  .side .fine{font-size:11.5px;letter-spacing:.06em;color:var(--wd-dim);line-height:1.6}
-  .side .fine b{color:var(--wd-act);font-weight:600;letter-spacing:.16em}
-  .side .art{position:relative;border-radius:22px;overflow:hidden;border:3px solid var(--wd-line);box-shadow:0 14px 40px rgba(0,0,0,.4);aspect-ratio:4/4.3}
-  .side .art img{width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block}
-  .side .art figcaption{position:absolute;left:0;right:0;bottom:0;padding:40px 16px 14px;background:linear-gradient(180deg,rgba(29,26,24,0),rgba(29,26,24,.92) 55%);font-size:13.5px;line-height:1.45;color:rgba(255,226,184,.88)}
-  .side .art figcaption b{display:block;font-size:17px;color:#ffe2b8;margin-bottom:2px}
+  body.wide #title .thead{visibility:hidden}
+  #sideR{align-self:flex-end;padding-bottom:26px;align-items:flex-start}
+  .side .kick{font-size:11px;letter-spacing:.34em;opacity:.6;font-weight:500}
+  .side h1.logo{font-size:clamp(58px,6.2vw,96px);margin:0}
+  .side .tagline{font-family:var(--fs);font-style:italic;font-size:clamp(17px,1.5vw,21px);line-height:1.4;opacity:.86;margin:0}
+  .side .fine{font-size:11.5px;letter-spacing:.05em;opacity:.55;line-height:1.7;margin-top:10px}
   .side .qr{display:flex;gap:14px;align-items:center}
-  .side .qr svg{width:88px;height:88px;border-radius:10px;flex:none}
-  .side .qr div{font-size:13.5px;line-height:1.45;color:rgba(255,226,184,.8)}
-  .side .qr div b{display:block;font-size:15px;color:#ffe2b8}
-  @media (max-height:900px){.side .art{aspect-ratio:16/12}.side{gap:14px}.side p{font-size:13.5px}}
-  @media (max-height:780px){.side .art{aspect-ratio:16/10}.side .card{padding:12px 16px}.side ul{gap:7px}.side .qr svg{width:72px;height:72px}}
-  @media (max-height:700px){#sideR .card:not(.qr){display:none}.side p{display:none}}
-  /* choose your wanderer */
-  .pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:-2px 0 6px}.pick.one{grid-template-columns:1fr;width:min(190px,56%);margin:-2px auto 6px}.pick.one .pk{cursor:default}
-  .pk{font:inherit;cursor:pointer;padding:0;border-radius:18px;overflow:hidden;background:#1d1a18;border:3px solid rgba(236,227,207,.35);position:relative;transition:transform .15s,border-color .15s}
-  .pk img{display:block;width:100%;aspect-ratio:4/4.4;object-fit:cover;object-position:50% 12%;opacity:.7;transition:opacity .15s}
-  .pk span{position:absolute;left:0;right:0;bottom:0;padding:6px 0;font-size:13px;font-weight:600;letter-spacing:.08em;color:#ffe2b8;background:linear-gradient(180deg,rgba(29,26,24,0),rgba(29,26,24,.9))}
-  .pk.on{border-color:#ece3cf;transform:translateY(-2px)}.pk.on img{opacity:1}
-  #title{overflow-y:auto;justify-content:safe center}
-  #title .tart{aspect-ratio:9/10;object-position:50% 40%;width:min(48%,200px)}
-  @media (max-height:820px){#title .tart{display:none}}
-  /* in-game renders sit on Zuro's display: night with a warm glow */
-  .tart,.side .art,.portraits img,.pk img{background:radial-gradient(70% 60% at 50% 62%,rgba(255,160,90,.28),rgba(255,160,90,0) 70%),#1d1a18}
-  .side .art img{object-fit:contain;object-position:50% 60%}
-  .pk img{object-fit:contain;object-position:50% 40%;opacity:.8}
-  .portraits img{object-fit:contain}
+  .side .qr svg{width:76px;height:76px;border-radius:10px;flex:none;box-shadow:0 0 0 1.5px var(--hink),4px 4px 0 rgba(90,61,52,.13)}
+  .side .qr div{font-size:12.5px;line-height:1.45;opacity:.75}
+  .side .qr div b{display:block;font-family:var(--fs);font-style:italic;font-weight:500;font-size:16px;opacity:1}
+  #title{overflow-y:auto}
+  .portraits img{object-fit:cover;object-position:50% 45%;background:#fbeee2}
   /* building page (Robin 20. 11.: a whole page per building, not a half sheet) */
   #sheet.page{top:0}
   #sheet.page .sh-in{position:absolute;inset:0;max-height:none;border:0;border-radius:0;overflow-y:auto;padding:18px 18px 30px}
@@ -293,25 +276,17 @@
 </style>
 </head>
 <body>
-<div id="bg"><svg class="stars" viewBox="0 0 1600 520" preserveAspectRatio="xMidYMid slice"><circle cx="518" cy="78" r="0.6" opacity="0.19"/><circle cx="857" cy="190" r="0.6" opacity="0.65"/><circle cx="344" cy="45" r="1.2" opacity="0.19"/><circle cx="145" cy="221" r="1.6" opacity="0.22"/><circle cx="357" cy="326" r="0.6" opacity="0.47"/><circle cx="635" cy="508" r="0.6" opacity="0.46"/><circle cx="213" cy="218" r="1.6" opacity="0.21"/><circle cx="494" cy="424" r="0.8" opacity="0.21"/><circle cx="914" cy="98" r="0.6" opacity="0.45"/><circle cx="100" cy="31" r="0.8" opacity="0.42"/><circle cx="851" cy="404" r="1.2" opacity="0.47"/><circle cx="725" cy="156" r="0.8" opacity="0.53"/><circle cx="391" cy="299" r="1.6" opacity="0.42"/><circle cx="550" cy="233" r="1.6" opacity="0.69"/><circle cx="189" cy="217" r="1" opacity="0.23"/><circle cx="782" cy="20" r="0.6" opacity="0.57"/><circle cx="917" cy="455" r="1" opacity="0.34"/><circle cx="560" cy="258" r="1.2" opacity="0.19"/><circle cx="150" cy="140" r="0.6" opacity="0.18"/><circle cx="1122" cy="337" r="1.2" opacity="0.31"/><circle cx="617" cy="348" r="0.6" opacity="0.67"/><circle cx="569" cy="318" r="1.2" opacity="0.18"/><circle cx="1229" cy="67" r="0.8" opacity="0.37"/><circle cx="1467" cy="258" r="0.8" opacity="0.40"/><circle cx="879" cy="459" r="1.2" opacity="0.63"/><circle cx="445" cy="216" r="1" opacity="0.53"/><circle cx="609" cy="120" r="0.6" opacity="0.25"/><circle cx="371" cy="121" r="1.2" opacity="0.61"/><circle cx="292" cy="147" r="0.8" opacity="0.38"/><circle cx="591" cy="294" r="0.8" opacity="0.53"/><circle cx="825" cy="321" r="0.6" opacity="0.40"/><circle cx="1394" cy="495" r="1.6" opacity="0.37"/><circle cx="638" cy="54" r="1.2" opacity="0.18"/><circle cx="108" cy="109" r="0.8" opacity="0.21"/><circle cx="961" cy="53" r="1.6" opacity="0.23"/><circle cx="162" cy="189" r="0.6" opacity="0.19"/><circle cx="333" cy="196" r="1" opacity="0.68"/><circle cx="964" cy="247" r="0.6" opacity="0.62"/><circle cx="1589" cy="242" r="1.2" opacity="0.32"/><circle cx="231" cy="390" r="1" opacity="0.41"/><circle cx="1107" cy="268" r="0.8" opacity="0.67"/><circle cx="845" cy="76" r="1.6" opacity="0.65"/><circle cx="1213" cy="155" r="0.6" opacity="0.53"/><circle cx="418" cy="191" r="0.8" opacity="0.35"/><circle cx="356" cy="282" r="1.6" opacity="0.33"/><circle cx="357" cy="422" r="0.8" opacity="0.59"/><circle cx="1309" cy="385" r="0.8" opacity="0.26"/><circle cx="788" cy="380" r="0.6" opacity="0.58"/><circle cx="756" cy="101" r="1.6" opacity="0.68"/><circle cx="716" cy="487" r="1" opacity="0.68"/><circle cx="583" cy="115" r="0.8" opacity="0.41"/><circle cx="540" cy="251" r="1.6" opacity="0.61"/><circle cx="767" cy="340" r="0.6" opacity="0.61"/><circle cx="192" cy="202" r="0.8" opacity="0.41"/><circle cx="286" cy="410" r="1" opacity="0.20"/><circle cx="1514" cy="375" r="1.2" opacity="0.37"/><circle cx="1515" cy="377" r="0.8" opacity="0.70"/><circle cx="44" cy="307" r="1.2" opacity="0.59"/><circle cx="234" cy="430" r="1.2" opacity="0.51"/><circle cx="561" cy="285" r="0.8" opacity="0.16"/><circle cx="1279" cy="378" r="0.6" opacity="0.44"/><circle cx="1494" cy="226" r="0.8" opacity="0.60"/><circle cx="338" cy="131" r="1" opacity="0.43"/><circle cx="1222" cy="170" r="1.6" opacity="0.38"/><circle cx="210" cy="473" r="1" opacity="0.64"/><circle cx="1060" cy="424" r="1.6" opacity="0.38"/><circle cx="1468" cy="261" r="1.6" opacity="0.23"/><circle cx="817" cy="454" r="0.8" opacity="0.48"/><circle cx="1242" cy="78" r="0.8" opacity="0.41"/><circle cx="1160" cy="289" r="1" opacity="0.53"/><circle cx="849" cy="251" r="0.6" opacity="0.64"/><circle cx="91" cy="99" r="0.6" opacity="0.57"/><circle cx="812" cy="292" r="0.6" opacity="0.39"/><circle cx="980" cy="263" r="1.6" opacity="0.26"/><circle cx="443" cy="264" r="1.2" opacity="0.43"/><circle cx="396" cy="272" r="1" opacity="0.66"/><circle cx="1428" cy="105" r="1.2" opacity="0.23"/><circle cx="195" cy="230" r="0.6" opacity="0.52"/><circle cx="685" cy="111" r="1" opacity="0.58"/><circle cx="1435" cy="80" r="1" opacity="0.23"/><circle cx="1413" cy="503" r="0.8" opacity="0.56"/><circle cx="151" cy="460" r="0.8" opacity="0.69"/><circle cx="1332" cy="84" r="1.2" opacity="0.70"/><circle cx="646" cy="219" r="1" opacity="0.33"/><circle cx="1155" cy="10" r="1.6" opacity="0.40"/><circle cx="1125" cy="200" r="1.6" opacity="0.49"/><circle cx="820" cy="33" r="0.8" opacity="0.68"/><circle cx="168" cy="138" r="0.6" opacity="0.65"/><circle cx="290" cy="393" r="1.2" opacity="0.62"/><circle cx="1082" cy="492" r="1.2" opacity="0.23"/><circle cx="1471" cy="297" r="1" opacity="0.20"/><circle cx="92" cy="358" r="1.2" opacity="0.64"/><circle cx="430" cy="9" r="0.6" opacity="0.59"/><circle cx="134" cy="445" r="0.6" opacity="0.30"/><circle cx="195" cy="6" r="1.6" opacity="0.38"/><circle cx="1465" cy="323" r="0.6" opacity="0.44"/><circle cx="381" cy="57" r="0.8" opacity="0.29"/><circle cx="290" cy="485" r="1" opacity="0.44"/><circle cx="329" cy="232" r="0.8" opacity="0.30"/><circle cx="1286" cy="517" r="0.6" opacity="0.16"/><circle cx="1173" cy="287" r="0.8" opacity="0.43"/><circle cx="393" cy="232" r="1.2" opacity="0.51"/><circle cx="873" cy="462" r="1.6" opacity="0.32"/><circle cx="344" cy="119" r="0.8" opacity="0.61"/><circle cx="1131" cy="331" r="1.2" opacity="0.69"/><circle cx="1571" cy="435" r="0.6" opacity="0.19"/><circle cx="1185" cy="133" r="0.8" opacity="0.18"/><circle cx="1064" cy="198" r="1.6" opacity="0.52"/><circle cx="451" cy="126" r="1" opacity="0.17"/><circle cx="297" cy="140" r="0.6" opacity="0.29"/><circle cx="1539" cy="506" r="1.6" opacity="0.33"/><circle cx="55" cy="459" r="0.8" opacity="0.35"/><circle cx="2" cy="198" r="1.2" opacity="0.30"/><circle cx="1050" cy="129" r="0.6" opacity="0.20"/><circle cx="1307" cy="75" r="1.6" opacity="0.17"/><circle cx="36" cy="158" r="0.8" opacity="0.20"/><circle cx="1532" cy="444" r="0.8" opacity="0.51"/><circle cx="1146" cy="457" r="1.2" opacity="0.57"/><circle cx="1153" cy="257" r="1" opacity="0.55"/><circle cx="1029" cy="23" r="1.6" opacity="0.50"/><circle cx="1174" cy="422" r="0.8" opacity="0.65"/><circle cx="1205" cy="296" r="0.6" opacity="0.60"/><circle cx="934" cy="464" r="0.8" opacity="0.20"/><circle cx="67" cy="331" r="0.6" opacity="0.36"/><circle cx="722" cy="26" r="0.6" opacity="0.49"/><circle cx="1089" cy="254" r="0.6" opacity="0.40"/><circle cx="112" cy="485" r="1.6" opacity="0.20"/><circle cx="842" cy="388" r="1.2" opacity="0.29"/><circle cx="119" cy="138" r="0.8" opacity="0.28"/><circle cx="1040" cy="239" r="1.2" opacity="0.19"/><circle cx="1457" cy="149" r="0.6" opacity="0.49"/><circle cx="1028" cy="40" r="0.8" opacity="0.33"/><circle cx="1042" cy="360" r="1.6" opacity="0.46"/><circle cx="20" cy="32" r="1" opacity="0.68"/><circle cx="159" cy="113" r="1.2" opacity="0.31"/><circle cx="826" cy="242" r="1.2" opacity="0.57"/><circle cx="1589" cy="286" r="1" opacity="0.69"/><circle cx="1498" cy="9" r="1.2" opacity="0.19"/><circle cx="811" cy="517" r="1" opacity="0.36"/><circle cx="1466" cy="484" r="0.6" opacity="0.47"/><circle cx="227" cy="273" r="1" opacity="0.22"/><circle cx="1312" cy="265" r="0.6" opacity="0.54"/><circle cx="370" cy="467" r="1.2" opacity="0.37"/><circle cx="255" cy="494" r="1.2" opacity="0.37"/><circle cx="1163" cy="216" r="1.2" opacity="0.32"/><circle cx="1344" cy="1" r="1" opacity="0.61"/><circle cx="192" cy="482" r="0.6" opacity="0.65"/><circle cx="464" cy="194" r="1.2" opacity="0.36"/><circle cx="1392" cy="40" r="1.2" opacity="0.57"/><circle cx="1367" cy="146" r="0.6" opacity="0.61"/><circle cx="457" cy="487" r="0.8" opacity="0.68"/><circle cx="698" cy="164" r="1" opacity="0.58"/><circle cx="684" cy="15" r="1.2" opacity="0.65"/><circle cx="1505" cy="286" r="0.6" opacity="0.18"/><circle cx="1172" cy="234" r="0.8" opacity="0.50"/><circle cx="458" cy="25" r="1.6" opacity="0.22"/><circle cx="755" cy="179" r="1" opacity="0.29"/><circle cx="1182" cy="339" r="1.2" opacity="0.51"/><circle cx="481" cy="290" r="1.2" opacity="0.22"/><circle cx="1029" cy="39" r="1.6" opacity="0.65"/><circle cx="795" cy="114" r="1" opacity="0.70"/><circle cx="720" cy="73" r="0.8" opacity="0.28"/><circle cx="280" cy="289" r="1" opacity="0.28"/><circle cx="413" cy="296" r="0.6" opacity="0.56"/><circle cx="660" cy="215" r="1.6" opacity="0.27"/><circle cx="432" cy="391" r="1.2" opacity="0.30"/><circle cx="1548" cy="65" r="1.6" opacity="0.44"/><circle cx="1264" cy="441" r="0.6" opacity="0.30"/><circle cx="398" cy="208" r="1.2" opacity="0.39"/><circle cx="499" cy="423" r="0.6" opacity="0.22"/></svg><div class="sun"></div>
-<svg class="dunes" viewBox="0 0 1600 460" preserveAspectRatio="none">
-<path d="M0 170 C180 120 330 150 480 120 C640 88 760 140 900 128 C1060 114 1180 70 1340 96 C1450 114 1530 104 1600 92 V460 H0Z" fill="#3a2516" opacity=".85"/>
-<path d="M0 250 C140 214 300 236 440 206 C600 172 720 230 880 222 C1040 214 1150 176 1300 192 C1430 206 1520 196 1600 184 V460 H0Z" fill="#2c1c11"/>
-<path d="M0 330 C200 300 360 324 520 300 C700 272 820 318 1000 314 C1180 310 1290 284 1440 292 C1520 296 1570 292 1600 290 V460 H0Z" fill="#20150d"/>
-<g fill="none" stroke="#ffe2b8" stroke-opacity=".06" stroke-width="2"><path d="M60 360 C300 340 520 356 760 344 C1000 332 1240 352 1540 338"/><path d="M0 400 C260 384 520 398 800 388 C1080 378 1320 396 1600 384"/><path d="M120 430 C380 418 640 430 900 422 C1160 414 1400 428 1600 420"/></g>
+<div id="bg"><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" fill="none" stroke="#8a5f4c" stroke-width="1.4" stroke-linecap="round">
+<circle cx="1290" cy="190" r="92" fill="#f6b8a4" fill-opacity=".34" stroke="none"/><circle cx="1290" cy="190" r="92" stroke-opacity=".34"/>
+<g stroke-opacity=".3"><path d="M-20 330 C160 300 330 322 500 304 S820 268 1010 290 1320 318 1620 286"/><path d="M-20 470 C210 438 400 468 620 446 S980 416 1190 442 1450 462 1620 438"/>
+<path d="M-20 610 C180 590 420 614 640 596 S1010 566 1230 590 1470 606 1620 590"/><path d="M-20 742 C240 720 470 748 720 730 S1080 706 1290 726 1500 742 1620 730"/><path d="M-20 850 C260 834 520 856 780 842 S1160 824 1360 838 1520 850 1620 842"/></g>
+<g stroke-opacity=".2" stroke-width="1.1"><path d="M90 392 q60 -14 130 0"/><path d="M1180 528 q70 -16 150 0"/><path d="M360 676 q60 -12 120 0"/><path d="M1320 790 q50 -10 110 0"/><path d="M700 368 q40 -8 90 0"/></g>
 </svg></div>
 <div id="wrap"><aside class="side" id="sideL">
   <div class="kick">VABIKO PRESENTS</div>
-  <h1 class="logo">ZURODA</h1>
-  <div class="tagline">A wanderer. A robot dog.<br>A desert that remembers.</div>
-  <p>The water is gone, and so are the people. You and Zuro live in a forgotten oasis village. Walk out into the desert, haul back scrap, wake up old machines – and maybe, one day, catch a signal from someone far away.</p>
-  <div class="card"><h3>HOW TO PLAY</h3><ul>
-    <li><span class="wic" data-ic="desert"></span><div><b>Tap to walk</b><span>Hold and drag to steer · WASD works too</span></div></li>
-    <li><span class="wic" data-ic="scrap"></span><div><b>Grab scrap &amp; crates</b><span>Bring it home to repair the village</span></div></li>
-    <li><span class="wic" data-ic="water"></span><div><b>Watch your water</b><span>Every step costs a sip</span></div></li>
-    <li><span class="wic" data-ic="home"></span><div><b>Make it home</b><span>Or Zuro drags you back – lighter</span></div></li>
-  </ul></div>
-  <div class="fine"><b>EARLY PROTOTYPE</b><br>Progress is saved in this browser. © 2026 Vabiko</div>
+  <h1 class="logo wordmark" aria-label="Zuroda">Zur<i></i>da</h1>
+  <div class="tagline">A wanderer, a robot dog<br>and a desert that remembers.</div>
+  <div class="fine">Early prototype · © 2026 Vabiko</div>
 </aside><div id="stage">
   <canvas id="c"></canvas>
   <canvas id="o"></canvas>
@@ -364,21 +339,15 @@
   <div id="sum" class="fade hidden"><div class="card" id="sumBody"></div></div>
 
   <div id="title" class="fade">
-    <img class="tart" data-portrait="trio" style="visibility:hidden" alt="The wanderer and Zuro"><div class="tag">EARLY PROTOTYPE</div>
-    <h1>Zuroda</h1>
-    <div class="story">The planet dried up. People vanished.<br>All that is left is you, an abandoned village… and Zuro.</div>
-    <div class="tbtns" id="tbtns"></div>
-    <div class="small">Progress is saved in this browser.<br>Drag anywhere to walk, tap to go to a spot (mouse or WASD on desktop).</div>
+    <div class="thead"><div class="tag">EARLY PROTOTYPE</div>
+      <h1 class="wordmark" aria-label="Zuroda">Zur<i></i>da</h1>
+      <div class="story">A wanderer, a robot dog<br>and a desert that remembers.</div></div>
+    <div class="tfoot"><div class="tbtns" id="tbtns"></div>
+      <div class="small">Progress is saved in this browser.</div></div>
   </div>
   <button id="mute" class="hidden" aria-label="Sound"></button>
 </div>
 <aside class="side" id="sideR">
-  <figure class="art" style="margin:0"><img data-portrait="trio" style="visibility:hidden" alt="The wanderer and Zuro"><figcaption><b>Meet Zuro</b>Your robot dog. He sniffs out lost bags, cheers you on – and always brings you home.</figcaption></figure>
-  <div class="card"><h3>IN THE DESERT</h3><ul>
-    <li><span class="wic" data-ic="wrench"></span><div><b>Rebuild the village</b><span>Pumps, solar panels, a workshop, robots</span></div></li>
-    <li><span class="wic" data-ic="map"></span><div><b>Map four lands</b><span>Salt flats, red rocks, an old town, dunes</span></div></li>
-    <li><span class="wic" data-ic="signal"></span><div><b>Find what's out there</b><span>Hidden camps – and a faint signal</span></div></li>
-  </ul></div>
-  <div class="card qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 29 29" shape-rendering="crispEdges"><rect x="-2" y="-2" width="29" height="29" fill="#ffe2b8"/><path d="M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM8 0h1v1h-1zM10 0h1v1h-1zM11 0h1v1h-1zM12 0h1v1h-1zM14 0h1v1h-1zM18 0h1v1h-1zM19 0h1v1h-1zM20 0h1v1h-1zM21 0h1v1h-1zM22 0h1v1h-1zM23 0h1v1h-1zM24 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM10 1h1v1h-1zM12 1h1v1h-1zM13 1h1v1h-1zM16 1h1v1h-1zM18 1h1v1h-1zM24 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM9 2h1v1h-1zM12 2h1v1h-1zM13 2h1v1h-1zM14 2h1v1h-1zM18 2h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1zM0 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM9 3h1v1h-1zM14 3h1v1h-1zM15 3h1v1h-1zM16 3h1v1h-1zM18 3h1v1h-1zM20 3h1v1h-1zM21 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM8 4h1v1h-1zM9 4h1v1h-1zM12 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM16 4h1v1h-1zM18 4h1v1h-1zM20 4h1v1h-1zM21 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM11 5h1v1h-1zM13 5h1v1h-1zM14 5h1v1h-1zM18 5h1v1h-1zM24 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM19 6h1v1h-1zM20 6h1v1h-1zM21 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM9 7h1v1h-1zM12 7h1v1h-1zM14 7h1v1h-1zM15 7h1v1h-1zM0 8h1v1h-1zM3 8h1v1h-1zM4 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM13 8h1v1h-1zM14 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM23 8h1v1h-1zM24 8h1v1h-1zM1 9h1v1h-1zM3 9h1v1h-1zM5 9h1v1h-1zM11 9h1v1h-1zM12 9h1v1h-1zM14 9h1v1h-1zM15 9h1v1h-1zM17 9h1v1h-1zM19 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM22 9h1v1h-1zM23 9h1v1h-1zM0 10h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM4 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM9 10h1v1h-1zM10 10h1v1h-1zM12 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM18 10h1v1h-1zM21 10h1v1h-1zM24 10h1v1h-1zM2 11h1v1h-1zM4 11h1v1h-1zM5 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM14 11h1v1h-1zM15 11h1v1h-1zM18 11h1v1h-1zM20 11h1v1h-1zM21 11h1v1h-1zM22 11h1v1h-1zM23 11h1v1h-1zM24 11h1v1h-1zM2 12h1v1h-1zM6 12h1v1h-1zM7 12h1v1h-1zM9 12h1v1h-1zM10 12h1v1h-1zM13 12h1v1h-1zM14 12h1v1h-1zM16 12h1v1h-1zM18 12h1v1h-1zM24 12h1v1h-1zM0 13h1v1h-1zM1 13h1v1h-1zM2 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM10 13h1v1h-1zM12 13h1v1h-1zM15 13h1v1h-1zM17 13h1v1h-1zM20 13h1v1h-1zM23 13h1v1h-1zM0 14h1v1h-1zM1 14h1v1h-1zM2 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM14 14h1v1h-1zM15 14h1v1h-1zM18 14h1v1h-1zM20 14h1v1h-1zM21 14h1v1h-1zM22 14h1v1h-1zM23 14h1v1h-1zM24 14h1v1h-1zM0 15h1v1h-1zM2 15h1v1h-1zM3 15h1v1h-1zM4 15h1v1h-1zM8 15h1v1h-1zM10 15h1v1h-1zM12 15h1v1h-1zM13 15h1v1h-1zM14 15h1v1h-1zM16 15h1v1h-1zM19 15h1v1h-1zM21 15h1v1h-1zM22 15h1v1h-1zM24 15h1v1h-1zM0 16h1v1h-1zM3 16h1v1h-1zM4 16h1v1h-1zM6 16h1v1h-1zM7 16h1v1h-1zM8 16h1v1h-1zM9 16h1v1h-1zM10 16h1v1h-1zM11 16h1v1h-1zM12 16h1v1h-1zM15 16h1v1h-1zM16 16h1v1h-1zM17 16h1v1h-1zM18 16h1v1h-1zM19 16h1v1h-1zM20 16h1v1h-1zM22 16h1v1h-1zM23 16h1v1h-1zM8 17h1v1h-1zM9 17h1v1h-1zM10 17h1v1h-1zM11 17h1v1h-1zM16 17h1v1h-1zM20 17h1v1h-1zM22 17h1v1h-1zM23 17h1v1h-1zM0 18h1v1h-1zM1 18h1v1h-1zM2 18h1v1h-1zM3 18h1v1h-1zM4 18h1v1h-1zM5 18h1v1h-1zM6 18h1v1h-1zM8 18h1v1h-1zM10 18h1v1h-1zM12 18h1v1h-1zM13 18h1v1h-1zM14 18h1v1h-1zM16 18h1v1h-1zM18 18h1v1h-1zM20 18h1v1h-1zM24 18h1v1h-1zM0 19h1v1h-1zM6 19h1v1h-1zM8 19h1v1h-1zM9 19h1v1h-1zM11 19h1v1h-1zM13 19h1v1h-1zM15 19h1v1h-1zM16 19h1v1h-1zM20 19h1v1h-1zM0 20h1v1h-1zM2 20h1v1h-1zM3 20h1v1h-1zM4 20h1v1h-1zM6 20h1v1h-1zM8 20h1v1h-1zM9 20h1v1h-1zM11 20h1v1h-1zM13 20h1v1h-1zM15 20h1v1h-1zM16 20h1v1h-1zM17 20h1v1h-1zM18 20h1v1h-1zM19 20h1v1h-1zM20 20h1v1h-1zM24 20h1v1h-1zM0 21h1v1h-1zM2 21h1v1h-1zM3 21h1v1h-1zM4 21h1v1h-1zM6 21h1v1h-1zM8 21h1v1h-1zM9 21h1v1h-1zM12 21h1v1h-1zM13 21h1v1h-1zM16 21h1v1h-1zM17 21h1v1h-1zM18 21h1v1h-1zM23 21h1v1h-1zM24 21h1v1h-1zM0 22h1v1h-1zM2 22h1v1h-1zM3 22h1v1h-1zM4 22h1v1h-1zM6 22h1v1h-1zM10 22h1v1h-1zM11 22h1v1h-1zM13 22h1v1h-1zM17 22h1v1h-1zM20 22h1v1h-1zM21 22h1v1h-1zM22 22h1v1h-1zM23 22h1v1h-1zM24 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM10 23h1v1h-1zM11 23h1v1h-1zM12 23h1v1h-1zM13 23h1v1h-1zM19 23h1v1h-1zM20 23h1v1h-1zM22 23h1v1h-1zM23 23h1v1h-1zM24 23h1v1h-1zM0 24h1v1h-1zM1 24h1v1h-1zM2 24h1v1h-1zM3 24h1v1h-1zM4 24h1v1h-1zM5 24h1v1h-1zM6 24h1v1h-1zM8 24h1v1h-1zM9 24h1v1h-1zM10 24h1v1h-1zM11 24h1v1h-1zM12 24h1v1h-1zM13 24h1v1h-1zM16 24h1v1h-1zM21 24h1v1h-1zM24 24h1v1h-1z" fill="#1d1a18"/></svg><div><b>Best on your phone</b>Scan to play – or open zuroda.com</div></div>
+  <div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 29 29" shape-rendering="crispEdges"><rect x="-2" y="-2" width="29" height="29" fill="#fdf6ee"/><path d="M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM8 0h1v1h-1zM10 0h1v1h-1zM11 0h1v1h-1zM12 0h1v1h-1zM14 0h1v1h-1zM18 0h1v1h-1zM19 0h1v1h-1zM20 0h1v1h-1zM21 0h1v1h-1zM22 0h1v1h-1zM23 0h1v1h-1zM24 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM10 1h1v1h-1zM12 1h1v1h-1zM13 1h1v1h-1zM16 1h1v1h-1zM18 1h1v1h-1zM24 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM9 2h1v1h-1zM12 2h1v1h-1zM13 2h1v1h-1zM14 2h1v1h-1zM18 2h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1zM0 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM9 3h1v1h-1zM14 3h1v1h-1zM15 3h1v1h-1zM16 3h1v1h-1zM18 3h1v1h-1zM20 3h1v1h-1zM21 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM8 4h1v1h-1zM9 4h1v1h-1zM12 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM16 4h1v1h-1zM18 4h1v1h-1zM20 4h1v1h-1zM21 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM11 5h1v1h-1zM13 5h1v1h-1zM14 5h1v1h-1zM18 5h1v1h-1zM24 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM19 6h1v1h-1zM20 6h1v1h-1zM21 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM9 7h1v1h-1zM12 7h1v1h-1zM14 7h1v1h-1zM15 7h1v1h-1zM0 8h1v1h-1zM3 8h1v1h-1zM4 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM13 8h1v1h-1zM14 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM23 8h1v1h-1zM24 8h1v1h-1zM1 9h1v1h-1zM3 9h1v1h-1zM5 9h1v1h-1zM11 9h1v1h-1zM12 9h1v1h-1zM14 9h1v1h-1zM15 9h1v1h-1zM17 9h1v1h-1zM19 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM22 9h1v1h-1zM23 9h1v1h-1zM0 10h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM4 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM9 10h1v1h-1zM10 10h1v1h-1zM12 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM18 10h1v1h-1zM21 10h1v1h-1zM24 10h1v1h-1zM2 11h1v1h-1zM4 11h1v1h-1zM5 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM14 11h1v1h-1zM15 11h1v1h-1zM18 11h1v1h-1zM20 11h1v1h-1zM21 11h1v1h-1zM22 11h1v1h-1zM23 11h1v1h-1zM24 11h1v1h-1zM2 12h1v1h-1zM6 12h1v1h-1zM7 12h1v1h-1zM9 12h1v1h-1zM10 12h1v1h-1zM13 12h1v1h-1zM14 12h1v1h-1zM16 12h1v1h-1zM18 12h1v1h-1zM24 12h1v1h-1zM0 13h1v1h-1zM1 13h1v1h-1zM2 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM10 13h1v1h-1zM12 13h1v1h-1zM15 13h1v1h-1zM17 13h1v1h-1zM20 13h1v1h-1zM23 13h1v1h-1zM0 14h1v1h-1zM1 14h1v1h-1zM2 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM14 14h1v1h-1zM15 14h1v1h-1zM18 14h1v1h-1zM20 14h1v1h-1zM21 14h1v1h-1zM22 14h1v1h-1zM23 14h1v1h-1zM24 14h1v1h-1zM0 15h1v1h-1zM2 15h1v1h-1zM3 15h1v1h-1zM4 15h1v1h-1zM8 15h1v1h-1zM10 15h1v1h-1zM12 15h1v1h-1zM13 15h1v1h-1zM14 15h1v1h-1zM16 15h1v1h-1zM19 15h1v1h-1zM21 15h1v1h-1zM22 15h1v1h-1zM24 15h1v1h-1zM0 16h1v1h-1zM3 16h1v1h-1zM4 16h1v1h-1zM6 16h1v1h-1zM7 16h1v1h-1zM8 16h1v1h-1zM9 16h1v1h-1zM10 16h1v1h-1zM11 16h1v1h-1zM12 16h1v1h-1zM15 16h1v1h-1zM16 16h1v1h-1zM17 16h1v1h-1zM18 16h1v1h-1zM19 16h1v1h-1zM20 16h1v1h-1zM22 16h1v1h-1zM23 16h1v1h-1zM8 17h1v1h-1zM9 17h1v1h-1zM10 17h1v1h-1zM11 17h1v1h-1zM16 17h1v1h-1zM20 17h1v1h-1zM22 17h1v1h-1zM23 17h1v1h-1zM0 18h1v1h-1zM1 18h1v1h-1zM2 18h1v1h-1zM3 18h1v1h-1zM4 18h1v1h-1zM5 18h1v1h-1zM6 18h1v1h-1zM8 18h1v1h-1zM10 18h1v1h-1zM12 18h1v1h-1zM13 18h1v1h-1zM14 18h1v1h-1zM16 18h1v1h-1zM18 18h1v1h-1zM20 18h1v1h-1zM24 18h1v1h-1zM0 19h1v1h-1zM6 19h1v1h-1zM8 19h1v1h-1zM9 19h1v1h-1zM11 19h1v1h-1zM13 19h1v1h-1zM15 19h1v1h-1zM16 19h1v1h-1zM20 19h1v1h-1zM0 20h1v1h-1zM2 20h1v1h-1zM3 20h1v1h-1zM4 20h1v1h-1zM6 20h1v1h-1zM8 20h1v1h-1zM9 20h1v1h-1zM11 20h1v1h-1zM13 20h1v1h-1zM15 20h1v1h-1zM16 20h1v1h-1zM17 20h1v1h-1zM18 20h1v1h-1zM19 20h1v1h-1zM20 20h1v1h-1zM24 20h1v1h-1zM0 21h1v1h-1zM2 21h1v1h-1zM3 21h1v1h-1zM4 21h1v1h-1zM6 21h1v1h-1zM8 21h1v1h-1zM9 21h1v1h-1zM12 21h1v1h-1zM13 21h1v1h-1zM16 21h1v1h-1zM17 21h1v1h-1zM18 21h1v1h-1zM23 21h1v1h-1zM24 21h1v1h-1zM0 22h1v1h-1zM2 22h1v1h-1zM3 22h1v1h-1zM4 22h1v1h-1zM6 22h1v1h-1zM10 22h1v1h-1zM11 22h1v1h-1zM13 22h1v1h-1zM17 22h1v1h-1zM20 22h1v1h-1zM21 22h1v1h-1zM22 22h1v1h-1zM23 22h1v1h-1zM24 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM10 23h1v1h-1zM11 23h1v1h-1zM12 23h1v1h-1zM13 23h1v1h-1zM19 23h1v1h-1zM20 23h1v1h-1zM22 23h1v1h-1zM23 23h1v1h-1zM24 23h1v1h-1zM0 24h1v1h-1zM1 24h1v1h-1zM2 24h1v1h-1zM3 24h1v1h-1zM4 24h1v1h-1zM5 24h1v1h-1zM6 24h1v1h-1zM8 24h1v1h-1zM9 24h1v1h-1zM10 24h1v1h-1zM11 24h1v1h-1zM12 24h1v1h-1zM13 24h1v1h-1zM16 24h1v1h-1zM21 24h1v1h-1zM24 24h1v1h-1z" fill="#5a3d34"/></svg><div><b>Best on your phone</b>Scan to play, or open zuroda.com</div></div>
 </aside>
 </div>
