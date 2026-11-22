@@ -585,8 +585,7 @@ function hRoom(kind){const key='room'+kind;if(BIMG[key])return BIMG[key];
     }
     return {c:new T.Vector3(-0.15,1.55,-0.1),half:3.15,az:0.66,el:0.5,sun:[11,22,12]};});}
 
-// ---- notebook UI (Robin 22. 11., proposal 2): the touch joystick is a pencil sketch – two loose rings with arrow ticks, dashes from the middle
+// ---- the touch joystick of the "Sklo" UI (Robin 22. 11., proposal A)
 // to the knob, the knob a paper disc hatched in coral. Sizes: ring 170 px, knob 54 px, travel 46 px (joyKnob in game.js moves the knob and the dashes).
-function hJoySvg(){const I='#4a332b',P='#fffaf0',K='#f2957f';
-  return `<svg class="jb" width="170" height="170" viewBox="0 0 170 170" aria-hidden="true"><ellipse cx="85" cy="85" rx="63" ry="61" fill="rgba(255,250,240,.55)" stroke="${I}" stroke-width="1.4" transform="rotate(9 85 85)"/><ellipse cx="85" cy="85" rx="61" ry="63.5" fill="none" stroke="${I}" stroke-width="1" opacity=".75" transform="rotate(-14 85 85)"/><path d="M79 33l6-8 6 8M79 137l6 8 6-8M33 79l-8 6 8 6M137 79l8 6-8 6" fill="none" stroke="${I}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><line class="jl" x1="85" y1="85" x2="85" y2="85" stroke="${I}" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="4.5 6"/></svg>`+
-    `<i><svg width="54" height="54" viewBox="0 0 54 54" aria-hidden="true"><defs><pattern id="jkh" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(58)"><line x1="0" y1="0" x2="0" y2="5" stroke="${K}" stroke-width="3.6"/></pattern></defs><circle cx="28.5" cy="29.5" r="24" fill="rgba(74,51,43,.24)"/><circle cx="27" cy="27" r="24" fill="${P}"/><circle cx="27" cy="27" r="21" fill="url(#jkh)"/><ellipse cx="27" cy="27" rx="24.5" ry="23.5" fill="none" stroke="${I}" stroke-width="1.5" transform="rotate(20 27 27)"/><ellipse cx="27" cy="27" rx="23.5" ry="25" fill="none" stroke="${I}" stroke-width=".9" opacity=".7" transform="rotate(-25 27 27)"/></svg></i>`;}
+function hJoySvg(){// the glass ring and the knob are CSS (src/glass.css); here only the four faint arrows
+  return `<svg class="jb" width="152" height="152" viewBox="0 0 152 152" aria-hidden="true"><g fill="none" stroke="#2a2f4f" stroke-opacity=".32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M70 17l6-6 6 6M70 135l6 6 6-6M17 70l-6 6 6 6M135 70l6 6-6 6"/></g></svg><i></i>`;}

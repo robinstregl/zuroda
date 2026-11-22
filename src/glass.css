@@ -1,0 +1,145 @@
+  /* ===== "Sklo" (Robin 22. 11., UI proposal A for the Diorama look) – the UI of the game. Frosted glass over the picture for what floats on it
+     (top panel, round buttons, Zuro's bubble, news), white rounded cards with soft shadows on pages, one typeface (Outfit), navy ink from
+     Zuro's visor, Zuro's red for the one thing to press. build.sh puts this file at the end of the style block of head.html (marker @ui),
+     so these rules win over the old dark "Zuro display" ones. No hand-drawn pieces, no rotations, no outlines. ===== */
+  body.lookH{--gi:#2a2f4f;--gm:rgba(42,47,79,.74);--gh:rgba(42,47,79,.1);--gr:#d9453a;--grd:#b9352d;--gt:#45a9bf;--ga:#f0b03c;--gpg:#fbeee0;--gs1:0 4px 12px rgba(150,95,60,.12);--gs2:0 6px 18px rgba(150,95,60,.12);
+    --ff:Outfit,'Century Gothic',system-ui,sans-serif;--hink:#2a2f4f;--hcoral:#d9453a;color:var(--gi);
+    --wd-bg:#fff;--wd-bg2:#fff;--wd-line:rgba(255,255,255,.8);--wd-tx:#2a2f4f;--wd-dim:rgba(42,47,79,.74);--wd-sep:rgba(42,47,79,.1);--wd-glow:none;--wd-water:#2b7f93;--wd-gold:#8a5a10;--wd-warn:#b9352d;--wd-act:#d9453a;--wd-r:26px}
+  /* the glass itself */
+  body.lookH .wpanel,body.lookH #mute,body.lookH .mapround,body.lookH #bMap,body.lookH #bMelon,body.lookH #bDrop,body.lookH .bubble,body.lookH #toast,body.lookH #sheet .x,body.lookH .mbtn,body.lookH #joy{
+    background:rgba(255,255,255,.6);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);border:1px solid rgba(255,255,255,.8);box-shadow:0 10px 28px rgba(150,95,60,.16),inset 0 1px 0 rgba(255,255,255,.7);color:var(--gi);text-shadow:none}
+  /* -- the panel on top -- */
+  body.lookH #bhud,body.lookH #xhud{padding:12px 12px 0}
+  body.lookH .wpanel{border-radius:26px;padding:14px 18px;min-height:0}
+  body.lookH .wpanel.col{gap:12px}
+  body.lookH .wgrid b,body.lookH .hrow b{font:600 16px/1 var(--ff)}
+  body.lookH .wgrid.g4{display:flex;justify-content:space-between;gap:6px}body.lookH .wi{gap:6px}
+  body.lookH .wic,body.lookH .wic svg.ic{width:22px;height:22px;filter:none}
+  body.lookH .cg,body.lookH .cx,body.lookH .cw,body.lookH .ce{color:var(--gi)}body.lookH .wgrid b.warn,body.lookH .wwater b.low{color:var(--grd)}
+  body.lookH #xhud .wwater{order:-1}
+  body.lookH .wwater{border-top:0;padding-top:0;gap:10px}body.lookH .wwater b{font:600 26px/1 var(--ff);letter-spacing:-.01em;min-width:0;white-space:nowrap}
+  body.lookH .wwater .wic,body.lookH .wwater .wic svg.ic,body.lookH .pv .wic,body.lookH .pv .wic svg.ic{width:28px;height:28px}
+  body.lookH .hud2{padding:14px 18px 12px;gap:0}body.lookH .hrow.prod{gap:20px;padding-bottom:12px}body.lookH .pv{gap:8px}body.lookH .pvt{gap:7px}body.lookH .pvt b{font:600 19px/1 var(--ff)}
+  body.lookH .hrow.loot{display:flex;gap:26px;padding-top:12px;border-top:1px solid var(--gh)}body.lookH .hrow.loot .wi{justify-content:flex-start}
+  /* meters: a thin rounded track, the amount in colour, the point of return as a red mark that sticks out */
+  body.lookH .hbar,body.lookH .pbar{height:8px;box-sizing:border-box;border:0;border-radius:4px;background:rgba(42,47,79,.11);padding:0}
+  body.lookH .hbar{overflow:visible;margin-left:4px}
+  body.lookH .hbar i{top:0;bottom:0;border-radius:4px;background:linear-gradient(90deg,#7fd0df,#45a9bf)}body.lookH .hbar i.can{background:#2f8ea4}
+  body.lookH .hbar em{width:2px;margin-left:-1px;background:rgba(255,255,255,.95)}
+  body.lookH .hbar s{top:-4px;bottom:-4px;width:3px;border-radius:2px;background:var(--gr);box-shadow:0 0 0 2px rgba(255,255,255,.85)}
+  body.lookH .pbar i{border-radius:4px;background:linear-gradient(90deg,#7fd0df,#45a9bf)}body.lookH .pbar.en i{background:linear-gradient(90deg,#f7cf6b,#f0b03c)}
+  body.lookH .wchips{padding:8px 70px 0 12px}body.lookH .wchips span{color:var(--gm);font:500 11.5px/1.2 var(--ff);letter-spacing:.01em}
+  /* -- round buttons -- */
+  body.lookH #mute,body.lookH .mapround,body.lookH .mbtn,body.lookH #bMelon,body.lookH #bMap,body.lookH #sheet .x{padding:0;opacity:1;border-radius:50%}
+  body.lookH #mute{width:46px;height:46px;right:12px}body.lookH .mapround{width:46px;height:46px;right:66px}
+  body.lookH #mute svg.ic,body.lookH #xMap svg.ic{width:28px;height:28px}
+  body.lookH #bMap{width:62px;height:62px;min-width:62px;flex:none;display:flex;align-items:center;justify-content:center}body.lookH #bMap svg.ic{width:36px;height:36px}
+  body.lookH #bMelon{width:56px;height:56px;left:14px;bottom:44px}body.lookH #bMelon small{right:2px;bottom:-2px;min-width:18px;height:18px;border-radius:9px;background:var(--gi);color:#fff;font:600 11px/18px var(--ff);text-align:center}
+  body.lookH #bDrop{left:14px;bottom:114px;height:36px;padding:0 14px 0 8px;border-radius:18px;font:600 13px/1 var(--ff)}
+  body.lookH #bSling{right:38px;bottom:164px;width:64px;height:64px;border:0;background:#fff;color:var(--gi);box-shadow:0 0 0 3px var(--gr),0 10px 22px rgba(150,95,60,.28)}
+  body.lookH #bSling small{right:-2px;bottom:-2px;min-width:20px;height:20px;border-radius:10px;background:var(--gr);color:#fff;font:600 11.5px/20px var(--ff);text-align:center}
+  body.lookH #sheet .x,body.lookH .mbtn{width:44px;height:44px;font-size:0;line-height:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath d='M2 2l10 10M12 2L2 12' stroke='%232a2f4f' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");background-position:50% 50%;background-size:14px 14px;background-repeat:no-repeat}
+  /* -- buttons: one red pill for the thing to do, white pills for the rest -- */
+  body.lookH .btn{letter-spacing:0;font-family:var(--ff)}
+  body.lookH .btn:not(.primary),body.lookH .sh-in .btn:not(.primary),body.lookH #bFetch{background:#fff;color:var(--gi);border:0;border-radius:999px;box-shadow:var(--gs1);font-weight:600}
+  body.lookH .btn.primary{border:0;border-radius:999px;background:linear-gradient(180deg,#d6453a,#c93a30);color:#fff;box-shadow:0 12px 26px rgba(217,69,58,.34),inset 0 1px 0 rgba(255,255,255,.35);font:600 20px/1.15 var(--ff);padding:10px 20px;min-height:62px}
+  body.lookH .btn.primary:disabled{background:rgba(42,47,79,.13);color:rgba(42,47,79,.62);box-shadow:none;opacity:1}
+  body.lookH .brow{gap:12px;align-items:center}body.lookH .brow .btn small,body.lookH .btn.act small,body.lookH .btn.two small{font:400 12.5px/1.2 var(--ff);opacity:.96}
+  body.lookH .btn.two{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+  body.lookH #bbar{padding:0 14px 30px;gap:14px}
+  body.lookH .sh-in .btn.primary{font-size:18px;min-height:56px}body.lookH .sh-in .btn:not(.primary){min-height:48px}
+  /* -- Zuro talks from a glass bubble with his head in a white circle -- */
+  body.lookH .bubble{display:flex;gap:10px;align-items:center;border-radius:22px;padding:10px 14px 10px 10px;font-size:14px;line-height:1.35;max-width:324px}
+  body.lookH .zh{flex:none;width:40px;height:40px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center}body.lookH .zh svg.ic{width:34px;height:34px}body.lookH .zt svg.ic{width:16px;height:16px;vertical-align:-3px}
+  body.lookH #xact{left:84px;right:16px;bottom:44px;max-width:none;flex-direction:row;align-items:flex-end;justify-content:flex-end;gap:12px}
+  body.lookH #xact .bubble{flex:0 1 190px;min-width:0;margin-bottom:0;font-size:13.5px}
+  /* the action under the thumb: a white disc with the thing on it and what it does on a red label */
+  body.lookH #bAct{flex:none;width:104px;height:104px;border:0;background:#fff;color:var(--gi);box-shadow:0 12px 28px rgba(150,95,60,.26),0 0 0 6px rgba(255,255,255,.45);gap:2px;padding:4px}
+  body.lookH #bAct .ai svg.ic{width:48px;height:48px}
+  body.lookH #bAct small{font:600 12.5px/1.12 var(--ff);letter-spacing:0;text-transform:none;color:#fff;background:#cf3f34;border-radius:11px;padding:3px 9px 4px;max-width:86px}
+  body.lookH #bAct small svg.ic{width:12px;height:12px;vertical-align:-2px}
+  body.lookH #bAct:active{transform:scale(.95)}body.lookH #bAct:disabled{opacity:.6}
+  /* the joystick: a glass ring and a white knob (hJoySvg in lookh.js) */
+  body.lookH #joy{width:152px;height:152px;margin:-76px 0 0 -76px;border-radius:50%;background:rgba(255,255,255,.34);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  body.lookH #joy .jb{position:absolute;left:0;top:0}
+  body.lookH #joy i{width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:#fff;box-shadow:0 8px 18px rgba(150,95,60,.28),inset 0 -3px 0 rgba(42,47,79,.06)}
+  /* -- news: a glass card under the panel -- */
+  body.lookH #toast{left:12px;top:calc(var(--hudb,112px) + 12px);min-width:0;max-width:calc(100% - 140px);border-radius:22px;padding:11px 16px 11px 12px;transform:translate(0,-10px)}
+  body.lookH #toast.on{transform:none}
+  body.lookH #toast b{font:600 15px/1.2 var(--ff)}body.lookH #toast span{font-size:12.5px;line-height:1.3;opacity:1;color:var(--gm)}
+  /* -- pages: the picture across the top, the name over its lower edge, white cards below -- */
+  body.lookH .sh-in{background:#fff8f0;color:var(--gi);border:0;border-radius:30px 30px 0 0;box-shadow:0 -10px 30px rgba(150,95,60,.14)}
+  body.lookH #sheet.page .sh-in{background:var(--gpg);border-radius:0;box-shadow:none;padding:0 18px 40px}
+  body.lookH .sh-in svg.ic{filter:none}
+  body.lookH #sheet.page .x{top:14px;margin:14px -4px -58px 0;z-index:3}
+  body.lookH .hroom{position:relative;margin:0 -18px}
+  body.lookH .hroom img{display:block;width:100%;aspect-ratio:39/25;object-fit:cover;border:0;border-radius:0;background:var(--gpg)}
+  body.lookH .hroom::after{content:'';position:absolute;left:0;right:0;bottom:0;height:42%;background:linear-gradient(180deg,rgba(251,238,224,0),var(--gpg));pointer-events:none}
+  body.lookH .bhead{display:block;position:relative;margin:-40px 0 0}
+  body.lookH .bht{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px 12px}
+  body.lookH .sh-in h2{font:600 36px/1 var(--ff);letter-spacing:-.015em;text-shadow:none;margin:0!important;white-space:nowrap}
+  body.lookH .blv{display:contents}
+  body.lookH .kick,body.lookH .lv{font:500 13px/1.2 var(--ff);letter-spacing:.01em;text-transform:none;color:var(--gm);margin:0}body.lookH .kick::first-letter{text-transform:uppercase}
+  body.lookH .pips{gap:4px}body.lookH .pips i{width:14px;height:6px;border:0;border-radius:3px;background:rgba(42,47,79,.13);box-shadow:none}body.lookH .pips i.on{background:var(--gi);box-shadow:none}
+  body.lookH .bht .pips{order:3;flex:0 0 100%;display:flex}body.lookH .bht .pips i,body.lookH .grl .pips i{flex:1;width:auto}body.lookH .grl .pips{flex:1;display:flex}
+  body.lookH .bdesc{font-size:14px;line-height:1.5;color:var(--gm);margin:12px 0 14px}body.lookH .sh-in p{line-height:1.5}
+  body.lookH .stat{background:#fff;border:0;border-radius:22px;box-shadow:var(--gs1);padding:12px 16px;margin:10px 0 14px}body.lookH .stat small{color:var(--gm)}body.lookH .stat>span svg{width:32px;height:32px}
+  body.lookH .sect{font:600 13px/1.2 var(--ff);letter-spacing:.02em;text-transform:none;color:var(--gm);margin:22px 2px 10px;text-decoration:none}
+  body.lookH .eff,body.lookH .detail .eff,body.lookH .upc .eff{background:none;border:0;border-radius:0;padding:0;margin:8px 0;font:400 13.5px/1.42 var(--ff)}
+  body.lookH .eff .lbl{font:500 12px/1.42 var(--ff);letter-spacing:.02em;text-transform:none;color:var(--gm);margin-right:8px}body.lookH .eff .lbl::first-letter{text-transform:uppercase}
+  body.lookH .costs{gap:6px;margin:10px 0 12px}
+  body.lookH .cc{background:rgba(42,47,79,.06);border:0;border-radius:999px;padding:4px 10px 4px 6px;gap:4px;font:600 14.5px/1 var(--ff)}body.lookH .cc svg{width:20px;height:20px}
+  body.lookH .cc.no{color:var(--grd);background:rgba(217,69,58,.1)}
+  body.lookH .upc{background:#fff;border:0;border-radius:24px;padding:14px 16px 16px;box-shadow:var(--gs2)}body.lookH .upc .eff{margin:0 0 4px}
+  body.lookH .upc.grn{background:#f2f7e8}.grl{display:flex;align-items:center;gap:12px;margin-bottom:8px}.grl span{font-weight:500;font-size:13px;color:var(--wd-dim);white-space:nowrap}.grn-note{margin:10px 0 0;font-size:12.5px;line-height:1.4;color:var(--wd-dim)}
+  body.lookH .msg{font-family:var(--ff);font-style:normal;background:#fff;color:var(--gi);border:0;border-radius:22px;box-shadow:var(--gs1);padding:14px 16px}
+  body.lookH .crow{border-top:1px solid var(--gh)}body.lookH .cost .no{color:var(--grd)}
+  /* the workshop: what you picked as one big card, everything else as a list in two columns */
+  body.lookH .feat{display:flex;flex-wrap:wrap;gap:12px;background:#fff;border-radius:24px;box-shadow:var(--gs2);padding:14px 16px 14px 12px}
+  body.lookH .ii.big{flex:none;width:76px;height:76px;border:0;border-radius:20px;background:#fdf3e8;box-shadow:none}body.lookH .ii.big svg{width:62px;height:62px}
+  body.lookH .fx{flex:1;min-width:0;display:flex;flex-direction:column;gap:9px}
+  body.lookH .fh{display:flex;align-items:center;justify-content:space-between;gap:8px}body.lookH .fh h3{font:600 21px/1 var(--ff);margin:0}
+  body.lookH .lvp{flex:none;font:600 12.5px/1 var(--ff);color:var(--grd);background:rgba(217,69,58,.1);border-radius:999px;padding:5px 10px;white-space:nowrap}body.lookH .lvp.max{color:var(--gi);background:rgba(42,47,79,.07)}
+  body.lookH .feat .eff{display:flex;gap:8px;margin:0;line-height:1.38}body.lookH .feat .eff .lbl{flex:none;width:32px;margin:0;padding-top:1px}
+  body.lookH .feat .costs{margin:1px 0 0}body.lookH .feat>.btn{flex:0 0 100%;margin-top:2px}body.lookH .fx{flex:1 1 0}
+  body.lookH .glist{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+  body.lookH .gl{height:48px;border:0;border-radius:16px;background:#fff;box-shadow:var(--gs1);padding:0 12px 0 8px;display:flex;align-items:center;gap:8px;font:inherit;color:var(--gi);text-align:left;cursor:pointer}
+  body.lookH .gl>svg.ic{width:32px;height:32px}body.lookH .gl .rb svg.ic{width:17px;height:17px;vertical-align:-4px}body.lookH .gl .in{flex:1;font:500 14px/1 var(--ff);white-space:nowrap}body.lookH .gl .rb{font:600 11.5px/1 var(--ff);color:var(--gm)}
+  body.lookH .gl.t0>svg.ic{opacity:.5;filter:grayscale(.7)}body.lookH .gl:active{transform:scale(.97)}
+  /* home: the two of you */
+  body.lookH .portraits{gap:12px;margin:14px 0 16px}body.lookH .portraits img{border:0;border-radius:24px;background:#fff;box-shadow:var(--gs2)}
+  body.lookH .portraits figcaption{font:500 13px/1.2 var(--ff);opacity:1;color:var(--gm);margin-top:8px}
+  body.lookH .facts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px}
+  body.lookH .fact{background:#fff;border-radius:18px;box-shadow:var(--gs1);padding:11px 14px;display:flex;flex-direction:column;gap:4px}body.lookH .fact small{font:500 12px/1.2 var(--ff);color:var(--gm)}body.lookH .fact b{font:600 17px/1.15 var(--ff)}
+  body.lookH .fact.wide{grid-column:1/-1}body.lookH .fact b svg.ic{width:22px;height:22px;vertical-align:-5px}
+  /* -- coming home -- */
+  body.lookH .card{margin:0 12px 26px;padding:22px 20px 20px;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:var(--gi);border:1px solid rgba(255,255,255,.8);border-radius:30px;box-shadow:0 14px 34px rgba(150,95,60,.2)}
+  body.lookH .card h3{display:inline-block;font:600 12.5px/1 var(--ff);letter-spacing:.01em;text-transform:none;color:var(--grd);background:rgba(217,69,58,.1);border-radius:999px;padding:5px 11px;opacity:1}
+  body.lookH .card .big{font:600 26px/1.15 var(--ff);text-shadow:none;margin:10px 0 6px}body.lookH .card .gain{font:600 20px/1.3 var(--ff)}body.lookH .card .info{opacity:1;color:var(--gm)}body.lookH .card .lost{color:var(--grd)}
+  body.lookH .card .btn.primary{margin-top:8px;width:100%}
+  /* -- the map -- */
+  body.lookH #mapv{background:rgba(251,238,224,.97)}body.lookH #mapc{border:0;border-radius:28px;box-shadow:0 10px 28px rgba(150,95,60,.16)}
+  body.lookH .mtop b{font:600 26px/1 var(--ff);letter-spacing:-.01em;color:var(--gi);text-shadow:none}
+  body.lookH .mfil{top:82px}body.lookH .mfil button{font:600 13px/1 var(--ff);padding:11px 14px;background:rgba(255,255,255,.92);color:var(--gi);border:0;border-radius:999px;box-shadow:var(--gs1)}
+  body.lookH .mfil button.on{background:var(--gi);color:#fff}
+  body.lookH #mcard{background:rgba(255,255,255,.94);color:var(--gi);border:0;border-radius:26px;padding:16px 16px 16px;box-shadow:0 14px 34px rgba(150,95,60,.22)}
+  body.lookH #mcard b{font:600 19px/1.2 var(--ff)}body.lookH #mcard p{opacity:1;color:var(--gm)}body.lookH #mcard .btn{margin-top:8px}body.lookH #mcard .btn.primary{min-height:54px;font-size:18px}
+  /* -- title and the page around the game -- */
+  body.lookH #title{color:var(--gi)}
+  body.lookH .wordmark i{box-shadow:none}
+  body.lookH .tag{font-weight:600;letter-spacing:.22em;opacity:1;color:var(--gm)}
+  body.lookH .story,body.lookH .side .tagline{font-family:var(--ff);font-style:normal;font-weight:400;opacity:1;color:var(--gm)}
+  body.lookH .tbtns{gap:12px}body.lookH .tbtns .lab{font:500 12.5px/1.2 var(--ff);letter-spacing:.01em;text-transform:none;opacity:1;color:var(--gm)}
+  body.lookH .tbtns input{font:600 18px/1.2 var(--ff);padding:13px 16px;border:0;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:var(--gs1);color:var(--gi)}
+  body.lookH .tbtns .btn.primary{border:0;color:#fff;background:linear-gradient(180deg,#d6453a,#c93a30);box-shadow:0 12px 26px rgba(217,69,58,.34),inset 0 1px 0 rgba(255,255,255,.35);font-size:19px;letter-spacing:0}
+  body.lookH .small{opacity:1;color:var(--gm)}body.lookH .small a{color:var(--gi)}
+  body.lookH #decorBar{background:rgba(255,255,255,.94);border-top:0;border-radius:26px 26px 0 0;box-shadow:0 -10px 30px rgba(150,95,60,.14)}
+  body.lookH .chip{border:0;background:#fff;color:var(--gi);box-shadow:var(--gs1)}body.lookH .chip.sel{box-shadow:0 0 0 2px var(--gr)}
+  /* icons of 26 px and more take the large picture */
+  .zh svg .hl,#mute svg .hl,.wwater .wic svg .hl,.pv .wic svg .hl,.gl>svg .hl,.fact b svg .hl{display:inline}.zh svg .hs,#mute svg .hs,.wwater .wic svg .hs,.pv .wic svg .hs,.gl>svg .hs,.fact b svg .hs{display:none}
+  /* -- desktop: the game stands in a glass frame on flat dunes, the wordmark on one side -- */
+  body.lookH.framed #stage{border-radius:40px;box-shadow:0 0 0 10px rgba(255,255,255,.55),0 0 0 11px rgba(255,255,255,.9),0 44px 90px -34px rgba(150,95,60,.55)}
+  body.lookH .side .kick{font:600 11.5px/1.2 var(--ff);letter-spacing:.24em;color:var(--gm);opacity:1}
+  body.lookH .side .fine{opacity:1;color:var(--gm);letter-spacing:.02em}
+  body.lookH .side .qr svg{border-radius:14px;box-shadow:0 0 0 7px #fff,0 12px 26px rgba(150,95,60,.2);margin:7px}
+  body.lookH .side .qr div{opacity:1;color:var(--gm)}body.lookH .side .qr div b{font:600 16px/1.3 var(--ff);font-style:normal;color:var(--gi)}

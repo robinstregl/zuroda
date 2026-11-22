@@ -1,6 +1,21 @@
 {
-  "root": "1.0",
+  "root": "2.9",
   "versions": [
+    {
+      "v": "2.9",
+      "date": "22. 11. 2026",
+      "title": "Nové UI: Sklo",
+      "max": true,
+      "notes": [
+        "Ovládací prvky jsou celé nové, podle návrhu A, který sis vybral: mléčné sklo nad hrou, bílé oblé karty, jedno čisté písmo (Outfit), tmavě modrá ze Zurova průzoru a jeho červená na hlavním tlačítku. Ručně psaný zápisník je pryč.",
+        "Na výpravě je voda první a největší číslo, s tenkým ukazatelem a červenou značkou, odkud už je čas se vrátit. Akce pod palcem je bílý kotouč s obrázkem věci a červeným popiskem, joystick skleněný kruh.",
+        "Stránka budovy má obrázek přes celou šířku a název přes jeho spodní okraj. V dílně je vybraná věc velká karta nahoře a ostatní jsou seznam ve dvou sloupcích (rozložení z návrhu C v grafice A).",
+        "Home ukazuje vás dva a přehled údajů v kartičkách místo odstavce textu.",
+        "Mapa je čistší: bez šrafovaného papíru, s tmavě modrými popisky.",
+        "Stránka kolem hry na počítači ladí: ploché duny, bledé slunce a hra ve skleněném rámečku. Stejný styl mají i stránky verzí a vzhledů.",
+        "Tahle verze běží i na hlavní adrese zuroda.com."
+      ]
+    },
     {
       "v": "2.8",
       "date": "22. 11. 2026",

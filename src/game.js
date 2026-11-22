@@ -257,8 +257,8 @@ const STYLES={
 // one art style for the whole game: Brawl-like (Robin, 19. 11.)
 const STN=(window.FORCE_STYLE)||(new URLSearchParams(location.search).get('s'))||'sun';const ST=STYLES[STN]||STYLES.sun;// look H is the game (Robin 22. 11.: "dej vše na hlavní doménu"); the old look: ?s=brawl
 if(/notex/.test(location.hash))ST.tex=false;
-if(ST.sunink){document.body.classList.add('lookH');// the UI of look H is the wanderer's notebook (src/notebook.css): handwriting on canvas too, and the pencil joystick
-  FF='"Shantell Sans", "Comic Sans MS", "Chalkboard SE", cursive';try{document.fonts.load('600 13px "Shantell Sans"');document.fonts.load('700 13px "Shantell Sans"');}catch(_){}
+if(ST.sunink){document.body.classList.add('lookH');// the UI of look H is "Sklo" (src/glass.css): Outfit on canvas too, and the glass joystick
+  FF='Outfit, "Century Gothic", system-ui, sans-serif';try{document.fonts.load('500 13px Outfit');document.fonts.load('600 13px Outfit');}catch(_){}
   const J=document.getElementById('joy');if(J)J.innerHTML=hJoySvg();}// compare: open with #notex for the untextured look
 
 
@@ -1697,23 +1697,23 @@ function canPay(n){return SV.scrap>=(n.s||0)&&SV.cores>=(n.c||0)&&(SV.chips||0)>
 const pay=n=>{SV.scrap-=n.s||0;SV.cores-=n.c||0;SV.chips=(SV.chips||0)-(n.x||0);SV.energy-=n.en||0;};
 const BOTTLE_COST=()=>({s:bottleCost(),c:0,en:0}),SMELT_COST={s:30,c:0,en:5};
 function workshopGrid(){
-  const sel=B.wsel||'kladivo';let h='<div class="sect">Gear</div><div class="igrid">';
-  for(const ck in CRAFT){const c=CRAFT[ck],gl=gearLv(ck);
-    h+=`<button class="it t${tierOf(gl)}${sel===ck?' sel':''}" data-act="pick" data-k="${ck}"><span class="ii t${tierOf(gl)}">{${c.icon}}</span>${gl?`<span class="rb">${ROMAN[gl]}</span>`:''}<span class="in">${c.name}</span>${pips(gl,c.lv.length)}</button>`;}
-  h+=`<button class="it t1${sel==='bottle'?' sel':''}" data-act="pick" data-k="bottle"><span class="ii t1">{bottle}</span><span class="rb">${SV.bottles||0}/${bottleMax()}</span><span class="in">Water bottle</span></button>`;
-  h+=`<button class="it t0 rec${sel==='smelt'?' sel':''}" data-act="pick" data-k="smelt"><span class="ii t3">{core}</span><span class="in">Melt scrap</span></button></div>`;
-  // detail of the selected tile
-  let d='';
+  const sel=B.wsel||'kladivo';
+  // the picked thing: big picture, what it does now and after, what it costs
+  let d='',btn='';const head=(ic,t,name,pill,max)=>`<span class="ii big t${t}">{${ic}}</span><div class="fx"><div class="fh"><h3>${name}</h3><span class="lvp${max?' max':''}">${pill}</span></div>`;
   if(CRAFT[sel]){const c=CRAFT[sel],gl=gearLv(sel),nx=c.lv[gl],multi=c.lv.length>1;
-    d+=`<div class="dt"><span class="ii big t${tierOf(gl)}">{${c.icon}}</span><div><div class="tier t${tierOf(gl)}">${gl?TIER[tierOf(gl)]+(multi?' · '+ROMAN[gl]:''):TIER[0]}</div><h3>${c.name}</h3></div></div>`;
-    if(gl)d+=`<div class="eff"><span class="lbl">now</span>${c.lv[gl-1].eff}</div>`;
-    if(nx){d+=`<div class="eff next"><span class="lbl">${gl?'level '+ROMAN[gl+1]:'craft'}</span>${nx.eff}</div><div class="costs">${costChips(nx)}</div><button class="btn primary full" data-act="craft" data-k="${sel}" ${canPay(nx)?'':'disabled'}>${gl?'Upgrade to '+ROMAN[gl+1]:'Craft'}</button>`;}
-    else d+=`<div class="eff"><span class="lbl">max</span>Fully upgraded {check}</div>`;}
+    d+=head(c.icon,tierOf(gl),c.name,!gl?TIER[0]:nx&&multi?ROMAN[gl]+' → '+ROMAN[gl+1]:TIER[tierOf(gl)]+(multi?' · '+ROMAN[gl]:''),!nx);
+    if(gl)d+=`<div class="eff"><span class="lbl">now</span><span>${c.lv[gl-1].eff}</span></div>`;
+    if(nx){d+=`<div class="eff next"><span class="lbl">${gl?'next':'craft'}</span><span>${nx.eff}</span></div><div class="costs">${costChips(nx)}</div>`;btn=`<button class="btn primary full" data-act="craft" data-k="${sel}" ${canPay(nx)?'':'disabled'}>${gl?'Upgrade to '+ROMAN[gl+1]:'Craft'}</button>`;}
+    else d+=`<div class="eff"><span class="lbl">max</span><span>Fully upgraded {check}</span></div>`;}
   else if(sel==='bottle'){const n=BOTTLE_COST(),full=(SV.bottles||0)>=bottleMax();
-    d+=`<div class="dt"><span class="ii big t1">{bottle}</span><div><div class="tier t1">${SV.bottles||0} / ${bottleMax()} carried</div><h3>Water bottle</h3></div></div><div class="eff">0.5 L each. Filled at the well before every trip – drink it out there whenever you need. A bigger backpack carries more.</div>`;
-    d+=full?`<div class="eff"><span class="lbl">full</span>Upgrade the backpack to carry more.</div>`:`<div class="costs">${costChips(n)}</div><button class="btn primary full" data-act="bottle" ${canPay(n)?'':'disabled'}>Make a bottle</button>`;}
-  else{const n=SMELT_COST;d+=`<div class="dt"><span class="ii big t3">{core}</span><div><div class="tier t3">Recipe</div><h3>Melt down scrap</h3></div></div><div class="eff">Turns a pile of scrap into one gold scrap. Expensive, but certain.</div><div class="costs">${costChips(n)}</div><button class="btn primary full" data-act="smelt" ${canPay(n)?'':'disabled'}>Melt</button>`;}
-  return h+`<div class="detail">${d}</div>`;}
+    d+=head('bottle',1,'Water bottle',(SV.bottles||0)+' / '+bottleMax()+' carried',full)+`<div class="eff"><span>0.5 L each. Filled at the well before every trip – drink it out there whenever you need. A bigger backpack carries more.</span></div>`;
+    if(full)d+=`<div class="eff"><span class="lbl">full</span><span>Upgrade the backpack to carry more.</span></div>`;else{d+=`<div class="costs">${costChips(n)}</div>`;btn=`<button class="btn primary full" data-act="bottle" ${canPay(n)?'':'disabled'}>Make a bottle</button>`;}}
+  else{const n=SMELT_COST;d+=head('core',3,'Melt scrap','Recipe',true)+`<div class="eff"><span>Turns a pile of scrap into one gold scrap. Expensive, but certain.</span></div><div class="costs">${costChips(n)}</div>`;btn=`<button class="btn primary full" data-act="smelt" ${canPay(n)?'':'disabled'}>Melt</button>`;}
+  let h=`<div class="feat">${d}</div>${btn}</div><div class="glist">`;// the button belongs to the card of the picked thing
+  const row=(k,ic,name,rb,t)=>k===sel?'':`<button class="gl t${t}" data-act="pick" data-k="${k}">{${ic}}<span class="in">${name}</span><span class="rb">${rb}</span></button>`;
+  for(const ck in CRAFT){const c=CRAFT[ck],gl=gearLv(ck);h+=row(ck,c.icon,c.name,gl?(c.lv.length>1?ROMAN[gl]:'{check}'):'',tierOf(gl));}
+  h+=row('bottle','bottle','Bottles',(SV.bottles||0)+'/'+bottleMax(),1)+row('smelt','core','Melt scrap','',1);
+  return h+'</div>';}
 function openBuilding(k,keepScroll){
   const b=BLD[k],lvl=SV.b[k],n=nextLv(k);
   let h=(ST.sunink?`<div class="hroom"><img src="${(k==='dilna'&&lvl>0?hRoom('work'):hScene(k,lvl))||''}" alt=""></div><div class="bhead">`:`<div class="bhead"><div class="bimg"><img src="${snapBld(k,lvl)}" alt=""></div>`)+(ST.sunink?`<div class="bht"><h2>${b.name}</h2><div class="blv"><div class="kick">${lvl===0?'ruin':'level '+lvl+' of '+b.lv.length}</div>${pips(lvl,b.lv.length)}</div></div></div>`:`<div class="bht"><div class="kick">${lvl===0?'ruin':'level '+lvl+' of '+b.lv.length}</div><h2>${b.name}</h2>${pips(lvl,b.lv.length)}</div></div>`)+`<p class="bdesc">${b.desc}</p>`;
@@ -1733,8 +1733,15 @@ function openBuilding(k,keepScroll){
   openSheet(h,true);B.sel=k;if(sc)sc.scrollTop=top;
 }
 function openHouse(){if(!PORTRAIT.m||!PORTRAIT.dog){try{refreshPortraits();}catch(e){}}
-  openSheet((ST.sunink?`<div class="hroom"><img src="${hRoom('home')||''}" alt=""></div>`:'')+`<div class="kick" style="margin-bottom:6px">your home</div><div class="portraits"><figure><img src="${PORTRAIT[SV.sex==='f'?'f':'m']||''}" alt=""><figcaption>${SV.name||'Wanderer'} · Lv ${heroLv()}</figcaption></figure><figure><img src="${PORTRAIT.dog||''}" alt=""><figcaption>Zuro · Lv ${dogLv()}</figcaption></figure></div><h2>Home</h2><div class="lv">Expeditions: ${SV.exp} · farthest: ${fmtM(SV.best)}</div><p>This is where you and Zuro live. Zuro always brings you back.</p>
-  <div class="eff"><b>${SV.name||'Wanderer'}</b> · level ${heroLv()}/30 &nbsp; · &nbsp; <b>Zuro</b> · level ${dogLv()}/15<br>Walked together: ${fmtMeters(SV.meters||0)} · Rescue keeps ${100-Math.round(rescueLoss()*100)} % of the load</div><div class="eff">Flask <b>${FLASK} L</b>${canteenCap()?' + canteen <b>'+canteenCap()+' L</b>':''} · Well <b>${Math.floor(SV.well)} / ${wellCap()} L</b> (+${wellRate()} L/min) · Backpack <b>${bagCap()}</b><br>Gear: ${Object.keys(SV.craft).filter(k=>CRAFT[k]&&gearLv(k)).map(k=>'{'+CRAFT[k].icon+'}'+(CRAFT[k].lv.length>1?' '+ROMAN[gearLv(k)]:'')).join(' &nbsp;')||'—'} · Camps found: ${CAMPS.filter(c=>SV.camps[c.id]).length} · Oasis: stage ${greenLv()} of 10<br>Bottles: {bottle} ${SV.bottles||0} / ${bottleMax()} (${BOTTLE} L each)</div>
+  const gear=Object.keys(SV.craft).filter(k=>CRAFT[k]&&gearLv(k)).map(k=>'{'+CRAFT[k].icon+'}'+(CRAFT[k].lv.length>1?' '+ROMAN[gearLv(k)]:'')).join(' &nbsp;')||'—';
+  const fact=(l,v,w)=>`<div class="fact${w?' wide':''}"><small>${l}</small><b>${v}</b></div>`;
+  openSheet((ST.sunink?`<div class="hroom"><img src="${hRoom('home')||''}" alt=""></div>`:'')+`<div class="bhead"><div class="bht"><h2>Home</h2><div class="kick">${SV.exp} expedition${SV.exp===1?'':'s'} · farthest ${fmtM(SV.best)}</div></div></div>
+  <p class="bdesc">This is where you and Zuro live. Zuro always brings you back.</p>
+  <div class="portraits"><figure><img src="${PORTRAIT[SV.sex==='f'?'f':'m']||''}" alt=""><figcaption>${SV.name||'Wanderer'} · level ${heroLv()} of 30</figcaption></figure><figure><img src="${PORTRAIT.dog||''}" alt=""><figcaption>Zuro · level ${dogLv()} of 15</figcaption></figure></div>
+  <div class="facts">${fact('Walked together',fmtMeters(SV.meters||0))}${fact('Rescue keeps',(100-Math.round(rescueLoss()*100))+' % of the load')}
+  ${fact('Water you carry',FLASK+' L'+(canteenCap()?' + '+canteenCap()+' L':''))}${fact('Bottles','{bottle} '+(SV.bottles||0)+' / '+bottleMax())}
+  ${fact('Well',Math.floor(SV.well)+' / '+wellCap()+' L')}${fact('Backpack',bagCap())}
+  ${fact('Gear',gear,1)}${fact('Camps',CAMPS.filter(c=>SV.camps[c.id]).length+' of '+CAMPS.length)}${fact('Oasis','stage '+greenLv()+' of 10')}</div>
   <button class="btn full" data-act="reset" style="margin-top:8px">Start over completely</button>`,true);
 }
 function openSheet(h,page){if($('sheet').classList.contains('hidden'))sfx.ui('open');$('shBody').innerHTML=icx(h);$('sheet').classList.toggle('page',!!page);$('sheet').classList.remove('hidden');}
@@ -2313,8 +2320,8 @@ function drawExpOverlay(){
         ctx.font=`800 ${14*dpr}px ${FF}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=al>=1?'#ff5a3a':'#ffd36e';ctx.fillText(al>=1?'!':'?',p.x,p.y+1*dpr);ctx.textBaseline='alphabetic';}
       if(f.hp<f.hpMax){const w=7*dpr,gx=p.x-(f.hpMax*w)/2;for(let k=0;k<f.hpMax;k++){ctx.fillStyle=k<f.hp?'#ff6e5a':'rgba(29,26,24,0.6)';ctx.fillRect(gx+k*w+1,p.y-22*dpr,w-2,4*dpr);}}}},true);
     for(const b of SV.bags)edgeArrow(b.x,b.y,'lost bag','#8f5b36');
-    for(const cp of CAMPS){if(SV.camps[cp.id]||SV.drill[cp.id]||Math.abs(cp.x-X.x)>2200||Math.abs(cp.y-X.y)>2200)continue;const d=drillOf(cp);if(Math.hypot(d.x-X.x,d.y-X.y)<DRILL_SENSE){edgeArrow(d.x,d.y,'drill','#b8432e');
-      if(!X.drillWarn){X.drillWarn=1;sfx.bark&&sfx.bark();xText('Woof! I smell old iron – a well drill must be near…','#b8432e');}}}
+    for(const cp of CAMPS){if(SV.camps[cp.id]||SV.drill[cp.id]||Math.abs(cp.x-X.x)>2200||Math.abs(cp.y-X.y)>2200)continue;const d=drillOf(cp);if(Math.hypot(d.x-X.x,d.y-X.y)<DRILL_SENSE){edgeArrow(d.x,d.y,'drill','#c93a30');
+      if(!X.drillWarn){X.drillWarn=1;sfx.bark&&sfx.bark();xText('Woof! I smell old iron – a well drill must be near…','#c93a30');}}}
     if(SV.craft.kompas)edgeArrow(0,0,'home','#c8643c');
     if(SV.b.radio)edgeArrow(SIG.x,SIG.y,'signal','#7a5a8c');
     if(SV.craft.kompas){let best=null,bd=1400;forX(X.x-1400,X.y-1400,X.x+1400,X.y+1400,c=>{for(const w of c.waters){if(w.taken)continue;const d=Math.hypot(w.x-X.x,w.y-X.y);if(d<bd){bd=d;best=w;}}for(const k of SV.caches){const d=Math.hypot(k.x-X.x,k.y-X.y);if(d<bd){bd=d;best=k;}}},true);
@@ -2326,12 +2333,12 @@ function drawExpOverlay(){
   }
 }
 function drawWay(wh){const w=X.way,dx=w.x-X.x,dy=w.y-X.y,d=Math.hypot(dx,dy);
-  if(d<26){X.way=null;xText('Here we are!','#b8432e');sfx.ui('select');return;}
-  const INKC='#4a332b',RED='#b8432e',t=proj(w.x*S,H2(w.x,w.y)+0.1,w.y*S);
+  if(d<26){X.way=null;xText('Here we are!','#c93a30');sfx.ui('select');return;}
+  const INKC='#2a2f4f',RED='#c93a30',t=proj(w.x*S,H2(w.x,w.y)+0.1,w.y*S);
   if(t.on&&t.z<1&&t.x>0&&t.x<cw&&t.y>0&&t.y<ch){const r=8*dpr,pu=1+0.08*Math.sin(tNow*4);ctx.save();ctx.translate(t.x,t.y);ctx.strokeStyle=RED;ctx.lineCap='round';ctx.lineWidth=3.2*dpr;ctx.beginPath();ctx.moveTo(-r,-r*0.62);ctx.lineTo(r,r*0.62);ctx.moveTo(r,-r*0.62);ctx.lineTo(-r,r*0.62);ctx.stroke();
     ctx.setLineDash([4*dpr,6*dpr]);ctx.lineWidth=1.8*dpr;ctx.beginPath();ctx.ellipse(0,0,r*2.4*pu,r*1.5*pu,0,0,6.283);ctx.stroke();ctx.setLineDash([]);ctx.restore();}
   const a=Math.atan2(dy,dx),R=40+Math.sin(tNow*4)*3,q=proj(X.x*S,wh+0.3,X.y*S),p=proj((X.x+Math.cos(a)*R)*S,wh+0.3,(X.y+Math.sin(a)*R)*S),sa=Math.atan2(p.y-q.y,p.x-q.x),k=dpr*1.3;
-  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(sa);ctx.beginPath();ctx.moveTo(12*k,0);ctx.lineTo(-7*k,-8*k);ctx.lineTo(-3*k,0);ctx.lineTo(-7*k,8*k);ctx.closePath();ctx.fillStyle='#f2957f';ctx.fill();ctx.lineJoin='round';ctx.lineWidth=1.7*dpr;ctx.strokeStyle=INKC;ctx.stroke();ctx.restore();
+  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(sa);ctx.beginPath();ctx.moveTo(12*k,0);ctx.lineTo(-7*k,-8*k);ctx.lineTo(-3*k,0);ctx.lineTo(-7*k,8*k);ctx.closePath();ctx.lineJoin='round';ctx.lineWidth=3.4*dpr;ctx.strokeStyle='rgba(255,255,255,0.95)';ctx.stroke();ctx.fillStyle=RED;ctx.fill();ctx.restore();
   const lab=fmtM(d),lx=p.x+Math.cos(sa)*26*dpr,ly=p.y+Math.sin(sa)*22*dpr+4*dpr;ctx.font=`700 ${12.5*dpr}px ${FF}`;ctx.textAlign='center';ctx.lineJoin='round';ctx.lineWidth=4*dpr;ctx.strokeStyle='rgba(255,250,240,0.92)';ctx.strokeText(lab,lx,ly);ctx.fillStyle=INKC;ctx.fillText(lab,lx,ly);}
 function star4(sx,sy,s,col){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(sx,sy-s*1.6);ctx.lineTo(sx+s*0.35,sy-s*0.35);ctx.lineTo(sx+s*1.6,sy);ctx.lineTo(sx+s*0.35,sy+s*0.35);
   ctx.lineTo(sx,sy+s*1.6);ctx.lineTo(sx-s*0.35,sy+s*0.35);ctx.lineTo(sx-s*1.6,sy);ctx.lineTo(sx-s*0.35,sy-s*0.35);ctx.closePath();ctx.fill();}
@@ -2407,7 +2414,7 @@ function markSeen(x,y,r){if(!SV.seen)SV.seen={};const R=Math.ceil(r/MC)+1,ci=Mat
   for(let j=-R;j<=R;j++)for(let i=-R;i<=R;i++){const cx=(ci+i+0.5)*MC,cy=(cj+j+0.5)*MC;if(Math.hypot(cx-x,cy-y)<=r)SV.seen[(ci+i)+','+(cj+j)]=1;}}
 const isSeen=(x,y)=>!!(SV.seen&&SV.seen[Math.floor(x/MC)+','+Math.floor(y/MC)]);
 const MAPC=ST.sunink?['#fff8ee','#eaf2f3','#f9d6c9','#ece4dc']:['#a07c46','#7d9298','#a05a3e','#7a7266'];// watercolour per territory
-const MT=ST.sunink?{sea:'178,216,226',deep:'150,198,212',coast:'#5a9fb0',disc:'rgba(255,250,243,0.96)',wreck:'#d1962a',wreckNo:'rgba(90,61,52,0.4)',gold:'#e0554a',water:'#5a9fb0',roof:'#f2957f',wall:'#fffaf3',bag:'#d0483c',trip:'rgba(224,112,92,0.95)',dim:'rgba(90,61,52,0.6)',drone:'#c98a1e',droneF:'rgba(213,154,46,0.10)',sig:'#8f6cc0',cS:'#fffaf3'}
+const MT=ST.sunink?{sea:'178,216,226',deep:'150,198,212',coast:'#5a9fb0',disc:'rgba(255,255,255,0.97)',wreck:'#d1962a',wreckNo:'rgba(42,47,79,0.38)',gold:'#e0554a',water:'#5a9fb0',roof:'#f2957f',wall:'#fffaf3',bag:'#d0483c',trip:'rgba(224,112,92,0.95)',dim:'rgba(42,47,79,0.62)',drone:'#c98a1e',droneF:'rgba(213,154,46,0.10)',sig:'#8f6cc0',cS:'#fffaf3'}
   :{sea:'40,112,124',deep:'26,74,88',coast:'#8fe0ee',disc:'rgba(29,26,24,0.88)',wreck:'#ffd36e',wreckNo:'rgba(255,226,184,0.55)',gold:'#ff6e5a',water:'#8fe0ee',roof:'#c8643c',wall:'#ffe2b8',bag:'#b2402a',trip:'rgba(255,154,106,0.9)',dim:'rgba(255,226,184,0.7)',drone:'#ffd36e',droneF:'rgba(255,211,110,0.05)',sig:'#c9a7e8',cS:'#1d1a18'};
 const MV={open:false,mode:'base',cx:0,cy:0,sc:0.3,sel:null};
 let paperPat=null;
@@ -2417,13 +2424,11 @@ function paperPattern(g){if(paperPat)return paperPat;const c=document.createElem
   paperPat=g.createPattern(c,'repeat');return paperPat;}
 function capsulePath(g,a,b,c2,d,r){const ang=Math.atan2(d-b,c2-a);g.beginPath();g.arc(a,b,r,ang+Math.PI/2,ang+Math.PI*1.5);g.arc(c2,d,r,ang-Math.PI/2,ang+Math.PI/2);g.closePath();}
 function mixBiome(x,y){const cs=coastSD(x,y).d;if(cs<0)return cs>-150?MT.sea:MT.deep;const w=biomeW(x,y);let r=0,gg=0,b=0;MAPC.forEach((h,i)=>{const c=C(h);r+=c.r*w[i];gg+=c.g*w[i];b+=c.b*w[i];});return `${Math.round(r*255)},${Math.round(gg*255)},${Math.round(b*255)}`;}
-const MINK=ST.sunink?'#4a3530':'#ffe2b8';
+const MINK=ST.sunink?'#2a2f4f':'#ffe2b8',MRING=ST.sunink?'rgba(42,47,79,0.3)':'#ffe2b8';
 function drawMap(){const cv=$('mapc'),g=cv.getContext('2d'),dpr=Math.min(2,window.devicePixelRatio||1);const W=cv.clientWidth*dpr,H=cv.clientHeight*dpr;if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}
   const sc=MV.sc*dpr,toS=(x,y)=>[W/2+(x-MV.cx)*sc,H/2+(y-MV.cy)*sc];MV.hits=[];
-  g.fillStyle=ST.sunink?'#f1dcc9':'#1d1a18';g.fillRect(0,0,W,H);
-  if(ST.sunink){// unexplored land: fine diagonal hatching on the paper
-    g.strokeStyle='rgba(90,61,52,0.085)';g.lineWidth=1*dpr;g.beginPath();const st=7*dpr,off=((MV.cx+MV.cy)*sc)%st;for(let x=-H-off;x<W;x+=st){g.moveTo(x,H);g.lineTo(x+H,0);}g.stroke();}
-  {const step=MC*sc*2;if(step>14){g.strokeStyle=ST.sunink?'rgba(74,53,48,0.07)':'rgba(255,226,184,0.05)';g.lineWidth=1;const ox=(W/2-MV.cx*sc)%step,oy=(H/2-MV.cy*sc)%step;g.beginPath();for(let x=ox;x<W;x+=step){g.moveTo(x,0);g.lineTo(x,H);}for(let y=oy;y<H;y+=step){g.moveTo(0,y);g.lineTo(W,y);}g.stroke();}}
+  g.fillStyle=ST.sunink?'#f1e0d1':'#1d1a18';g.fillRect(0,0,W,H);// unexplored land is one flat, slightly darker tone (the hatched paper went with the notebook)
+  {const step=MC*sc*2;if(step>14){g.strokeStyle=ST.sunink?'rgba(42,47,79,0.05)':'rgba(255,226,184,0.05)';g.lineWidth=1;const ox=(W/2-MV.cx*sc)%step,oy=(H/2-MV.cy*sc)%step;g.beginPath();for(let x=ox;x<W;x+=step){g.moveTo(x,0);g.lineTo(x,H);}for(let y=oy;y<H;y+=step){g.moveTo(0,y);g.lineTo(W,y);}g.stroke();}}
   // fog of war: watercolour blobs on explored cells
   const x0=MV.cx-W/2/sc,x1=MV.cx+W/2/sc,y0=MV.cy-H/2/sc,y1=MV.cy+H/2/sc;
   {const i0=Math.floor(x0/MC)-2,i1=Math.floor(x1/MC)+2,j0=Math.floor(y0/MC)-2,j1=Math.floor(y1/MC)+2,w=i1-i0+1,h=j1-j0+1;
@@ -2438,7 +2443,7 @@ function drawMap(){const cv=$('mapc'),g=cv.getContext('2d'),dpr=Math.min(2,windo
   const FULL=MV.mode==='view'||MV.mode==='exp',F=SV.mapF||{water:1},NEAR=sc>=0.09*dpr;
   // discoveries: only on the explorer's map, filtered (Robin 20. 11.: too many dots) – wrecks and gold only when zoomed in
   let budget={n:6},pend=false;
-  if(FULL){const ico=(n,sx,sy,r,ring)=>{g.fillStyle=MT.disc;g.beginPath();g.arc(sx,sy,r,0,6.283);g.fill();g.lineWidth=1.6*dpr;g.strokeStyle=ring||MINK;g.stroke();const im=ICIMG[n],iz=r*1.45;if(im&&im.complete)g.drawImage(im,sx-iz/2,sy-iz/2,iz,iz);};
+  if(FULL){const ico=(n,sx,sy,r,ring)=>{g.fillStyle=MT.disc;g.beginPath();g.arc(sx,sy,r,0,6.283);g.fill();g.lineWidth=(ring?1.8:1.2)*dpr;g.strokeStyle=ring||MRING;g.stroke();const im=ICIMG[n],iz=r*1.45;if(im&&im.complete)g.drawImage(im,sx-iz/2,sy-iz/2,iz,iz);};
    const R0=11*dpr,on=(sx,sy)=>sx>-20&&sx<W+20&&sy>-20&&sy<H+20;
    for(let cy=Math.floor(y0/CH)-1;cy<=Math.floor(y1/CH)+1;cy++)for(let cx=Math.floor(x0/CH)-1;cx<=Math.floor(x1/CH)+1;cx++){
      const ox=cx*CH,oy=cy*CH;if(!(isSeen(ox+60,oy+60)||isSeen(ox+180,oy+60)||isSeen(ox+60,oy+180)||isSeen(ox+180,oy+180)))continue;const c=mapChunk(cx,cy,budget);if(!c){pend=true;continue;}
@@ -2449,12 +2454,12 @@ function drawMap(){const cv=$('mapc'),g=cv.getContext('2d'),dpr=Math.min(2,windo
      }
    if(F.water)for(const k of (SV.caches||[])){const [sx,sy]=toS(k.x,k.y);ico('bottle',sx,sy,R0*0.9,MT.water);MV.hits.push({x:sx,y:sy,t:'poi',k:'cache',o:k});}
    // 2.5: a well drill you have seen but not taken yet
-   for(const cp of CAMPS){if(SV.camps[cp.id]||SV.drill[cp.id])continue;const d=drillOf(cp);if(!isSeen(d.x,d.y))continue;const [sx,sy]=toS(d.x,d.y);if(!on(sx,sy))continue;if(sc>=0.05*dpr)ico('wrench',sx,sy,R0,'#b8432e');else{g.fillStyle='#b8432e';g.beginPath();g.arc(sx,sy,3*dpr,0,6.283);g.fill();}MV.hits.push({x:sx,y:sy,t:'poi',k:'drill',o:d});}}
+   for(const cp of CAMPS){if(SV.camps[cp.id]||SV.drill[cp.id])continue;const d=drillOf(cp);if(!isSeen(d.x,d.y))continue;const [sx,sy]=toS(d.x,d.y);if(!on(sx,sy))continue;if(sc>=0.05*dpr)ico('wrench',sx,sy,R0,'#c93a30');else{g.fillStyle='#c93a30';g.beginPath();g.arc(sx,sy,3*dpr,0,6.283);g.fill();}MV.hits.push({x:sx,y:sy,t:'poi',k:'drill',o:d});}}
   if(pend&&MV.rd)setTimeout(MV.rd,16);
   // planned route (tap anywhere to check if your water reaches)
   if(FULL&&MV.plan){const P=MV.plan,[ax,ay]=toS(P.sx,P.sy),[bx,by]=toS(P.tx,P.ty),[hx,hy]=toS(0,0);g.setLineDash([7*dpr,5*dpr]);g.lineWidth=2.6*dpr;g.strokeStyle=P.col;g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();
     if(P.sx||P.sy){g.globalAlpha=0.55;g.beginPath();g.moveTo(bx,by);g.lineTo(hx,hy);g.stroke();g.globalAlpha=1;}g.setLineDash([]);g.fillStyle=P.col;g.beginPath();g.arc(bx,by,5*dpr,0,6.283);g.fill();}
-  if(FULL&&X&&scene==='exp'&&!X.end&&X.way){const [ax,ay]=toS(X.x,X.y),[bx,by]=toS(X.way.x,X.way.y),r=7*dpr;g.strokeStyle='#b8432e';g.setLineDash([2*dpr,6*dpr]);g.lineCap='round';g.lineWidth=2.4*dpr;g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();g.setLineDash([]);
+  if(FULL&&X&&scene==='exp'&&!X.end&&X.way){const [ax,ay]=toS(X.x,X.y),[bx,by]=toS(X.way.x,X.way.y),r=7*dpr;g.strokeStyle='#c93a30';g.setLineDash([2*dpr,6*dpr]);g.lineCap='round';g.lineWidth=2.4*dpr;g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();g.setLineDash([]);
     g.lineWidth=3.2*dpr;g.beginPath();g.moveTo(bx-r,by-r);g.lineTo(bx+r,by+r);g.moveTo(bx+r,by-r);g.lineTo(bx-r,by+r);g.stroke();g.lineCap='butt';MV.hits.push({x:bx,y:by,t:'way'});}
   // last trip (dashed ink)
   if(FULL&&SV.lastPath&&SV.lastPath.length>1){g.setLineDash([5*dpr,4*dpr]);g.lineWidth=1.8*dpr;g.strokeStyle=MT.trip;g.beginPath();SV.lastPath.forEach((p,i)=>{const [sx,sy]=toS(p[0],p[1]);i?g.lineTo(sx,sy):g.moveTo(sx,sy);});g.stroke();g.setLineDash([]);}
@@ -2488,7 +2493,7 @@ function drawMap(){const cv=$('mapc'),g=cv.getContext('2d'),dpr=Math.min(2,windo
    g.font=`600 ${11*dpr}px ${FF}`;g.textAlign='center';g.textBaseline='bottom';g.fillStyle=MINK;g.fillText('N',cx,cy-s*1.55);}
   // scale bar
   {let m=10;for(const v of [10,20,50,100,200,500,1000]){m=v;if(v/M_PER_U*MV.sc>=70)break;}const px=m/M_PER_U*sc,x=18*dpr,y=H-104*dpr;
-   g.strokeStyle=MINK;g.lineWidth=2*dpr;g.beginPath();g.moveTo(x,y-4*dpr);g.lineTo(x,y);g.lineTo(x+px,y);g.lineTo(x+px,y-4*dpr);g.stroke();g.font=`italic ${11*dpr}px ${FF}`;g.textAlign='left';g.textBaseline='bottom';g.fillStyle=MINK;g.fillText(fmtMeters(m),x,y-6*dpr);}
+   g.strokeStyle=MINK;g.lineWidth=2*dpr;g.beginPath();g.moveTo(x,y-4*dpr);g.lineTo(x,y);g.lineTo(x+px,y);g.lineTo(x+px,y-4*dpr);g.stroke();g.font=`${ST.sunink?'500':'italic'} ${11*dpr}px ${FF}`;g.textAlign='left';g.textBaseline='bottom';g.fillStyle=MINK;g.fillText(fmtMeters(m),x,y-6*dpr);}
   // worn paper edge
   const vg=g.createRadialGradient(W/2,H/2,Math.min(W,H)*0.35,W/2,H/2,Math.max(W,H)*0.75);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,ST.sunink?'rgba(150,96,70,0.2)':'rgba(0,0,0,0.45)');g.fillStyle=vg;g.fillRect(0,0,W,H);
 }
