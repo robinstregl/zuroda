@@ -2,6 +2,20 @@
   "root": "1.0",
   "versions": [
     {
+      "v": "2.8",
+      "date": "22. 11. 2026",
+      "title": "Dioráma, nový Zuro a červená čelenka",
+      "max": true,
+      "notes": [
+        "Hra teď vypadá jako vzhled 3 ze stránky vzhledů (Dioráma): bez obrysů a šrafování, s měkkým stínováním a rozmazanými okraji stínů. Původní tuš je pořád k vidění na adrese s ?look=0.",
+        "Zuro je postavený znovu, ze stejných zaoblených tvarů jako domy, vraky a roboti. Rozložení zůstalo: bílé tělo, červený hřbet, uši a tlapky, tmavě modrý průzor s očima a anténka. Starý model z Blenderu je ze hry pryč.",
+        "Poutníkova čelenka je červená jako Zuro a je vidět i zezadu, s uzlem a dvěma cípy. Dřív byla vzadu zapuštěná do vlasů.",
+        "Ikony (šrot, zlatá kola, čipy, výbava, hlavy poutníka a Zura) jsou nakreslené znovu bez tuše, aby ladily se hrou.",
+        "Stránka se načítá rychleji, má zhruba polovinu velikosti (1,1 MB místo 2,1 MB).",
+        "Ovládací prvky jsou zatím pořád zápisník s ručně psaným písmem. K novému vzhledu nesedí; návrhy čistého UI jsou připravené zvlášť a čekají na výběr."
+      ]
+    },
+    {
       "v": "2.7",
       "date": "22. 11. 2026",
       "title": "Dvacet vzhledů na zkoušku",

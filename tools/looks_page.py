@@ -61,15 +61,15 @@ header p{margin:0;font-size:14px;line-height:1.4;color:var(--ns)}
 <body>
 <main>
 <div class="top"><h1>Zuroda <small>dvacet vzhledů</small></h1><a href="../verze/">verze</a></div>
-<p class="lead">Všech dvacet je <b>tatáž hra</b>, jen s jinak nastavenými čísly: tuš, stíny, barvy, světlo a kamera. Modely, textury ani zápisník se nemění. Obrázky jsou přímo ze hry, vždy stejná vesnice a stejné místo v poušti; klepnutím se zvětší. Tlačítko <b>Zahrát si</b> otevře verzi %(ver)s v tom vzhledu ve zkušební hře se vším na max.</p>
+<p class="lead">Všech dvacet je <b>tatáž hra</b>, jen s jinak nastavenými čísly: tuš, stíny, barvy, světlo a kamera. Modely, textury ani zápisník se nemění. Obrázky jsou přímo ze hry, vždy stejná vesnice a stejné místo v poušti; klepnutím se zvětší. Od verze 2.8 hra běží ve vzhledu <b>3 · Dioráma</b>; ostatní tu zůstávají na porovnání. Tlačítko <b>Zahrát si</b> otevře verzi %(ver)s v tom vzhledu ve zkušební hře se vším na max.</p>
 <div class="grid">
 %(cards)s</div>
 <section class="work">
 <h2>Jak velká je to práce</h2>
 <ul>
 <li><b>Minuty:</b> udělat kterýkoli z těchto vzhledů výchozím, nebo smíchat dva dohromady (třeba dioráma s barevnými obrysy). Je to jen přepínač.</li>
-<li><b>Desítky minut:</b> přepéct ikony ve stejném stylu (dnes mají tušovou linku) a doladit barvy jednotlivých věcí.</li>
-<li><b>Hodiny:</b> UI. Zápisník je kreslený tuší; ke hře bez obrysů by sedělo čisté UI se světlými kartičkami a obyčejným písmem. To je nový styl pro všechny obrazovky.</li>
+<li><b>Desítky minut:</b> doladit barvy jednotlivých věcí. Ikony jsou od 2.8 přepečené bez tuše.</li>
+<li><b>Hodiny:</b> UI. Zápisník je ručně psaný a kreslený tužkou; k Dioramatu patří čisté UI. To je nový styl pro všechny obrazovky a teprve se vybírá.</li>
 <li><b>Dny:</b> jiné tvary modelů, například jednodušší postavička.</li>
 </ul>
 <p>Dioráma a Miniatura používají náročnější filtr stínů. Na skutečném telefonu zatím nezkoušeno.</p>

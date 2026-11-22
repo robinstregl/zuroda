@@ -1269,41 +1269,10 @@ function addHammer(par,p,r,sc){const h=cgrp(par,p,r);h.scale.setScalar(sc||1);mk
   mk(rbox(0.2,0.08,0.08,0.02),'#7d8590',h,{p:[0,0.14,0],ol:0.008});mk(rbox(0.05,0.085,0.085,0.015),'#5d6168',h,{p:[-0.11,0.14,0],ol:0.006});mk(cyl(0.03,0.03,0.05,10),'#4a3424',h,{p:[0,-0.27,0],ol:0.004});return h;}
 function makeHammer(){const g=grp();const h=addHammer(g,[0,0.06,0],[Math.PI/2,0,0.3],4);return g;}
 
-// ===================== WOLT (Blender model) =====================
-let WOLT=null;
-const ZURO_COL=[[/^(helmet_rear|ear_outer|chest_plate|stripe|boot_|pawb_|clamp)/,'#b8322b'],[/^ear_inner/,'#8a2420'],[/^(torso_rear|saddle|module$|module_cap|tail_stub)/,'#b8322b'],
-  [/^(torso_front|belly|helmet_front|thigh_|upper_|paw_|kcap_|yoke)/,'#ebe6dc'],[/^(muzzle)/,'#e9dcc2'],[/^visor/,'#1c2654'],[/^(module_screen|module_mark)/,'#b8322b']];
-function prepWolt(sc){const cache={};const ms=[];sc.traverse(o=>{if(o.isMesh)ms.push(o);});
-  ms.forEach(o=>{const src=o.material;const nm=src.name||'';
-    if(nm==='screen'){o.userData.screen=true;return;}
-    if(!cache[nm]){let m;
-      if(src.emissive&&src.emissive.getHex()&&src.emissiveIntensity>0){m=MAT({color:src.color.clone(),emissive:src.emissive.clone(),emissiveIntensity:0.9});m.userData.e0=0.9;EMIS.push(m);}
-      else m=rimify(MAT({color:src.color.clone()}));
-      cache[nm]=m;}
-    o.material=cache[nm];o.castShadow=true;o.receiveShadow=false;
-    {const hit=ZURO_COL.find(([re])=>re.test(o.name));if(hit){const k='z'+hit[1];cache[k]=cache[k]||rimify(MAT({color:C(hit[1])}));o.material=cache[k];}}
-    if(/^(tail_fluff|muzzle)$/.test(o.name))o.visible=false;// cleaner face: no fluffy beard (Robin 20. 11.)
-    if(ST.ol&&!/^(toe_|kcap_|slot_|antenna|hose_ring|neck_ring|bolt_|module_mark|jointcap)/.test(o.name)){const ol=new T.Mesh(o.geometry,OL(0.012));ol.castShadow=false;ol.receiveShadow=false;o.add(ol);}});
-  return sc;}
-(function loadWolt(){try{if(!window.WOLT_GLB||!T.GLTFLoader)return;const bin=Uint8Array.from(atob(window.WOLT_GLB),c=>c.charCodeAt(0));
-  new T.GLTFLoader().parse(bin.buffer,'',g=>{WOLT=prepWolt(g.scene);setTimeout(refreshPortraits,0);if(BS.heroG&&scene!=='exp')rebuildBaseChars();if(scene==='exp'&&X&&X.dog&&!X.end){const old=X.dog;X.dog=makeDog(dogGear());X.dog.root.rotation.order='YXZ';X.scene.remove(old.root);X.scene.add(X.dog.root);}},e=>console.warn('wolt glb',e));}catch(e){console.warn(e);}})();
-const WOLT_SCALE=1.28;
-function makeDogGLB(dgear){const D={};const root=new T.Group();D.root=root;const m=WOLT.clone(true);m.scale.setScalar(WOLT_SCALE*(ST.sunink?1.1:1));root.add(m);
-  const by=n=>m.getObjectByName(n);
-  D.body=by('body');D.neck=by('neck');D.head=by('head');D.tail=by('tail');
-  {const sn=new T.Mesh(rbox(0.3,0.17,0.2,0.07),rimify(MAT({color:C('#e9dcc2')})));sn.position.set(0,-0.005,0.205);sn.castShadow=true;D.head.add(sn);}
-  {const sp=new T.Mesh(new T.ConeGeometry(0.055,0.26,5),rimify(MAT({color:C('#b8322b')})));sp.position.set(0,0.13,0);sp.castShadow=true;D.tail.add(sp);m.traverse(o=>{if(o.name==='tail_glow'||(o.isSprite))o.visible=false;});}D.tail2=new T.Object3D();D.by=D.body.position.y;D.bs=0.5;D.tx0=0.7;
-  D.hip=[['hip_FL',0],['hip_FR',Math.PI],['hip_BL',Math.PI],['hip_BR',0]].map(([n,ph])=>({g:by(n),ph}));
-  D.knee=['knee_FL','knee_FR','knee_BL','knee_BR'].map(by);
-  D.ear=['ear_L','ear_R'].map(by);D.ear.forEach(e=>{e.userData.q0=e.quaternion.clone();});
-  D.faceMat=new T.MeshBasicMaterial({map:DF.idle,side:T.DoubleSide});m.traverse(o=>{if(o.isMesh&&o.userData.screen)o.material=D.faceMat;});
-  if(ST.chunky){D.head.scale.multiplyScalar(1.16);for(const k of D.knee)if(k)k.scale.multiplyScalar(1.06);blobShadow(root,0.75);}
-  // gear that changes the look
-  if(dgear.lamp){const l=cgrp(D.head,[0.0,0.37,0.03]);mk(cyl(0.05,0.045,0.06,14),'#4a3424',l,{r:[Math.PI/2,0,0]});mk(cyl(0.04,0.04,0.015,14),TM('#fff3c4',{emissive:'#ffe08a',emissiveIntensity:1.3}),l,{p:[0,0,0.035],r:[Math.PI/2,0,0],ol:0});}
-  if(dgear.module==='solar'){const sp=cgrp(D.body,[0,0.155,-0.15],[0,0,0]);mk(rbox(0.26,0.03,0.22,0.012),'#3d4f74',sp,{ol:0.008});for(let i=-1;i<=1;i++)mk(rbox(0.004,0.032,0.2,0.002),'#7f9ad0',sp,{p:[i*0.065,0.001,0],ol:0});}
-  if(dgear.bags){for(const s of [-1,1]){mk(rbox(0.08,0.15,0.22,0.035),LEATHER,D.body,{p:[s*0.19,-0.03,-0.1]});mk(rbox(0.085,0.045,0.225,0.02),'#7f4f2c',D.body,{p:[s*0.19,0.04,-0.1],ol:0.006});}}
-  return D;}
-function makeDog(dgear){if(WOLT)return makeDogGLB(dgear);
+// ===================== ZURO =====================
+// portraits used to wait for the old Blender dog to load; now they are made once everything else is set up
+setTimeout(()=>{try{refreshPortraits();}catch(e){console.warn('portraits',e);}},0);
+function makeDog(dgear){if(ST.sunink)return makeDogH(dgear);// 2.8: Zuro is built from our own shapes (makeDogH); the old Blender model is gone, the old look falls back to the first box dog below
   const D={};const root=cgrp();D.root=root;
   const body=cgrp(root,[0,0.66,0]);D.body=body;
   mk(rbox(0.56,0.46,0.98,0.2),CREAM,body);
@@ -1763,7 +1732,7 @@ function openBuilding(k,keepScroll){
   const sc=document.querySelector('#sheet .sh-in'),top=keepScroll&&sc?sc.scrollTop:0;
   openSheet(h,true);B.sel=k;if(sc)sc.scrollTop=top;
 }
-function openHouse(){
+function openHouse(){if(!PORTRAIT.m||!PORTRAIT.dog){try{refreshPortraits();}catch(e){}}
   openSheet((ST.sunink?`<div class="hroom"><img src="${hRoom('home')||''}" alt=""></div>`:'')+`<div class="kick" style="margin-bottom:6px">your home</div><div class="portraits"><figure><img src="${PORTRAIT[SV.sex==='f'?'f':'m']||''}" alt=""><figcaption>${SV.name||'Wanderer'} · Lv ${heroLv()}</figcaption></figure><figure><img src="${PORTRAIT.dog||''}" alt=""><figcaption>Zuro · Lv ${dogLv()}</figcaption></figure></div><h2>Home</h2><div class="lv">Expeditions: ${SV.exp} · farthest: ${fmtM(SV.best)}</div><p>This is where you and Zuro live. Zuro always brings you back.</p>
   <div class="eff"><b>${SV.name||'Wanderer'}</b> · level ${heroLv()}/30 &nbsp; · &nbsp; <b>Zuro</b> · level ${dogLv()}/15<br>Walked together: ${fmtMeters(SV.meters||0)} · Rescue keeps ${100-Math.round(rescueLoss()*100)} % of the load</div><div class="eff">Flask <b>${FLASK} L</b>${canteenCap()?' + canteen <b>'+canteenCap()+' L</b>':''} · Well <b>${Math.floor(SV.well)} / ${wellCap()} L</b> (+${wellRate()} L/min) · Backpack <b>${bagCap()}</b><br>Gear: ${Object.keys(SV.craft).filter(k=>CRAFT[k]&&gearLv(k)).map(k=>'{'+CRAFT[k].icon+'}'+(CRAFT[k].lv.length>1?' '+ROMAN[gearLv(k)]:'')).join(' &nbsp;')||'—'} · Camps found: ${CAMPS.filter(c=>SV.camps[c.id]).length} · Oasis: stage ${greenLv()} of 10<br>Bottles: {bottle} ${SV.bottles||0} / ${bottleMax()} (${BOTTLE} L each)</div>
   <button class="btn full" data-act="reset" style="margin-top:8px">Start over completely</button>`,true);
@@ -2654,8 +2623,8 @@ function snapChars(kind,w,h){if(ST.sunink)return hSnapChars(kind,w,h);try{const 
     const sc=new T.Scene();setupLights(sc);const keep=SV.sex;let cam;
     const hero=sx=>{SV.sex=sx;const H=makeHero(heroGear());SV.sex=keep;return H;};
     if(kind==='f'||kind==='m'){const H=hero(kind);H.root.rotation.y=0.38;sc.add(H.root);cam=new T.PerspectiveCamera(26,w/h,0.1,50);cam.position.set(0.9,1.95,4.6);cam.lookAt(0,1.5,0);}
-    else if(kind==='dog'){if(!WOLT)return null;const D=makeDog(dogGear());D.root.rotation.y=-0.5;sc.add(D.root);cam=new T.PerspectiveCamera(26,w/h,0.1,50);cam.position.set(0.6,1.3,4.0);cam.lookAt(0,0.62,0);}
-    else{if(!WOLT)return null;const b=hero('m'),D=makeDog(dogGear());b.root.position.set(-0.45,0,0);b.root.rotation.y=0.35;D.root.position.set(0.75,0,0.55);D.root.rotation.y=-0.35;sc.add(b.root,D.root);
+    else if(kind==='dog'){const D=makeDog(dogGear());D.root.rotation.y=-0.5;sc.add(D.root);cam=new T.PerspectiveCamera(26,w/h,0.1,50);cam.position.set(0.6,1.3,4.0);cam.lookAt(0,0.62,0);}
+    else{const b=hero('m'),D=makeDog(dogGear());b.root.position.set(-0.45,0,0);b.root.rotation.y=0.35;D.root.position.set(0.75,0,0.55);D.root.rotation.y=-0.35;sc.add(b.root,D.root);
       cam=new T.PerspectiveCamera(28,w/h,0.1,60);cam.position.set(0,1.6,7.6);cam.lookAt(0,1.05,0);}
     const fl=new T.Mesh(new T.CircleGeometry(3,32),new T.ShadowMaterial({opacity:0.28}));fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;sc.add(fl);
     r2.render(sc,cam);const url=r2.domElement.toDataURL('image/png');r2.dispose();r2.forceContextLoss&&r2.forceContextLoss();return url;}catch(e){return null;}}
@@ -2666,7 +2635,7 @@ window.__animSnap=(k,t,ry,sx,zm,gx)=>{try{const w=220,h=300,r2=new T.WebGLRender
   const keep=SV.sex;SV.sex=sx||'f';const H=makeHero(Object.assign(heroGear(),{tool:'hammer'},gx||{}));SV.sex=keep;H.root.rotation.y=ry||0;sc.add(H.root);if(H.sk){const P=new Float32Array(SK_NB*4+3);skSample(H.sk,skClip(k),t,P);skApply(H.sk,P);}else{const c=animClip(k);const P=new Float32Array(AF);sampleClip(c,t,P);applyPose(H,P);}if(k==='smash'||k==='fix')toolInHand(H,true);
   const cam=new T.PerspectiveCamera(30,w/h,0.1,50);if(zm){cam.position.set(0,2.0,2.3);cam.lookAt(0,1.62,0);}else{cam.position.set(0,1.6,5.2);cam.lookAt(0,1.0,0);}r2.render(sc,cam);const u=r2.domElement.toDataURL('image/png');r2.dispose();return u;}catch(e){return 'ERR '+e;}};
 SV.sex='m';
-if(ZVER||CHEAT||LOOKN){const t=document.querySelector('#title .tag');if(t)t.textContent='EARLY PROTOTYPE'+(ZVER?' · '+ZVER:'')+(CHEAT?' · '+CHEAT.toUpperCase():'')+(LOOKN?' · LOOK '+LOOKN:'');}
+if(ZVER||CHEAT||LOOKN!==LOOK_DEF){const t=document.querySelector('#title .tag');if(t)t.textContent='EARLY PROTOTYPE'+(ZVER?' · '+ZVER:'')+(CHEAT?' · '+CHEAT.toUpperCase():'')+(LOOKN!==LOOK_DEF?' · LOOK '+LOOKN:'');}
 if(ZVER){const f=document.querySelector('.side .fine');if(f)f.textContent='Early prototype '+ZVER+' · © 2026 Vabiko';}
 (function buildTitle(){const el=$('tbtns');el.innerHTML='';
   // one wanderer only (Robin 21. 11.); no pictures on the title – the live village is the picture (22. 11.)
@@ -2707,7 +2676,7 @@ function frame(nowT){
   requestAnimationFrame(frame);
 }
 window.__dbg={makeScrap,makeWreck,makeCrate,makeDrone,makeSeeker,makeGoldCog,makeBag,makeCamp,makeDeadTree,makeBoulder,makePuddle,makeCactus,makeBot,makeBuilding,makeRuin,makeChipDrop,makeCacheBottle,makeSaltCrystals,makeRubble,makeBrine,makeHero,makeDog,makePalm,makeHouse,heroGear,dogGear,makeLamp,makeBench,makeFlowers};
-window.__hicons=only=>ST.sunink?hIconAtlas(only).toDataURL('image/png'):null;window.__woltReady=()=>!!WOLT;
+window.__hicons=only=>ST.sunink?hIconAtlas(only).toDataURL('image/png'):null;window.__woltReady=()=>true;window.__zuroNew=1;window.__dogSnap=(ry,w,h)=>hSnap(w,h,sc=>{const D=makeDog({});D.root.rotation.y=ry;sc.add(D.root);return {c:new T.Vector3(0,0.78,0),half:1.15,az:0.25,el:0.3};});window.__heroSnap=(ry,w,h,el)=>hSnap(w,h,sc=>{const H=makeHero(heroGear());H.root.rotation.y=ry;sc.add(H.root);return {c:new T.Vector3(0,1.75,0),half:1.25,az:0.1,el:el||0.3};});
 window.__snd=()=>Object.keys(SBUF).length;window.__ps=(k)=>ps(k);window.__obst=(cx,cy)=>obstOf(cx,cy);window.__coast=(x,y)=>coastSD(x,y);window.__camps=()=>CAMPS;window.__drill=i=>drillOf(CAMPS[i]);window.__biome=(x,y)=>biomeAt(x,y);window.__markSeen=(x,y,r)=>markSeen(x,y,r);window.__MVhits=()=>(MV.hits||[]).map(h=>({x:h.x,y:h.y,t:h.t,k:h.k,id:h.cp&&h.cp.id}));window.__segPt=segPt;window.__BS=BS;window.__camT=camT;window.__house=()=>openHouse();window.__close=()=>closeSheet();window.__SV=()=>SV;window.__rebuild=()=>{for(const k in BLD)rebuildBuilding(k);};window.__X=()=>X;window.__go=()=>startExpedition();window.__open=k=>openBuilding(k);window.__fix=p=>fixDest(p);
 // balance sims (tools/sim_fast.py): the bot plays expeditions without drawing – whole minutes of play in a blink. A stuck bot gets a nudge sideways (counted).
 window.__simExp=(camp)=>{window.SIMBOT=1;const w0=SV.well;startExpedition(camp||null);if(!X||scene!=='exp'){window.SIMBOT=0;return null;}const fill=X.water,nb0=X.bottles,st=1/30,stk=[];let n=0,stuck=0,lx=X.x,ly=X.y,lt=0;

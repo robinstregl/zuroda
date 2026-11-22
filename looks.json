@@ -2,8 +2,8 @@
   "looks": [
     {
       "n": 0,
-      "name": "Dnešní vzhled",
-      "what": "Tak hra vypadá teď: hnědá tuš na hranách, dva tóny světla a šrafované stíny. Je tu pro srovnání.",
+      "name": "Tuš a šrafy",
+      "what": "Tak hra vypadala do verze 2.7: hnědá tuš na hranách, dva tóny světla a šrafované stíny. Je tu pro srovnání.",
       "tags": []
     },
     {
@@ -26,11 +26,12 @@
     {
       "n": 3,
       "name": "Dioráma",
-      "what": "Nejblíž obrázku, který jsi poslal: bez tuše, měkké stínování, rozmazané okraje stínů a teplejší stín.",
+      "what": "Od verze 2.8 výchozí vzhled hry: bez tuše, měkké stínování, rozmazané okraje stínů a teplejší stín.",
       "tags": [
         "obrysy",
         "stíny",
-        "barvy"
+        "barvy",
+        "výchozí"
       ]
     },
     {

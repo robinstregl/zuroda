@@ -9,7 +9,7 @@ set -e
 cd "$(dirname "$0")"
 CDN=https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js
 page() { # $1 three.js url, $2 output file, $3 version number ('' = none: the main page keeps the plain save)
-  { sed '/^\/\*@notebook\*\/$/r src/notebook.css' src/head.html; echo "<script src=\"$1\"></script>"; echo '<script>'; cat src/vendor/GLTFLoader.js; echo '</script><script>'; cat src/wolt_b64.js; echo '</script><script>'; cat src/icons.js; echo '</script><script>'; cat src/anims.js; echo '</script><script>'; cat src/nature.js; echo '</script><script>'; cat src/hero.js; echo '</script><script>'; sed "/^'use strict';\$/r src/lookh.js" src/game.js; echo '</script></body></html>'; } > "$2.tmp"
+  { sed '/^\/\*@notebook\*\/$/r src/notebook.css' src/head.html; echo "<script src=\"$1\"></script>"; echo '<script>'; cat src/icons.js; echo '</script><script>'; cat src/anims.js; echo '</script><script>'; cat src/nature.js; echo '</script><script>'; cat src/hero.js; echo '</script><script>'; sed "/^'use strict';\$/r src/lookh.js" src/game.js; echo '</script></body></html>'; } > "$2.tmp"
   if [ -n "$3" ]; then sed "0,/<head>/s//<head><script>window.ZVER=\"$3\"<\/script>/" "$2.tmp" > "$2"; rm "$2.tmp"; else mv "$2.tmp" "$2"; fi
   echo "built $2"
 }

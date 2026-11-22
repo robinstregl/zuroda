@@ -3,7 +3,7 @@ const ICO_O='#3a2a20';
 // look H: the icons are drawn in their own style (same rule as STN in game.js)
 const ICO_H=((window.FORCE_STYLE)||(new URLSearchParams(location.search).get('s'))||'sun')==='sun';
 // the baked sheet of look-H icons: cell sizes, grid and the order of the icons (the baker in lookh.js reads the same list)
-const HICON={L:160,S:64,cols:8,url:'img/hicons.png?v=1',names:['scrap','core','chip','energy','water','pack','hammer','canteen','boots','sling','compass','bottle','flowers','lamp','bench','palm',
+const HICON={L:160,S:64,cols:8,url:'img/hicons.png?v=2',names:['scrap','core','chip','energy','water','pack','hammer','canteen','boots','sling','compass','bottle','flowers','lamp','bench','palm',
   'sun','moon','dawn','dusk','hero','paw','levelup','check','close','wrench','signal','sound','mute','radio','chest','empty','cog','map','scroll','desert','home','drone']};
 const ICON_SRC=(()=>{
   const g=(inner,sw)=>`<g fill="none" stroke="${ICO_O}" stroke-width="${sw||3.2}" stroke-linejoin="round" stroke-linecap="round">${inner}</g>`;

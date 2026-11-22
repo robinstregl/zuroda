@@ -164,7 +164,9 @@ const LOOKS=[
   {tint:['#dcecff',0.6],sh:[0.42,0.47,0.62]},                                                                      // 17 cool morning
   {ink:0.7,haze:2.2,fogIn:0.36,wash:['#f6dcc6',0.12]},                                                             // 18 thick haze
   {sun:[-46,13,-5],tint:['#ffd9b0',0.55],sh:[0.56,0.40,0.52],sat:1.05}];                                           // 19 golden hour, long shadows
-const LOOKN=Math.max(0,Math.min(LOOKS.length-1,parseInt((location.search.match(/[?&]look=(\d+)/)||[])[1])||0));
+// 2.8 (Robin 22. 11.: "I like number three best – flip the game to it"): the diorama row is the game now; ?look=0 still shows the inked look it had before
+const LOOK_DEF=3,LOOKQ=(location.search.match(/[?&]look=(\d+)/)||[])[1];
+const LOOKN=LOOKQ===undefined?LOOK_DEF:Math.max(0,Math.min(LOOKS.length-1,parseInt(LOOKQ)||0));
 const LK=Object.assign({ink:1,inkW:1,inkCol:'#6f4a3e',inkMode:0,sens:1,hatch:1,dots:0,soft:0,blur:0,sh:[0.50,0.43,0.47],sat:1,con:1,lift:0,tint:['#ffffff',0],wash:['#ffffff',0],tilt:0,vig:0,grain:0,haze:1,fogIn:0.62,el:0,sun:null,gb:0.55},LOOKS[LOOKN]);
 const HINK={rt:null,w:0,h:0,sc:null,cam:null,mat:null,col:LK.inkCol,px:1.05,on:true};
 function inkInit(){if(HINK.sc)return;HINK.cam=new T.OrthographicCamera(-1,1,1,-1,0,1);HINK.sc=new T.Scene();
@@ -210,7 +212,7 @@ function inkRender(ren,scene,camera,st){st=st||HINK;inkInit();const _inkV=HINK.v
   // the wider the view, the smaller everything is on screen – the pen gets lighter so small things do not drown in ink
   U.uA.value=camera.isOrthographicCamera?0.92*Math.min(1,Math.max(0.5,Math.sqrt(13/((camera.right-camera.left)/camera.zoom)))):0.92;
   const fg=scene.fog;if(fg&&camera.isOrthographicCamera){U.uFog.value.set((fg.near-camera.near)/(camera.far-camera.near),(fg.far-camera.near)/(camera.far-camera.near),0.85);}else U.uFog.value.set(0,1,0);
-  if(st.icon)U.uA.value=0.95;else U.uA.value*=LK.ink;
+  if(st.icon)U.uA.value=0.95*LK.ink;else U.uA.value*=LK.ink;// icons follow the look too (2.8): no pen in the diorama
   ren.render(HINK.sc,HINK.cam);}
 
 // ===================================================================
@@ -274,7 +276,7 @@ function hIconDefs(){const q=hGeo(),P=HP,gold=hM('#f6c960'),green=hM('#8fca9f'),
   D.dusk=g=>{horizon(g,P.coral,0);for(const [x,y,d] of [[-0.42,0.36,0.11],[0.36,0.46,0.13],[0.02,0.52,0.09]])part(q.sph,lilac,x,y,0,d,d,d,g);};
   // ---- the two of you ----
   D.hero=g=>{const H=makeHero({head:null,eyes:null,neck:null,body:null,back:null,feet:null,hands:null,tool:null});H.root.rotation.y=0.35;g.add(H.root);return {c:new T.Vector3(0,2.14,0.1),half:0.95,az:0.2,el:0.22,sens:1};};
-  D.paw=g=>{if(!WOLT)return {c:new T.Vector3(0,0,0),half:1};const Dg=makeDog({});Dg.root.rotation.y=-0.3;g.add(Dg.root);return {c:new T.Vector3(-0.1,1.22,0.4),half:0.68,az:0.2,el:0.22,sens:1};};
+  D.paw=g=>{const Dg=makeDog({});Dg.root.rotation.y=-0.3;g.add(Dg.root);return {c:new T.Vector3(-0.1,1.22,0.4),half:0.68,az:0.2,el:0.22,sens:1};};
   // ---- signs ----
   D.levelup=g=>{face(gold,0,0,0,0.98,0.18,g);part(hExt([[0,0.3],[0.27,0.02],[0.1,0.02],[0.1,-0.28],[-0.1,-0.28],[-0.1,0.02],[-0.27,0.02]],0.07),paper,0,0,0.11,1,1,1,g);};
   D.check=g=>{face(P.sage,0,0,0,0.98,0.18,g);const a=part(rbox(0.34,0.12,0.07,0.03),paper,-0.155,-0.095,0.11,1,1,1,g);a.rotation.z=-0.84;const b=part(rbox(0.6,0.12,0.07,0.03),paper,0.1,0.005,0.11,1,1,1,g);b.rotation.z=0.854;};
@@ -333,8 +335,10 @@ function hIconAtlas(only){const names=HICON.names,L=HICON.L,S=HICON.S,cols=HICON
 // of the village awnings: a headband tied at the back (Robin chose it on 22. 11. over a scarf and a headwrap; it also shows from above).
 // The body keeps the skeleton and all animations; pockets, buckles and other tiny parts are left out (they only made noise).
 // ===================================================================
+// Zuro (2.8): one red for the dog and for the wanderer's headband, so the two belong together
+const ZR={white:'#fbf4ea',red:'#d9453a',redD:'#b9352d',visor:'#232c5c',muzzle:'#f3e3cb',nose:'#3d2c28',joint:'#5b6278'};
 const HH={skin:'#eec3a6',hair:'#51342b',hairHi:'#6a463a',shirt:'#fdf3e3',vest:'#6cb2ba',pants:'#73809b',wraps:'#f4e6d4',shoe:'#b08467',boot:'#b98a6b',
-  belt:'#93695a',scarf:'#f2957f',scarfD:'#e58470',wrap:'#fdf2e4',pack:'#e0b898',packD:'#c99b7a',glove:'#c99b7a',eye:'#3b2620'};
+  belt:'#93695a',scarf:ZR.red,scarfD:ZR.redD,wrap:'#fdf2e4',pack:'#e0b898',packD:'#c99b7a',glove:'#c99b7a',eye:'#3b2620'};
 const HFH={};
 // face: two tall dark eyes with a small light, short brows, a little mouth, soft cheeks – readable even when the head is 30 px wide
 function heroFaceH(expr){return faceTex((g,w,h)=>{const ex=[w*0.34,w*0.66],ey=h*0.52,ink=HH.eye;g.lineCap='round';g.lineJoin='round';
@@ -368,12 +372,33 @@ function buildHeadH(H,gear,head,neck){H.head=head;const R=HD_R,Y=HD_C;
     clump(HC,-0.07,0.27,0.19,0.25,0.105,0.15,0.25,0,-0.3);clump(HC,0.19,0.23,0.15,0.13,0.11,0.13,0.2,0,-0.5);clump(HC,-0.24,0.2,0.1,0.11,0.13,0.13,0,0,0.3);
     tuft(HC,0.04,0.38,-0.1,0.14,0.2,0.12,-0.45,0,-0.35);tuft(HC,-0.07,0.37,-0.16,0.13,0.16,0.11,-0.8,0,0.45);
   }
-  {// coral headband tied at the back
-    const b=mk(tor(0.338,0.05,8,40),HH.scarf,head,{p:[0,Y+0.12,-0.015],r:[Math.PI/2-0.16,0,0]});b.scale.set(1,1,1.25);
-    mk(sph(0.06,10,8),HH.scarfD,head,{p:[0.05,Y+0.07,-0.36]});
-    const t1=cgrp(head,[0.09,Y+0.06,-0.37],[0.75,0,-0.25]);mk(rbox(0.09,0.3,0.035,0.016),HH.scarf,t1,{p:[0,-0.14,0]});
-    const t2=cgrp(head,[0.0,Y+0.06,-0.38],[1.0,0,0.2]);mk(rbox(0.085,0.22,0.035,0.016),HH.scarfD,t2,{p:[0,-0.1,0]});}
+  {// headband (2.8): Zuro's red, worn over the hair so it shows all the way round (before, the back of it and the knot were sunk in the hair)
+    const pts=[];for(let i=0;i<20;i++){const a=i/20*Math.PI*2,c=Math.cos(a),sn=Math.sin(a),fr=Math.max(0,sn),bk=Math.max(0,-sn);
+      const rr=0.378-0.036*fr*fr+0.055*bk*bk;pts.push(new T.Vector3(c*rr,-0.02*bk,sn*rr-0.015));}// tight on the forehead, wide over the hair behind
+    const bg=G.hband||(G.hband=new T.TubeGeometry(new T.CatmullRomCurve3(pts,true),72,0.043,10,true));const bp=cgrp(head,[0,Y+0.115,0]);bp.scale.y=1.7;mk(bg,HH.scarf,bp);
+    mk(sph(0.075,14,10),HH.scarfD,head,{p:[0.03,Y+0.09,-0.5]});
+    const t1=cgrp(head,[0.08,Y+0.07,-0.52],[0.55,0,-0.38]);mk(rbox(0.105,0.36,0.04,0.018),HH.scarf,t1,{p:[0,-0.17,0]});
+    const t2=cgrp(head,[-0.03,Y+0.07,-0.53],[0.85,0,0.28]);mk(rbox(0.095,0.27,0.04,0.018),HH.scarfD,t2,{p:[0,-0.13,0]});}
 }
+// ---- Zuro (2.8, Robin 22. 11.: "I like how he looks, but you can feel the old 3D model behind him – build him again the way the other things here are built") ----
+// The same dog – white box head with a dark visor, red helmet and floppy ears, red back, chest and boots, a little aerial – made from about twenty
+// big rounded shapes of our own. Same joints as before (hips, knees, neck, head, tail, ears), so dogPose moves him without a change.
+function makeDogH(dgear){const D={};const root=cgrp();D.root=root;const m=cgrp(root);m.scale.setScalar(1.08);
+  const body=cgrp(m,[0,0.5,0]);D.body=body;D.by=0.5;
+  mk(rbox(0.5,0.4,0.76,0.19),ZR.white,body);mk(rbox(0.52,0.2,0.46,0.1),ZR.red,body,{p:[0,0.115,-0.13]});mk(rbox(0.3,0.24,0.1,0.05),ZR.red,body,{p:[0,-0.03,0.345]});
+  D.hip=[];D.knee=[];
+  for(const [x,z,ph] of [[-0.19,0.25,0],[0.19,0.25,Math.PI],[-0.19,-0.25,Math.PI],[0.19,-0.25,0]]){const hip=cgrp(body,[x,-0.1,z]);mk(rbox(0.17,0.26,0.19,0.08),ZR.white,hip,{p:[0,-0.08,0]});
+    const kn=cgrp(hip,[0,-0.2,0]);mk(rbox(0.2,0.2,0.25,0.085),ZR.red,kn,{p:[0,-0.1,0.025]});D.hip.push({g:hip,ph});D.knee.push(kn);}
+  const tail=cgrp(body,[0,0.13,-0.36],[-0.7,0,0]);D.tail=tail;mk(caps(0.06,0.04,0.2),ZR.red,tail,{r:[Math.PI,0,0]});D.tail2=cgrp(tail,[0,0.2,0]);
+  const neck=cgrp(body,[0,0.14,0.27]);D.neck=neck;mk(cyl(0.12,0.14,0.14,18),ZR.joint,neck,{p:[0,0.05,0.02]});
+  const head=cgrp(neck,[0,0.36,0.12]);D.head=head;
+  mk(rbox(0.66,0.56,0.54,0.2),ZR.white,head);mk(rbox(0.685,0.5,0.3,0.19),ZR.red,head,{p:[0,0.05,-0.15]});
+  mk(rbox(0.5,0.33,0.08,0.11),ZR.visor,head,{p:[0,0.045,0.25]});
+  D.faceMat=new T.MeshBasicMaterial({map:DF.idle});{const fp=new T.Mesh(new T.PlaneGeometry(0.4,0.25),D.faceMat);fp.position.set(0,0.045,0.292);head.add(fp);}
+  mk(rbox(0.36,0.2,0.24,0.09),ZR.muzzle,head,{p:[0,-0.19,0.3]});{const ns=mk(sph(0.07,16,12),ZR.nose,head,{p:[0,-0.13,0.43]});ns.scale.set(1.15,0.8,0.8);}
+  D.ear=[];for(const sd of [-1,1]){const ep=cgrp(head,[sd*0.345,0.2,-0.02],[0,0,sd*0.22]);mk(rbox(0.11,0.42,0.28,0.05),ZR.red,ep,{p:[sd*0.02,-0.17,0]});D.ear.push(ep);}
+  mk(cyl(0.013,0.013,0.3,6),ZR.nose,head,{p:[-0.17,0.42,-0.08]});mk(sph(0.04,12,10),ZR.red,head,{p:[-0.17,0.58,-0.08]});
+  return D;}
 // a simple pack for look H: one rounded bag with a darker flap; the big one carries a bedroll
 function buildBackH(par,type,H){const SZ={bundle:[0.4,0.4,0.2],satchel:[0.44,0.46,0.23],pack:[0.48,0.54,0.26]}[type]||[0.44,0.46,0.23];const [w,h,d]=SZ;
   const pk=cgrp(par,[0,-0.05,-0.29-d/2]);H.pack=pk;mk(rbox(w,h,d,0.07),HH.pack,pk);mk(rbox(w*1.04,h*0.36,d*1.06,0.05),HH.packD,pk,{p:[0,h*0.33,0]});
@@ -403,8 +428,8 @@ function hSnap(w,h,fill,pr){let r2=null;try{pr=pr||2;r2=new T.WebGLRenderer({ant
     if(st.rt){st.rt.depthTexture.dispose();st.rt.dispose();}r2.dispose();r2.forceContextLoss&&r2.forceContextLoss();return url;}
   catch(e){try{r2&&r2.dispose();}catch(_){}console.warn('hSnap',e);return null;}}
 function hSnapChars(kind,w,h){return hSnap(w,h,sc=>{
-  if(kind==='dog'){if(!WOLT)return null;const D=makeDog(dogGear());D.root.rotation.y=-0.35;sc.add(D.root);return {c:new T.Vector3(0,0.8,0),half:1.15,az:0.25,el:0.3};}
-  if(kind==='trio'){if(!WOLT)return null;const b=makeHero(heroGear()),D=makeDog(dogGear());b.root.position.set(-0.6,0,0);b.root.rotation.y=0.3;D.root.position.set(0.85,0,0.35);D.root.rotation.y=-0.4;sc.add(b.root,D.root);return {c:new T.Vector3(0.05,1.2,0),half:1.8,az:0.1,el:0.32};}
+  if(kind==='dog'){const D=makeDog(dogGear());D.root.rotation.y=-0.35;sc.add(D.root);return {c:new T.Vector3(0,0.8,0),half:1.15,az:0.25,el:0.3};}
+  if(kind==='trio'){const b=makeHero(heroGear()),D=makeDog(dogGear());b.root.position.set(-0.6,0,0);b.root.rotation.y=0.3;D.root.position.set(0.85,0,0.35);D.root.rotation.y=-0.4;sc.add(b.root,D.root);return {c:new T.Vector3(0.05,1.2,0),half:1.8,az:0.1,el:0.32};}
   const H=makeHero(heroGear());H.root.rotation.y=0.3;sc.add(H.root);return {c:new T.Vector3(0,1.45,0),half:1.72,az:0.1,el:0.3};});}
 function hSnapBld(k,lvl){return hSnap(300,230,sc=>{const g=lvl?makeBuilding(k,lvl):makeRuin(k);sc.add(g);const bb=new T.Box3().setFromObject(g),c=bb.getCenter(new T.Vector3()),sz=bb.getSize(new T.Vector3());
   return {c,half:Math.max(sz.x*0.42,sz.z*0.42,sz.y*0.62)+0.9,az:0.62,el:0.58};});}
@@ -534,7 +559,7 @@ function hRoom(kind){const key='room'+kind;if(BIMG[key])return BIMG[key];
       // rug, Zuro on his charging pad, the pack by the bed, a potted palm
       part(q.cyl,HP.coral,0.1,Y+0.02,0.75,2.4,0.04,1.7,g,true);part(q.cyl,HP.cream,0.1,Y+0.03,0.75,1.7,0.04,1.1,g,true);
       part(q.cyl,HP.teal,2.0,Y+0.05,1.25,1.5,0.1,1.5,g);part(q.cyl,HP.glass,2.0,Y+0.06,1.25,0.9,0.1,0.9,g,true);
-      if(WOLT){const Dg=makeDog(dogGear());Dg.root.position.set(2.0,Y+0.1,1.25);Dg.root.rotation.y=-0.75;Dg.root.scale.multiplyScalar(0.92);sc.add(Dg.root);}
+      {const Dg=makeDog(dogGear());Dg.root.position.set(2.0,Y+0.1,1.25);Dg.root.rotation.y=-0.75;Dg.root.scale.multiplyScalar(0.92);sc.add(Dg.root);}
       {const pk=grp(-1.15,Y+0.32,0.55,g);pk.rotation.y=0.5;buildBackH(pk,'satchel',{});pk.children[0].position.set(0,0,0);}
       part(q.cyl10,HP.clay,-2.5,Y+0.3,1.85,0.6,0.6,0.6,g);for(let i=0;i<6;i++){const a=i/6*6.283;const l=part(G.cone5,i%2?HP.sage:HP.sageD,-2.5+Math.cos(a)*0.28,Y+1.1,1.85+Math.sin(a)*0.28,0.3,1.1,0.12,g);l.rotation.set(Math.sin(a)*0.5,0,-Math.cos(a)*0.5);}
     }else{
