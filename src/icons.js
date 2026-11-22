@@ -1,5 +1,7 @@
 // ================= Daleko icon set (one style: chunky dark outline, flat palette, soft highlight) =================
 const ICO_O='#3a2a20';
+// look H: the icons are drawn in their own style (same rule as STN in game.js)
+const ICO_H=((window.FORCE_STYLE)||(new URLSearchParams(location.search).get('s')))==='sun';
 const ICON_SRC=(()=>{
   const g=(inner,sw)=>`<g fill="none" stroke="${ICO_O}" stroke-width="${sw||3.2}" stroke-linejoin="round" stroke-linecap="round">${inner}</g>`;
   const hl=(d,o)=>`<path d="${d}" fill="#fff" opacity="${o||0.45}"/>`;
@@ -55,6 +57,62 @@ const ICON_SRC=(()=>{
   S.sound=g(`<path d="M26 44 V14 L48 8 V38" stroke-width="4"/><ellipse cx="20" cy="46" rx="8" ry="6" fill="#3a2a20"/><ellipse cx="42" cy="40" rx="8" ry="6" fill="#3a2a20"/>`);
   S.mute=S.sound+g(`<path d="M10 10 L54 54" stroke="#c8643c" stroke-width="6"/>`);
   S.full=S.pack+g(`<circle cx="50" cy="14" r="10" fill="#c0532f"/><path d="M50 9 V15 M50 19 V19.5" stroke="#fff8ea" stroke-width="3.4"/>`);
+
+  // ---- look H (22. 11.): the same set redrawn for the sun-bleached ink look – thin warm ink line, pale flat fills, one soft shade tone ----
+  if(ICO_H){
+    const K='#5a3d34',SH='#6b4a63';
+    const C={cream:'#fef8f1',coral:'#f2957f',coralL:'#f8b9a6',teal:'#8ec0cb',tealD:'#6aa3b0',tealL:'#cfe6ea',wood:'#d2a585',woodD:'#b08a70',tan:'#e6c2a2',metal:'#ccd4db',metalD:'#9aa6b3',sage:'#b4d3b4',sageD:'#8fbb97',gold:'#f5ca74',goldD:'#e2a948',green:'#86c29b',slate:'#6c7690',sand:'#f3dcc6',sandD:'#ecc9a8',red:'#ee7466',glass:'#fff1b8',lilac:'#b9a7cf',skin:'#eec3a6',hair:'#51342b'};
+    const g=(inner,sw)=>`<g fill="none" stroke="${K}" stroke-width="${sw||2.6}" stroke-linejoin="round" stroke-linecap="round">${inner}</g>`;
+    // filled shape with an optional shade patch (drawn under the outline)
+    const F=(d,f,sd,o)=>`<path d="${d}" fill="${f}" stroke="none"/>`+(sd?`<path d="${sd}" fill="${SH}" opacity="${o||0.2}" stroke="none"/>`:'')+`<path d="${d}"/>`;
+    const ci=(x,y,r,f)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${f}"/>`;
+    const NUT='M32 8 L52 19.5 V43.5 L32 55 L12 43.5 V19.5 Z',NUTS='M32 31.5 L52 19.5 V43.5 L32 55 Z';
+    S.scrap=g(F(NUT,C.metal,NUTS)+ci(32,31.5,8.5,C.cream));
+    S.core=g(F(NUT,C.gold,NUTS,0.16)+ci(32,31.5,8.5,C.cream)+`<path d="M50 4 l1.9 5.1 l5.1 1.9 l-5.1 1.9 l-1.9 5.1 l-1.9 -5.1 l-5.1 -1.9 l5.1 -1.9z" fill="${C.cream}" stroke-width="1.8"/>`);
+    S.energy=g(F('M37 5 L14 36 H29 L25 59 L50 26 H35 Z',C.gold,'M35 26 H50 L25 59 L29 36 Z',0.16));
+    S.melon=g(F('M6 22 A26 26 0 0 0 58 22 Z',C.sageD)+`<path d="M11 23 A21 21 0 0 0 53 23 Z" fill="${C.cream}" stroke="none"/><path d="M14 23 A18 18 0 0 0 50 23 Z" fill="${C.coral}" stroke="none"/>`)+[[23,29],[32,33],[41,29],[28,37],[36,37]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="1.5" ry="2.4" fill="${K}"/>`).join('');
+    S.water=g(F('M32 6 C32 6 12 30 12 42 A20 20 0 0 0 52 42 C52 30 32 6 32 6 Z',C.teal,'M32 6 C32 6 52 30 52 42 A20 20 0 0 1 32 62 Z',0.18));
+    const PACK=g(`<path d="M24 17 V12 a8 8 0 0 1 16 0 V17"/>`+F('M24 17 H40 a10 10 0 0 1 10 10 V47 a10 10 0 0 1 -10 10 H24 a10 10 0 0 1 -10 -10 V27 a10 10 0 0 1 10 -10 Z',C.tan,'M40 17 a10 10 0 0 1 10 10 V47 a10 10 0 0 1 -10 10 Z')+`<path d="M14 31 H50"/><rect x="22" y="37" width="20" height="12" rx="4" fill="${C.cream}"/><rect x="29" y="27.5" width="6" height="7" rx="1.6" fill="${C.coral}" stroke-width="2"/>`);
+    S.pack=PACK;
+    S.chip=g(`<path d="M21 9 v6 M28.5 9 v6 M35.5 9 v6 M43 9 v6 M21 49 v6 M28.5 49 v6 M35.5 49 v6 M43 49 v6 M9 21 h6 M9 28.5 h6 M9 35.5 h6 M9 43 h6 M49 21 h6 M49 28.5 h6 M49 35.5 h6 M49 43 h6" stroke-width="2.2"/>`+F('M20 15 H44 a5 5 0 0 1 5 5 V44 a5 5 0 0 1 -5 5 H20 a5 5 0 0 1 -5 -5 V20 a5 5 0 0 1 5 -5 Z',C.green,'M38 15 H44 a5 5 0 0 1 5 5 V44 a5 5 0 0 1 -5 5 H38 Z')+`<rect x="24" y="24" width="16" height="16" rx="2.5" fill="${C.cream}" stroke-width="2.2"/>`);
+    S.sling=g(`<path d="M32 59 L32 37 M32 38 L18.5 13 M32 38 L45.5 13" stroke-width="8.6"/><path d="M32 59 L32 37 M32 38 L18.5 13 M32 38 L45.5 13" stroke-width="3.6" stroke="${C.wood}"/><path d="M18.5 13 Q32 31 45.5 13" stroke="${C.coral}" stroke-width="2.6"/>`+ci(32,22.5,4.6,C.metal));
+    S.hammer=`<g transform="rotate(38 32 32)">`+g(F('M31 22 H33 a3 3 0 0 1 3 3 V57 a3 3 0 0 1 -3 3 H31 a3 3 0 0 1 -3 -3 V25 a3 3 0 0 1 3 -3 Z',C.wood)+F('M15.5 8 H48.5 a3.5 3.5 0 0 1 3.5 3.5 V19.5 a3.5 3.5 0 0 1 -3.5 3.5 H15.5 a3.5 3.5 0 0 1 -3.5 -3.5 V11.5 a3.5 3.5 0 0 1 3.5 -3.5 Z',C.metal,'M12 16 H52 V19.5 a3.5 3.5 0 0 1 -3.5 3.5 H15.5 a3.5 3.5 0 0 1 -3.5 -3.5 Z')+`<path d="M21 8.5 V22.5" stroke-width="2"/>`)+`</g>`;
+    S.boots=g(F('M17 8 H36 V35 L50 41 C55 43 57 46 57 50 V53 H12 V40 Z',C.wood,'M36 35 L50 41 C55 43 57 46 57 50 V53 H36 Z')+`<path d="M17 8 H36 V15.5 H15.8 Z" fill="${C.cream}"/><rect x="10" y="52.5" width="49" height="6.5" rx="2.6" fill="${C.woodD}"/><path d="M24 22 h8 M24 29 h8" stroke-width="2.2"/>`);
+    S.goggles=g(`<path d="M4 31 H60" stroke-width="2.6"/>`+ci(20,31,12.5,C.tan)+ci(44,31,12.5,C.tan)+ci(20,31,7.5,C.tealL)+ci(44,31,7.5,C.tealL));
+    S.compass=g(`<rect x="28" y="4.5" width="8" height="7" rx="2" fill="${C.gold}"/>`+ci(32,34,23.5,C.gold)+`<circle cx="32" cy="34" r="17" fill="${C.cream}"/><path d="M32 17 A17 17 0 0 1 32 51 Z" fill="${SH}" opacity="0.12" stroke="none"/><path d="M32 19.5 L36.6 34 H27.4 Z" fill="${C.coral}" stroke-width="2"/><path d="M27.4 34 H36.6 L32 48.5 Z" fill="${C.cream}" stroke-width="2"/>`)+`<circle cx="32" cy="34" r="2.2" fill="${K}"/>`;
+    const BOT='M27 13 Q27 19 21 24 Q17 28 17 34 V54 Q17 59 22 59 H42 Q47 59 47 54 V34 Q47 28 43 24 Q37 19 37 13 Z';
+    S.bottle=g(`<path d="M18.5 40 H45.5 V54 Q45.5 57.5 42 57.5 H22 Q18.5 57.5 18.5 54 Z" fill="${C.teal}" stroke="none"/>`+`<path d="${BOT}" fill="${C.tealL}" fill-opacity="0.55" stroke="none"/><path d="M40.4 21.6 Q47 27.5 47 34 V54 Q47 59 42 59 H40.4 Z" fill="${SH}" opacity="0.16" stroke="none"/><path d="${BOT}"/><path d="M17.5 40 H46.5" stroke-width="2"/><rect x="25.5" y="5" width="13" height="8.5" rx="2.6" fill="${C.coral}"/>`);
+    S.canteen=g(`<path d="M11 16 Q32 2 53 16" stroke-width="2.4"/><rect x="26.5" y="9" width="11" height="10" rx="2.4" fill="${C.metal}"/>`+F('M32 18 A20 20 0 1 0 32 58 A20 20 0 1 0 32 18 Z',C.teal,'M32 18 A20 20 0 0 1 32 58 Z',0.18)+ci(32,38,9,C.cream));
+    S.flowers=g(`<path d="M20 58 V37 M32 58 V29 M44 58 V39" stroke="${C.sageD}" stroke-width="3.2"/>`)+[[20,30,C.coralL],[32,20,C.gold],[44,32,C.cream]].map(([x,y,c])=>g([0,1,2,3,4].map(i=>{const a=i/5*6.283-1.57;return ci((x+Math.cos(a)*6).toFixed(1),(y+Math.sin(a)*6).toFixed(1),4.6,c);}).join('')+ci(x,y,3.4,C.goldD),1.9)).join('');
+    S.lamp=`<circle cx="32" cy="24" r="18" fill="${C.glass}" opacity="0.6"/>`+g(`<path d="M32 35 V59 M24 59 H40" stroke-width="3"/><path d="M22 14 H42 L38 8 H26 Z" fill="${C.slate}"/><rect x="24" y="14" width="16" height="20" rx="3" fill="${C.glass}"/>`);
+    S.bench=g(`<path d="M13 26 V32 M51 26 V32 M13 41 V56 M51 41 V56" stroke-width="3"/><rect x="8" y="16" width="48" height="10" rx="2.6" fill="${C.wood}"/><rect x="6" y="32" width="52" height="9" rx="2.6" fill="${C.tan}"/>`);
+    S.palm=g(`<path d="M30 59 C30 46 34 35 31 25" stroke-width="8"/><path d="M30 59 C30 46 34 35 31 25" stroke="${C.wood}" stroke-width="3"/><path d="M31 24 L6 22 L20 13 Z M31 24 L58 22 L44 12 Z M31 24 L37 4 L27 9 Z M31 24 L12 39 L15 27 Z M31 24 L51 38 L48 27 Z" fill="${C.sage}" stroke-width="2.2"/>`);
+    const rays=(cx,cy,r0,r1,as,sw)=>as.map(a=>`<path d="M${(cx+Math.cos(a)*r0).toFixed(1)} ${(cy+Math.sin(a)*r0).toFixed(1)} L${(cx+Math.cos(a)*r1).toFixed(1)} ${(cy+Math.sin(a)*r1).toFixed(1)}" stroke-width="${sw}"/>`).join('');
+    S.sun=g(ci(32,32,12.5,C.gold)+rays(32,32,19,26.5,[0,1,2,3,4,5,6,7].map(i=>i/8*6.283),3));
+    S.moon=g(`<path d="M40 8 A24 24 0 1 0 56 44 A19 19 0 1 1 40 8 Z" fill="#fbe9b4"/>`);
+    S.dawn=g(`<path d="M14 44 A18 18 0 0 1 50 44 Z" fill="${C.gold}"/><path d="M6 44 H58" stroke-width="3"/>`+rays(32,44,24,30.5,[-2,-1,0,1,2].map(i=>-1.57+i*0.55),3)+`<path d="M15 52 H49 M23 58 H41" stroke-width="2.4"/>`);
+    S.dusk=g(`<path d="M14 44 A18 18 0 0 1 50 44 Z" fill="${C.coral}"/><path d="M6 44 H58" stroke-width="3"/><path d="M15 52 H49 M23 58 H41" stroke-width="2.4"/>`)+`<circle cx="12" cy="16" r="2.1" fill="${C.lilac}"/><circle cx="50" cy="12" r="2.5" fill="${C.lilac}"/><circle cx="36" cy="21" r="1.7" fill="${C.lilac}"/>`;
+    S.paw=g(`<path d="M32 30 C22 30 15 40 17 48 C19 55 26 54 32 52 C38 54 45 55 47 48 C49 40 42 30 32 30 Z" fill="${C.red}"/><ellipse cx="17" cy="26" rx="5.3" ry="6.8" fill="${C.red}"/><ellipse cx="27" cy="16" rx="5.3" ry="7.2" fill="${C.red}"/><ellipse cx="37" cy="16" rx="5.3" ry="7.2" fill="${C.red}"/><ellipse cx="47" cy="26" rx="5.3" ry="6.8" fill="${C.red}"/>`);
+    S.hero=g(ci(32,36,18.5,C.skin)+`<path d="M13.6 32 C11 15 24 8 31 10 L33.5 3.5 L37 9.6 C46 8 54 17 50.4 32 Q32 24 13.6 32 Z" fill="${C.hair}"/><path d="M13.5 31.5 Q32 23.5 50.5 31.5 L50.8 37 Q32 29.5 13.2 37 Z" fill="${C.coral}" stroke-width="2.2"/><path d="M27.5 47.5 Q32 50.5 36.5 47.5" stroke-width="2.2"/>`)+`<ellipse cx="25.5" cy="41" rx="2.3" ry="3.1" fill="${K}"/><ellipse cx="38.5" cy="41" rx="2.3" ry="3.1" fill="${K}"/><circle cx="20.5" cy="46.5" r="2.4" fill="${C.coral}" opacity="0.55"/><circle cx="43.5" cy="46.5" r="2.4" fill="${C.coral}" opacity="0.55"/>`;
+    S.levelup=g(ci(32,32,24.5,C.gold)+`<path d="M32 16.5 L45.5 32 H37 V47.5 H27 V32 H18.5 Z" fill="${C.cream}" stroke-width="2.2"/>`);
+    S.check=g(ci(32,32,24.5,C.sage)+`<path d="M20 33 L28.5 41.5 L45 23" stroke-width="4.6"/>`);
+    S.close=g(`<path d="M17 17 L47 47 M47 17 L17 47" stroke-width="5"/>`);
+    S.wrench=`<g transform="rotate(-40 32 32)">`+g(F('M28 20 H36 V58 a4 4 0 0 1 -8 0 Z',C.metal,'M32.5 20 H36 V58 a4 4 0 0 1 -3.5 3.9 Z')+F('M22 6 a12 12 0 1 0 20 0 V14 a2 2 0 0 1 -2 2 H24 a2 2 0 0 1 -2 -2 Z',C.metal))+`</g>`;
+    S.radio=g(`<path d="M40 24 L49.5 7" stroke-width="2.4"/>`+ci(49.5,7,2.6,C.coral)+F('M15 24 H49 a7 7 0 0 1 7 7 V49 a7 7 0 0 1 -7 7 H15 a7 7 0 0 1 -7 -7 V31 a7 7 0 0 1 7 -7 Z',C.coralL,'M44 24 H49 a7 7 0 0 1 7 7 V49 a7 7 0 0 1 -7 7 H44 Z')+ci(22,40,8,C.cream)+`<path d="M36 34 H48 M36 40 H48 M36 46 H48" stroke-width="2.2"/>`);
+    S.chest=g(F('M8 30 A24 14 0 0 1 56 30 Z',C.tan)+F('M8 30 H56 V53 a3 3 0 0 1 -3 3 H11 a3 3 0 0 1 -3 -3 Z',C.wood,'M43 30 H56 V53 a3 3 0 0 1 -3 3 H43 Z')+`<path d="M18 18.5 V56 M46 18.5 V56" stroke-width="2.2"/><rect x="27" y="28" width="10" height="11.5" rx="2.2" fill="${C.gold}"/>`);
+    S.empty=g(`<path d="M8 32 L14 12 H58 L56 32" fill="${C.tan}"/>`+F('M8 32 H56 V56 H8 Z',C.wood,'M43 32 H56 V56 H43 Z')+`<path d="M22 45 q4 -4 8 0 q4 4 8 0" stroke-width="2.2"/>`);
+    S.cog=g(F(gear(32,32,25,18,9),C.metal)+`<path d="M32 14 A18 18 0 0 1 32 50 Z" fill="${SH}" opacity="0.18" stroke="none"/>`+ci(32,32,7.5,C.cream));
+    S.map=g(`<path d="M8 14 L24 8 L40 14 L56 8 V50 L40 56 L24 50 L8 56 Z" fill="${C.cream}"/><path d="M24 8 L40 14 V56 L24 50 Z" fill="${SH}" opacity="0.1" stroke="none"/><path d="M24 8 V50 M40 14 V56" stroke-width="1.8"/><path d="M14 41 Q20 31 28 35 T43 25" stroke="${C.coral}" stroke-width="2.6" stroke-dasharray="4 3.4"/><path d="M44.5 17.5 l5 5 m0 -5 l-5 5" stroke="${C.red}" stroke-width="2.6"/>`);
+    S.scroll=g(`<rect x="14" y="10" width="36" height="44" rx="3" fill="${C.cream}"/><path d="M10 10 a4 4 0 0 1 8 0 V54 a4 4 0 0 1 -8 0 Z M46 10 a4 4 0 0 1 8 0 V54 a4 4 0 0 1 -8 0 Z" fill="${C.sand}"/><path d="M23 22 H41 M23 30 H41 M23 38 H35" stroke-width="2.2"/>`);
+    S.desert=g(ci(44,20,8.5,C.gold)+`<path d="M3 47 Q18 30 34 47 Z" fill="${C.sand}"/><path d="M22 53 Q42 32 61 53 Z" fill="${C.sandD}"/><path d="M3 56 H61" stroke-width="2.6"/>`);
+    S.home=g(`<rect x="31" y="9" width="17" height="13" rx="1.6" fill="${C.cream}"/>`+F('M13 27 H51 V54 a2 2 0 0 1 -2 2 H15 a2 2 0 0 1 -2 -2 Z',C.cream,'M41 27 H51 V54 a2 2 0 0 1 -2 2 H41 Z',0.16)+`<rect x="9" y="21" width="46" height="6.5" rx="2" fill="${C.cream}"/><rect x="19" y="39" width="10" height="17" rx="1.4" fill="${C.teal}"/><path d="M16 33 H32 L34.5 39.5 H13.5 Z" fill="${C.coral}" stroke-width="2.2"/><rect x="38" y="36" width="9" height="9" rx="1.4" fill="${C.glass}" stroke-width="2.2"/>`);
+    S.bag=g(F('M20 22 C10 30 10 54 32 56 C54 54 54 30 44 22 Z',C.tan,'M36 22 H44 C54 30 54 54 32 56 C42 50 44 32 36 22 Z')+`<path d="M22 22 L42 22 L38 14 L26 14 Z" fill="${C.wood}"/><path d="M21 31 Q32 35 43 31" stroke-width="2.2"/><path d="M26 14 l4 -6 l4 6" fill="${C.coral}" stroke-width="2.2"/>`);
+    S.drone=g(`<path d="M8 28 H22 M42 28 H56" stroke-width="2.4"/><ellipse cx="14" cy="24" rx="9" ry="3" fill="${C.tealL}"/><ellipse cx="50" cy="24" rx="9" ry="3" fill="${C.tealL}"/><path d="M18 32 A14 10 0 0 1 46 32 Z" fill="${C.cream}"/><rect x="16" y="32" width="32" height="8" rx="4" fill="${C.coral}"/>`+ci(32,46.5,4.8,C.glass));
+    S.signal=g(`<path d="M22 34 a14 14 0 0 1 20 0 M15 27 a24 24 0 0 1 34 0 M8 20 a34 34 0 0 1 48 0" stroke-width="3.2"/>`+ci(32,45,5,C.coral));
+    S.sound=g(`<path d="M26 44 V14 L48 8 V38" stroke-width="3.2"/><ellipse cx="20" cy="46" rx="7.5" ry="5.6" fill="${K}"/><ellipse cx="42" cy="40" rx="7.5" ry="5.6" fill="${K}"/>`);
+    S.mute=S.sound+g(`<path d="M11 11 L53 53" stroke="${C.cream}" stroke-width="8.5"/><path d="M11 11 L53 53" stroke="${C.red}" stroke-width="4"/>`);
+    S.full=PACK+g(ci(49.5,14.5,10,C.red)+`<path d="M49.5 9.5 V15.5 M49.5 19.6 V19.9" stroke="${C.cream}" stroke-width="3.2"/>`);
+  }
   return S;})();
 const ICON_NAMES={scrap:'Šrot',core:'Zlatý šrot',chip:'Čip',sling:'Prak',energy:'Energie',melon:'Meloun',bottle:'Láhev s vodou',water:'Voda',pack:'Batoh / kapacita',hammer:'Kladivo',boots:'Lehké boty',goggles:'Brýle proti oparu',compass:'Kompas',canteen:'Polní čutora',
   flowers:'Květiny',lamp:'Lampa',bench:'Lavička',palm:'Palma',sun:'Den',moon:'Noc',dawn:'Svítání',dusk:'Soumrak',paw:'Wolt (úroveň)',hero:'Poutník (úroveň)',levelup:'Nová úroveň',check:'Hotovo / vlastníš',close:'Zavřít',

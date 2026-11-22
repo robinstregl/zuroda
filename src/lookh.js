@@ -293,6 +293,32 @@ function makeWreckH(kind){const g=grp(),W=grp(0,0,0,g),q=hGeo();PART_OL=0;
   const sand=part(G.disc,M('#fffaf3',{depthWrite:false,pat:0}),0,0.03,0,kind===2?3:kind===3?7.5:4.8,1,kind===2?2.2:kind===3?5.5:3,g,true);sand.receiveShadow=true;sand.renderOrder=1;
   return g;}
 // guard drone: a slate saucer with a pale dome, four rotor rings and one red lens
+// village decorations in the same hand: a slim lantern, a pale bench, a tuft of round blossoms
+function makeLampH(){const l=grp(),q=hGeo();PART_OL=0;part(q.cyl10,HP.metalD,0,0.95,0,0.1,1.9,0.1,l);part(q.cyl,HP.metalD,0,0.05,0,0.36,0.1,0.36,l);
+  part(rbox(0.42,0.5,0.42,0.12),M(HP.glass,{emissive:'#ffc860',emissiveIntensity:0.9}),0,2.12,0,1,1,1,l);part(rbox(0.56,0.1,0.56,0.04),HP.tealD,0,2.42,0,1,1,1,l);
+  const gs=glowSprite('#ffb050',5.2);gs.position.set(0,2.1,0);l.add(gs);return l;}
+function makeBenchH(){const b=grp();PART_OL=0;part(rbox(1.8,0.12,0.62,0.05),HP.wood,0,0.46,0,1,1,1,b);const bk=part(rbox(1.8,0.42,0.1,0.04),HP.wood,0,0.84,-0.28,1,1,1,b);bk.rotation.x=-0.12;
+  for(const x of [-0.72,0.72]){part(rbox(0.12,0.42,0.5,0.04),HP.woodD,x,0.21,0,1,1,1,b);part(rbox(0.1,0.5,0.1,0.04),HP.woodD,x,0.7,-0.27,1,1,1,b);}return b;}
+function makeFlowersH(){const f=grp(),q=hGeo();PART_OL=0;const cols=[HP.coral,HP.glass,HP.cream,HP.rock,HP.panelL];
+  for(let i=0;i<6;i++){const a=i*1.1,r=0.25+(i%3)*0.15,x=Math.cos(a)*r,z=Math.sin(a)*r,h=0.3+(i%2)*0.12;part(q.cyl10,HP.sageD,x,h/2,z,0.05,h,0.05,f);part(q.sph,cols[i%5],x,h+0.07,z,0.26,0.2,0.26,f);}
+  part(q.sph,HP.sage,0,0.05,0,0.9,0.16,0.9,f,true);return f;}
+// cactus: one rounded trunk with two arms, pale sage, a coral bud on top
+function makeCactusH(h,dry){const c=grp(),q=hGeo();PART_OL=0;const col=dry?'#dccbaa':HP.sage;
+  const cap=(x,y,z,r,len,rz)=>{const a=grp(x,y,z,c);if(rz)a.rotation.z=rz;part(q.cyl,col,0,len/2,0,r*2,len,r*2,a);part(q.sph,col,0,len,0,r*2,r*2,r*2,a);part(q.sph,col,0,0,0,r*2,r*2,r*2,a);};
+  cap(0,0,0,0.42,h);cap(-0.3,h*0.5,0,0.2,0.56,Math.PI/2);cap(-0.86,h*0.5,0,0.2,0.55);cap(0.3,h*0.34,0,0.19,0.5,-Math.PI/2);cap(0.8,h*0.34,0,0.19,0.5);
+  if(!dry)part(q.sph,HP.coral,0,h+0.42,0,0.32,0.24,0.32,c);return c;}
+// village helper robot: a small hovering pod – cream shell, a cap in the colour of its building, a dark visor with two warm eyes
+function makeBotH(col,s){const b=grp(),q=hGeo(),body=grp(0,1.1*s,0,b);PART_OL=0;
+  part(q.sph,HP.cream,0,0,0,1.16*s,1.04*s,1.16*s,body);
+  part(G.hbotcap||(G.hbotcap=new T.SphereGeometry(0.5,40,14,0,6.2832,0,0.92)),col,0,0.03*s,0,1.2*s,1.1*s,1.2*s,body);
+  part(q.cyl,HP.metalD,0,-0.5*s,0,0.56*s,0.12*s,0.56*s,body);
+  for(const sx of [-1,1]){const e=part(q.cyl,HP.metal,sx*0.6*s,-0.05*s,0,0.3*s,0.12*s,0.3*s,body);e.rotation.z=Math.PI/2;}
+  const vis=part(rbox(0.74*s,0.36*s,0.16*s,0.075*s),HP.slate,0,0.06*s,0.47*s,1,1,1,body);vis.rotation.x=-0.3;
+  const pup=grp(0,0.07*s,0.56*s,body);pup.rotation.x=-0.3;const em=new T.MeshStandardMaterial({color:C('#fff1b8'),emissive:C('#ffd66e'),emissiveIntensity:0.9});
+  for(const sx of [-1,1]){const e=part(q.sph,em,sx*0.17*s,0,0,0.15*s,0.17*s,0.05*s,pup,true);e.castShadow=false;}
+  part(q.cyl10,HP.metalD,0,0.66*s,0,0.05*s,0.3*s,0.05*s,body);
+  const tip=part(q.sph,new T.MeshStandardMaterial({color:C('#ffd36e'),emissive:C('#ffb020'),emissiveIntensity:0.8}),0,0.86*s,0,0.17*s,0.17*s,0.17*s,body,true);
+  return {g:b,body,tip,pup,s,ph:Math.random()*6};}
 function makeDroneH(R3,A){R3=R3||9.2;A=A||0.5;const g=grp(),q=hGeo(),body=grp(0,1.6,0,g);
   part(q.sph,HP.slate,0,0,0,2.1,0.62,2.1,body);part(q.sph,HP.metal,0,0.2,0,1.25,0.7,1.25,body);part(q.cyl,HP.metalD,0,0.02,0,2.14,0.1,2.14,body);
   const eye=part(q.sph,hEye(),0.92,0.02,0,0.44,0.44,0.44,body);part(q.cyl,HP.metalD,0.84,0.02,0,0.56,0.14,0.56,body).rotation.z=Math.PI/2;
@@ -322,6 +348,15 @@ function hRoomShell(sc,w,d,floorCol){const g=grp(0,0,0,sc);part(rbox(w+0.3,0.3,d
   part(rbox(w+0.3,3.0,0.25,0.06),HP.wall,0,1.8,-d/2,1,1,1,g);part(rbox(0.25,3.0,d+0.3,0.06),HP.wallS,-w/2,1.8,0,1,1,1,g);
   part(rbox(w+0.36,0.16,0.32,0.05),HP.trim,0,3.34,-d/2,1,1,1,g);part(rbox(0.32,0.16,d+0.36,0.05),HP.trim,-w/2,3.34,0,1,1,1,g);return g;}
 function hRoomWin(g,x,y,z,w,h){part(rbox(w+0.24,h+0.24,0.12,0.04),HP.teal,x,y,z,1,1,1,g);part(G.box,HP.tank,x,y,z+0.03,w,h,0.1,g);part(G.box,HP.teal,x,y,z+0.05,0.07,h,0.1,g);part(G.box,HP.teal,x,y,z+0.05,w,0.07,0.1,g);}
+// the outdoor buildings get a wide picture of the place instead of a room: the building at its current level, its helper robot, palms and stones around
+function hScene(k,lvl){const key='scene'+k+lvl;if(BIMG[key])return BIMG[key];
+  return BIMG[key]=hSnap(330,200,sc=>{const b=BLD[k],g=lvl?makeBuilding(k,lvl):makeRuin(k);g.rotation.y=-0.22;sc.add(g);
+    const bb=new T.Box3().setFromObject(g),c=bb.getCenter(new T.Vector3()),sz=bb.getSize(new T.Vector3()),R=Math.max(sz.x,sz.z)*0.5,az=0.42,el=0.4;
+    const put=(o,x,z,ry)=>{o.position.set(c.x+x,0,c.z+z);if(ry)o.rotation.y=ry;sc.add(o);};
+    put(makePalm(0.6),-R-1.5,-1.4,0.6);put(makePalm(0.48),R+2.1,-2.6,2.1);put(makeRock(0.5,3),R+1.3,1.9);put(makeRock(0.32,5),-R-1.0,2.3);put(makeCactus(1.1),R+2.6,0.4,0.5);
+    if(lvl&&b.bot){const o=makeBot(b.botCol||b.col,0.9);put(o.g,-R*0.45,sz.z*0.5+1.3,0.35);}
+    const hv=(sz.y*Math.cos(el)+sz.z*Math.sin(el))*0.5+0.9,hh=((sz.x*Math.cos(az)+sz.z*Math.sin(az))*0.5+3.1)*200/330;
+    return {c,half:Math.max(hv,hh),az,el};});}
 function hRoom(kind){const key='room'+kind;if(BIMG[key])return BIMG[key];
   return BIMG[key]=hSnap(330,200,sc=>{const q=hGeo(),Y=0.3,W=6.4,D=5,g=hRoomShell(sc,W,D,kind==='home'?'#ecd2b6':'#dfe3e6');const leg=(x,z,h,c)=>part(q.cyl10,c||HP.woodD,x,Y+h/2,z,0.1,h,0.1,g);
     if(kind==='home'){
