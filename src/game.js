@@ -268,7 +268,7 @@ let cw=0,ch=0,dpr=1;
 const TOUCH=matchMedia('(pointer:coarse)').matches;
 const R=new T.WebGLRenderer({canvas,antialias:!ST.px&&!TOUCH,powerPreference:'high-performance'});
 // dynamic resolution (iPhone run was ~50 fps with uneven frames): render scale drops if frames are slow, creeps back up when there is headroom
-let RQ=0,RQmax=2,fpsAcc=0,fpsN=0,fpsT=0,fastT=0;
+let RQ=0,RQmax=2,fpsAcc=0,fpsN=0,fpsT=0,fastT=0,qBase=0,qFrom=0,qN=0,qLock=0;
 R.shadowMap.enabled=ST.sh!=='none';R.shadowMap.type={basic:T.BasicShadowMap,pcf:T.PCFShadowMap,pcfsoft:TOUCH?T.PCFShadowMap:T.PCFSoftShadowMap,none:T.BasicShadowMap}[ST.sh];if(ST.sunink&&LK.blur)R.shadowMap.type=T.PCFSoftShadowMap;R.outputEncoding=T.sRGBEncoding;
 const cam=ST.cam==='persp'?new T.PerspectiveCamera(ST.fov,0.56,1,900):new T.OrthographicCamera(-1,1,1,-1,1,600);let ASP=0.56,PXW=0.1,CAMDIST=120,VH=800;
 if(!ST.px)canvas.style.imageRendering='auto';
@@ -2663,7 +2663,14 @@ function frame(nowT){
   if(window.CATALOG)return;
   const rdt=(nowT-last)/1000,dt=Math.min(0.05,rdt);last=nowT;tNow+=dt;
   if(!ST.px&&!window.FIXQ&&rdt>0&&rdt<0.25&&!document.hidden){fpsAcc+=rdt;fpsN++;fpsT+=rdt;if(fpsT>2){const f=fpsN/fpsAcc;fpsAcc=fpsN=fpsT=0;
-    if(f<54&&RQ>1){RQ=Math.max(1,RQ-0.25);R.setPixelRatio(RQ);R.setSize(stage.clientWidth,VH,false);fastT=0;}else if(f>58.5&&RQ<RQmax){fastT+=2;if(fastT>=8){RQ=Math.min(RQmax,RQ+0.25);R.setPixelRatio(RQ);R.setSize(stage.clientWidth,VH,false);fastT=0;}}else fastT=0;}}
+    // a slow phone gets a softer picture – but only when that actually helps. iOS in Low Power Mode draws 30 frames a second whatever we do;
+    // the old rule read that as "slow" and went down to the coarsest picture for good (Robin's iPhone, 22. 11.). Now: two steps down that
+    // change nothing mean the rate is capped from outside → back to the sharp picture and stay there until the phone runs at full speed again.
+    const RQmin=Math.min(RQmax,1.25),setQ=q=>{RQ=q;R.setPixelRatio(RQ);R.setSize(stage.clientWidth,VH,false);fastT=0;};
+    if(qLock){if(f>58.5){qLock=0;qN=0;}}
+    else if(f<54){if(!qN){qBase=f;qFrom=RQ;}
+      if(qN>=2&&f<qBase+5){setQ(qFrom);qLock=1;}else{if(RQ>RQmin)setQ(Math.max(RQmin,RQ-0.25));qN++;}}
+    else if(f>58.5&&RQ<RQmax){qN=0;fastT+=2;if(fastT>=8)setQ(Math.min(RQmax,RQ+0.25));}else{fastT=0;qN=0;}}}
   if(CSHEET){if(ST.sunink)inkRender(R,CSHEET.sc,CSHEET.cam);else R.render(CSHEET.sc,CSHEET.cam);requestAnimationFrame(frame);return;}
   if(scene!=='title'&&!(scene==='exp'&&X&&X.end))SV.tod=((SV.tod||0)+dt*(scene==='exp'?(window.SPD||1):1)/DAYLEN)%1;
   if(scene==='exp'&&X)applyDay(X.scene,X.sun);
@@ -2681,7 +2688,7 @@ function frame(nowT){
   requestAnimationFrame(frame);
 }
 window.__dbg={makeScrap,makeWreck,makeCrate,makeDrone,makeSeeker,makeGoldCog,makeBag,makeCamp,makeDeadTree,makeBoulder,makePuddle,makeCactus,makeBot,makeBuilding,makeRuin,makeChipDrop,makeCacheBottle,makeSaltCrystals,makeRubble,makeBrine,makeHero,makeDog,makePalm,makeHouse,heroGear,dogGear,makeLamp,makeBench,makeFlowers};
-window.__hicons=only=>ST.sunink?hIconAtlas(only).toDataURL('image/png'):null;window.__woltReady=()=>true;window.__zuroNew=1;window.__dogSnap=(ry,w,h)=>hSnap(w,h,sc=>{const D=makeDog({});D.root.rotation.y=ry;sc.add(D.root);return {c:new T.Vector3(0,0.78,0),half:1.15,az:0.25,el:0.3};});window.__heroSnap=(ry,w,h,el)=>hSnap(w,h,sc=>{const H=makeHero(heroGear());H.root.rotation.y=ry;sc.add(H.root);return {c:new T.Vector3(0,1.75,0),half:1.25,az:0.1,el:el||0.3};});
+window.__hicons=only=>ST.sunink?hIconAtlas(only).toDataURL('image/png'):null;window.__woltReady=()=>true;window.__q=()=>[RQ,RQmax,qN,qLock];window.__fps=()=>fpsN&&fpsAcc?Math.round(fpsN/fpsAcc):0;window.__zuroNew=1;window.__dogSnap=(ry,w,h)=>hSnap(w,h,sc=>{const D=makeDog({});D.root.rotation.y=ry;sc.add(D.root);return {c:new T.Vector3(0,0.78,0),half:1.15,az:0.25,el:0.3};});window.__heroSnap=(ry,w,h,el)=>hSnap(w,h,sc=>{const H=makeHero(heroGear());H.root.rotation.y=ry;sc.add(H.root);return {c:new T.Vector3(0,1.75,0),half:1.25,az:0.1,el:el||0.3};});
 window.__snd=()=>Object.keys(SBUF).length;window.__ps=(k)=>ps(k);window.__obst=(cx,cy)=>obstOf(cx,cy);window.__coast=(x,y)=>coastSD(x,y);window.__camps=()=>CAMPS;window.__drill=i=>drillOf(CAMPS[i]);window.__biome=(x,y)=>biomeAt(x,y);window.__markSeen=(x,y,r)=>markSeen(x,y,r);window.__MVhits=()=>(MV.hits||[]).map(h=>({x:h.x,y:h.y,t:h.t,k:h.k,id:h.cp&&h.cp.id}));window.__segPt=segPt;window.__BS=BS;window.__camT=camT;window.__house=()=>openHouse();window.__close=()=>closeSheet();window.__SV=()=>SV;window.__rebuild=()=>{for(const k in BLD)rebuildBuilding(k);};window.__X=()=>X;window.__go=()=>startExpedition();window.__open=k=>openBuilding(k);window.__fix=p=>fixDest(p);
 // balance sims (tools/sim_fast.py): the bot plays expeditions without drawing – whole minutes of play in a blink. A stuck bot gets a nudge sideways (counted).
 window.__simExp=(camp)=>{window.SIMBOT=1;const w0=SV.well;startExpedition(camp||null);if(!X||scene!=='exp'){window.SIMBOT=0;return null;}const fill=X.water,nb0=X.bottles,st=1/30,stk=[];let n=0,stuck=0,lx=X.x,ly=X.y,lt=0;

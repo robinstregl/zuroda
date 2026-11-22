@@ -2,6 +2,19 @@
   "root": "2.9",
   "versions": [
     {
+      "v": "2.10",
+      "date": "22. 11. 2026",
+      "title": "Ostrý obraz v úsporném režimu a hra jako aplikace",
+      "max": true,
+      "notes": [
+        "Oprava: na iPhonu v úsporném režimu (žlutá baterie) byl obraz hry hrubý a kostičkovaný. Telefon v tom režimu kreslí jen 30 snímků za sekundu, hra si to vyložila jako pomalý telefon a snížila rozlišení na minimum, odkud se už nevrátila. Teď pozná, že zjemnění nepomáhá, a vrátí se k ostrému obrazu.",
+        "I na opravdu pomalém telefonu už rozlišení neklesne tak hluboko jako dřív.",
+        "Hra přidaná na plochu iPhonu (Sdílet → Přidat na plochu) má vlastní ikonu se Zurem a jméno Zuroda a spouští se bez lišt prohlížeče.",
+        "V režimu aplikace se tlačítka dole drží nad domovskou linkou a horní panel pod stavovým řádkem. V prohlížeči se nic neposunulo.",
+        "Na skutečném iPhonu to ještě nikdo nezkoušel; tahle verze je na vyzkoušení, hlavní adresa zůstává na 2.9."
+      ]
+    },
+    {
       "v": "2.9",
       "date": "22. 11. 2026",
       "title": "Nové UI: Sklo",
