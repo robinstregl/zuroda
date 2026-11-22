@@ -91,6 +91,14 @@ function makeRuinH(k){const g=grp();PART_OL=0.012;const r=mulberry32(k.length*99
   const v=part(G.cyl6,HP.woodD,0.3,0.35,0.7,0.16,1.6,0.16,g);v.rotation.set(0.2,0,1.3);PART_OL=0;return g;}
 
 // ---------------- camps out in the desert ----------------
+// 2.5: the old well drill every camp needs – a small derrick left in the sand with the auger still hanging in it (taken = the empty derrick stays as a landmark)
+function makeDrillH(taken){const g=grp(),q=hGeo();PART_OL=0.012;
+  for(let i=0;i<3;i++){const a=i/3*6.283+0.5,leg=part(G.cyl6,HP.woodD,Math.cos(a)*0.5,1.3,Math.sin(a)*0.5,0.13,2.8,0.13,g);leg.rotation.z=Math.cos(a)*0.37;leg.rotation.x=-Math.sin(a)*0.37;}
+  part(q.cyl10,HP.metalD,0,2.62,0,0.36,0.24,0.36,g);part(G.dode,HP.rock,0.75,0.1,0.55,0.34,0.24,0.3,g);part(G.dode,HP.rockD,-0.7,0.1,-0.5,0.3,0.22,0.3,g);
+  if(!taken){part(q.cyl10,HP.metal,0,1.45,0,0.11,2.2,0.11,g);
+    for(let i=0;i<4;i++)part(G.cone7,i%2?HP.rust:HP.coral,0,0.5+i*0.33,0,0.66-i*0.07,0.3,0.66-i*0.07,g).rotation.x=Math.PI;
+    part(G.cone7,HP.metalD,0,0.16,0,0.2,0.32,0.2,g).rotation.x=Math.PI;}
+  g.scale.setScalar(1.5);PART_OL=0;return g;}
 function makeCampH(built){const g=grp();PART_OL=0.012;
   for(let i=0;i<8;i++){const a=i/8*6.283;part(G.dode,i%2?HP.rock:HP.rockD,Math.cos(a)*0.7,0.12,Math.sin(a)*0.7+0.4,0.36,0.26,0.32,g);}
   if(built){part(G.cone5,M('#ffb050',{emissive:'#ff8a30',emissiveIntensity:0.9}),0,0.35,0.4,0.5,0.6,0.5,g,true);const gs=glowSprite('#ffa848',4.5);gs.position.set(0,0.6,0.4);gs.userData.g0=0.9;g.add(gs);

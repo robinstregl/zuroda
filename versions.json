@@ -2,6 +2,21 @@
   "root": "1.0",
   "versions": [
     {
+      "v": "2.5",
+      "date": "22. 11. 2026",
+      "title": "Delší cesta a vrták",
+      "notes": [
+        "Poloostrov je delší: k signálu je to teď 4,45 km (bylo 1,84). Kempů je pořád sedm, ale úseky mezi nimi rostou: 312, 402, 496, 556, 634, 665 a 725 m, od posledního kempu je to k signálu 760 m. Ve 2.4 to bylo kolem 230 m, tedy půl minuty.",
+        "Jeden úsek zabere 40 až 95 vteřin chůze. S prázdným batohem stojí 1,6 až 3,8 L vody, zhruba 70 % toho, co v té fázi hry uneseš. S napůl plným batohem je to o třetinu víc, takže bez kaluže po cestě nedojdeš.",
+        "Každý kemp potřebuje vrták na studnu. Starý vrták leží 60 až 120 m od místa pro kemp, v každé hře jinde. Zuro ho ucítí ze 70 m a ukáže šipkou. Jakmile ho vezmeš, je tvůj napořád a nic neváží.",
+        "Bez vrtáku kemp postavit nejde. Ceny kempů se nezměnily.",
+        "Na mapě jde klepnout na místo pro kemp i na nalezený vrták. Kartička řekne, kolik vody cesta stojí, kolik neseš a kolik známých kaluží je po cestě. Zpáteční cesta se počítá k nejbližšímu kempu nebo domů.",
+        "Kempy jsou všechny stejné; návrh, že každý má něco svého, je zrušený.",
+        "Uložená hra si nechá vesnici, výbavu a zásoby. Mapa začíná prázdná a to, co stály už postavené kempy, se vrátí do zásob.",
+        "Výpravy z domu vycházejí automatu stejně jako ve 2.4: 48 s na začátku, 126 s na konci. Cestu od kempu ke kempu automat nehraje, ta je spočítaná ze spotřeby a přeměřená chůzí."
+      ]
+    },
+    {
       "v": "2.4",
       "date": "22. 11. 2026",
       "title": "Poloostrov",
