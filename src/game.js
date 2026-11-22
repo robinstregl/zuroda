@@ -71,28 +71,54 @@ const ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
 const gearLv=k=>SV.craft[k]|0;
 // wrecks: kind 0 car, 1 helicopter, 2 motorbike → hammer level needed and loot
 const WRECK={2:{name:'Old motorbike',need:1,s:[4,6],g:0.3},0:{name:'Old car',need:3,s:[7,10],g:1},1:{name:'Crashed helicopter',need:5,s:[11,15],g:2},3:{name:'Crashed plane',need:7,s:[22,30],g:3}};// 2.2: no circuits in wrecks any more
-// camps: built once, then a one-click trip from home (costs well water)
-// camps: the places Robin marked on the map (20. 11.). No arrows point to them – the player has to find them.
-const CAMPS=[
-  {id:'c1',name:'Shore Camp',x:-2990,y:1830,trip:3},{id:'c2',name:'Red Mesa Camp',x:5335,y:-4740,trip:5},
-  {id:'c3',name:'Far Dunes Camp',x:3410,y:8300,trip:6},{id:'c4',name:'Salt Lake Camp',x:-4400,y:-9930,trip:7}];
-// ---- the sea (Robin 20. 11.): a coastline to the south-west, so the world can't grow in every direction ----
-const COAST_CP=[[-30000,-26000],[-14471,-10025],[-6471,-2025],[-5360,-914],[-5434,568],[-4989,2544],[-3507,4520],[-1531,5508],[-420,6496],[198,7484],[568,9460],[1927,11066],[3656,12054],[17656,20054],[40000,33000]];
-let COAST=null,COAST_SIGN=1;
-function coastPts(){if(COAST)return COAST;const P=COAST_CP,out=[];
+// ---- the peninsula (Robin 22. 11.: "not endless in every direction – a peninsula, my home on its tip, the camps on the way to the signal") ----
+// The land is described along the straight line home → signal: s = distance along it, w = distance to the right of it (2D units, 10 = 1 m).
+const SIG={x:9000,y:-16000};
+const AX=(()=>{const L=Math.hypot(SIG.x,SIG.y);return {ux:SIG.x/L,uy:SIG.y/L,L};})();
+const axS=(x,y)=>x*AX.ux+y*AX.uy,axP=(s,w)=>[s*AX.ux-w*AX.uy,s*AX.uy+w*AX.ux];
+// spine: [s, how far the middle of the land lies to the right of the line, half width]. Four lobes (one per territory) joined by three necks.
+const SPINE=[[-2750,0,0],[-2450,-50,1200],[-1700,-100,2200],[-500,0,2950],[900,150,3300],[2400,350,3450],[3500,650,2700],[4500,900,1500],[5500,900,2600],[6800,500,3500],[8000,-150,2700],[9000,-700,1450],[10000,-1000,2700],[11300,-1100,3650],[12500,-750,2800],[13500,-200,1450],[14500,300,2600],[15800,700,3300],[17200,400,2500],[18358,0,1600],[19600,0,3200],[21500,0,7000],[26000,0,16000],[40000,0,45000]];
+const NECKS=[4500,9000,13500];// where one territory ends and the next begins
+function spineAt(s){const P=SPINE;if(s<=P[0][0])return [P[0][1],P[0][2]];for(let i=0;i<P.length-1;i++)if(s<=P[i+1][0]){const a=P[i],b=P[i+1],t=smooth(0,1,(s-a[0])/(b[0]-a[0]));return [a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];}const l=P[P.length-1];return [l[1],l[2]];}
+function coastCP(){const r=mulberry32(7),L=[],R=[],s0=SPINE[0][0],ss=[];
+  for(let s=s0+420;s<19400;s+=560)ss.push(s);ss.push(20200,21300,23000,26000,31000,40000);
+  // bays and capes: two slow waves per side (neighbouring points move together, so the shore stays rounded); the necks keep their width
+  const ph=[r()*6.283,r()*6.283,r()*6.283,r()*6.283],wob=(s,a,b)=>0.62*Math.sin(s/760+a)+0.38*Math.sin(s/330+b);
+  for(const s of ss){const [c,hw]=spineAt(s);const amp=smooth(1500,2500,hw)*(hw*0.1+90)*(1-smooth(18500,20500,s));
+    L.push(axP(s,c-hw-wob(s,ph[0],ph[1])*amp));R.push(axP(s,c+hw+wob(s,ph[2],ph[3])*amp));}
+  return [...L.reverse(),axP(s0,0),...R];}
+let COAST=null,COAST_SIGN=1;const CGRID=new Map(),CG=480;
+function coastPts(){if(COAST)return COAST;const P=coastCP(),out=[];
   for(let i=0;i<P.length-1;i++){const p0=P[Math.max(0,i-1)],p1=P[i],p2=P[i+1],p3=P[Math.min(P.length-1,i+2)];
     for(let k=0;k<8;k++){const t=k/8,t2=t*t,t3=t2*t;const f=(a,b,c,d)=>0.5*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*t2+(-a+3*b-3*c+d)*t3);out.push([f(p0[0],p1[0],p2[0],p3[0]),f(p0[1],p1[1],p2[1],p3[1])]);}}
   out.push(P[P.length-1]);COAST=out;COAST_SIGN=1;COAST_SIGN=coastRaw(0,0).side>0?1:-1;return COAST;}
-function coastRaw(x,y){const P=COAST;let bd=1e18,best=null;for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1],dx=b[0]-a[0],dy=b[1]-a[1],l2=dx*dx+dy*dy;let t=((x-a[0])*dx+(y-a[1])*dy)/l2;t=t<0?0:t>1?1:t;
+// nearest point of the shore line. The line has ~700 pieces, so each 48 m square of the world remembers which pieces can be the nearest one for a point inside it.
+function coastNear(gx,gy){const k=gx+','+gy;let L=CGRID.get(k);if(L)return L;const P=COAST,n=P.length-1,cx=(gx+0.5)*CG,cy=(gy+0.5)*CG,ds=new Float64Array(n);let dm=1e18;
+  for(let i=0;i<n;i++){const a=P[i],b=P[i+1],dx=b[0]-a[0],dy=b[1]-a[1];let t=((cx-a[0])*dx+(cy-a[1])*dy)/(dx*dx+dy*dy);t=t<0?0:t>1?1:t;const d=Math.hypot(cx-a[0]-dx*t,cy-a[1]-dy*t);ds[i]=d;if(d<dm)dm=d;}
+  L=[];const lim=dm+CG*1.4143;for(let i=0;i<n;i++)if(ds[i]<=lim)L.push(i);CGRID.set(k,L);return L;}
+function coastRaw(x,y){const P=COAST,L=coastNear(Math.floor(x/CG),Math.floor(y/CG));let bd=1e18,best=null;for(let j=0;j<L.length;j++){const i=L[j],a=P[i],b=P[i+1],dx=b[0]-a[0],dy=b[1]-a[1],l2=dx*dx+dy*dy;let t=((x-a[0])*dx+(y-a[1])*dy)/l2;t=t<0?0:t>1?1:t;
   const qx=a[0]+dx*t,qy=a[1]+dy*t,d2=(x-qx)*(x-qx)+(y-qy)*(y-qy);if(d2<bd){bd=d2;best={qx,qy,side:Math.sign(dx*(y-a[1])-dy*(x-a[0]))||1};}}best.d=Math.sqrt(bd);return best;}
 // signed distance to the shore: >0 on land, <0 in the sea; n = unit vector pointing inland
 function coastSD(x,y){coastPts();const r=coastRaw(x,y),land=r.side*COAST_SIGN>0,d=r.d||0.001;const nx=(x-r.qx)/d,ny=(y-r.qy)/d;return land?{d,nx,ny}:{d:-d,nx:-nx,ny:-ny};}
-const CAMP_COST=12;
+// camps: built once, then a one-click trip from home (costs well water)
+// 2.4 (Robin 22. 11.: "first camp about 200 m out, the next ones every 200–250 m towards the signal", 7–8 of them): seven sites along the peninsula,
+// every other one in a neck between two territories. s = distance along the line home → signal, k = how far off the middle (share of the half width).
+// cost: what it takes to build the camp (carried load first, the rest from the village stock); trip: well water for the one-tap trip from home.
+const CAMP_DEF=[
+  {id:'n1',name:'Dune Camp',s:2000,k:0.15,trip:2,cost:{s:12}},
+  {id:'n2',name:'Rock Gate Camp',s:4450,k:0,trip:3,cost:{s:40,c:2}},
+  {id:'n3',name:'Red Mesa Camp',s:6750,k:-0.1,trip:4,cost:{s:80,c:5,x:4}},
+  {id:'n4',name:'Broken Road Camp',s:9000,k:0.05,trip:5,cost:{s:130,c:8,x:8}},
+  {id:'n5',name:'Station Camp',s:11300,k:0.3,trip:6,cost:{s:190,c:12,x:14}},
+  {id:'n6',name:'Salt Gate Camp',s:13500,k:0,trip:7,cost:{s:260,c:16,x:20}},
+  {id:'n7',name:'Salt Lake Camp',s:15800,k:-0.2,trip:8,cost:{s:340,c:22,x:28}}];
+const CAMPS=CAMP_DEF.map(c=>{const m=spineAt(c.s),p=axP(c.s,m[0]+m[1]*c.k);return Object.assign({x:Math.round(p[0]/10)*10,y:Math.round(p[1]/10)*10},c);});
+const CAMP_CLEAR=200;// nothing solid, no ruin and no robot's beat this close to a camp site (Robin: "a camp needs free room around it")
+const campNear=(x,y,r)=>CAMPS.some(cp=>Math.hypot(x-cp.x,y-cp.y)<r);
 const DECOR={kvetiny:{icon:'{flowers}',name:'Flowers',s:2},lampa:{icon:'{lamp}',name:'Lamp',s:3},lavicka:{icon:'{bench}',name:'Bench',s:4},palma:{icon:'{palm}',name:'Palm',s:6}};
 const MSGS=['…hello? …is anyone there? …all I hear is static…','…if you can hear this… you are not alone… I repeat, you are not alone…','…every evening I switch on the transmitter… and wait…',
   '…northeast… past the salt flats… there is water here…','…I saw a light on the horizon… was that you?…','…the road is long… but it can be walked…','…I\'ll wait. I promise.'];
 const LORE=['Diary scrap: “The wells dried up one after another. Nobody knew why.”','Diary scrap: “The robots stayed. We went north.”','Diary scrap: “Whoever finds this, don\'t give up.”'];
-const SIG={x:9000,y:-16000};
 const STARTERS=[{x:250,y:-190},{x:-290,y:-250},{x:110,y:-430},{x:-420,y:120}];
 const CH=240,W=360;
 
@@ -104,7 +130,7 @@ if(ZVER)try{if(localStorage.getItem(SAVE_KEY)===null){const pv=v=>v.split('.').m
   let src='daleko3_save',bv=null;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i),m=k&&k.match(/^daleko3_save_v([0-9.]+)$/);if(m&&lt(pv(m[1]),pv(ZVER))&&(!bv||lt(bv,pv(m[1])))){bv=pv(m[1]);src=k;}}
   const o=localStorage.getItem(src);if(o!==null)localStorage.setItem(SAVE_KEY,o);}}catch(_){}
 function freshSave(){return {v:1,eco:2,seed:(Math.random()*4294967295)>>>0,scrap:0,cores:0,chips:0,bottles:0,b:{cerpadlo:0,solar:0,dilna:0,dron:0,radio:0},energy:30,scout:null,
-  craft:{},decor:[],green:0,greenW:0,taken:[],bags:[],exp:0,best:0,msg:0,lore:0,scrapT:{},meters:0,name:'Wanderer',tod:0.12,zoom:14,mscale:1,seen:{},lastPath:null,well:24,wellAt:Date.now(),camps:{},fetch:null,caches:[]};}
+  craft:{},decor:[],green:0,greenW:0,taken:[],bags:[],exp:0,best:0,msg:0,lore:0,scrapT:{},meters:0,name:'Wanderer',tod:0.12,zoom:14,mscale:1,seen:{},lastPath:null,well:24,wellAt:Date.now(),camps:{},fetch:null,caches:[],world:2};}
 function loadSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.v===1){s.takenSet=new Set(s.taken||[]);s.scrapT=s.scrapT||{};s.meters=s.meters||0;s.name=s.name||'Wanderer';if(s.tod===undefined)s.tod=0.12;s.zoom=clamp(s.zoom||14,10,18);
     if(!s.eco){s.eco=2;s.well=24;s.wellAt=Date.now();s.camps={};s.fetch=null;}// older save → new water economy
     s.camps=s.camps||{};if(s.well===undefined)s.well=24;
@@ -137,6 +163,10 @@ SV.bottles=Math.min(SV.bottles||0,bottleMax());// a save from before 2.1 may car
 const GREEN={cost:[12,20,32,48,70,95,125,160,200,250],patch:[6,22,40,60,82,104,126,148,168,182,190],fthr:[9,9,9,0.82,0.8,0.7,0.62,0.55,0.5,0.45,0.4],palms:[1,1,2,2,2,3,3,4,6,7,8],
   what:['','Grass takes root around the house.','A second palm sprouts.','The first flowers open.','Grass spreads along the paths.','A third palm gives shade.','Flowers everywhere.','The green reaches the workshop and the pump.','Two more palms.','A little pond fills up.','A full oasis – palms, flowers and water.']};
 // a village from before 2.3 keeps the green it had (it used to grow with the buildings)
+// 2.4: the world is a peninsula now. An older save keeps the village, the gear and the stock; the map starts blank and whatever lay out in the old desert comes home.
+let WORLD_NOTE=false;
+if(SV.world!==2){if(SV.exp>0){WORLD_NOTE=true;SV.scrap+=12*Object.keys(SV.camps||{}).length;for(const b of SV.bags||[]){SV.scrap+=b.s||0;SV.cores+=b.c||0;SV.chips=(SV.chips||0)+(b.k||0);}SV.bottles=Math.min((SV.bottles||0)+(SV.caches||[]).length,bottleMax());}
+  SV.seen={};SV.lastPath=null;SV.camps={};SV.bags=[];SV.caches=[];SV.scrapT={};SV.takenSet=new Set([...SV.takenSet].filter(id=>/^k\d$/.test(id)));SV.world=2;}
 if(SV.green===undefined){const had=4+9*Object.values(SV.b).reduce((a,b)=>a+b,0);let g=0;while(g<10&&GREEN.patch[g+1]<=had+8)g++;SV.green=SV.exp>0?g:0;SV.greenW=0;}
 const greenLv=()=>clamp(SV.green|0,0,10);
 const greenReserve=()=>waterCap()+bottleMax()*BOTTLE;// one full fill for the next trip always stays in the well
@@ -1388,7 +1418,7 @@ const heroWaterMul=()=>1,/* 2.1: levels no longer stretch the water – how long
 const OBST=new Map();
 function obstOf(cx,cy){const k=cx+','+cy;let o=OBST.get(k);if(o)return o;o=[];
   const ox=cx*CH,oy=cy*CH,mx=ox+CH/2,my=oy+CH/2,dist=Math.hypot(mx,my);
-  const nearCamp=CAMPS.some(cp=>cp.x>ox-70&&cp.x<ox+CH+70&&cp.y>oy-70&&cp.y<oy+CH+70)||STARTERS.some(q=>q.x>ox-40&&q.x<ox+CH+40&&q.y>oy-40&&q.y<oy+CH+40);
+  const nearCamp=CAMPS.some(cp=>Math.hypot(cp.x-clamp(cp.x,ox,ox+CH),cp.y-clamp(cp.y,oy,oy+CH))<CAMP_CLEAR)||STARTERS.some(q=>q.x>ox-40&&q.x<ox+CH+40&&q.y>oy-40&&q.y<oy+CH+40);
   if(dist>330&&!nearCamp&&coastSD(mx,my).d>220){const r=mulberry32(hash3((SV.seed^0x5bd1e995)>>>0,cx,cy));const bio=biomeAt(mx,my);
     // Robin 20. 11.: fewer holes, but bigger and irregular – built from overlapping lobes / a bent chain, so you really have to walk around
     if(r()<(bio===2?0.38:0.2)){const ccx=mx+(r()-0.5)*24,ccy=my+(r()-0.5)*24,fit=(x,y,rr)=>Math.max(Math.abs(x-mx),Math.abs(y-my))+rr<112;
@@ -1421,12 +1451,13 @@ function blockObst(P,dir,step,isX){let hit=false;
 function walkable(x,y){if(coastSD(x,y).d<9)return false;let ok=true;obstNear(x,y,o=>{if(ok&&segPt(x,y,o).d<o.r+7)ok=false;});return ok;}
 function fixDest(p){if(!p||!X)return null;if(walkable(p.x,p.y))return p;const dx=X.x-p.x,dy=X.y-p.y,L=Math.hypot(dx,dy);if(L<1)return null;
   for(let t=5;t<L;t+=5){const x=p.x+dx/L*t,y=p.y+dy/L*t;if(walkable(x,y))return Math.hypot(X.x-x,X.y-y)<10?null:{x,y};}return null;}
-// ---- biomes: every direction leads somewhere (2D game units) ----
-const BIOME_COL=ST.sunink?['#f9dec3','#dff6fc','#f2b6a6','#d2d3d4']:['#d0aa70','#ebe3d3','#c4906a','#b3a596'];// sand, salt flats (north), red rocks (east), old town (west)
+// ---- biomes (2.4): the territories lie one after another on the way to the signal, each on its own lobe of the peninsula ----
+// dunes (home) → red rocks → old town → salt flats (the old messages: "past the salt flats… there is water here"); the borders are the necks
+const BIOME_COL=ST.sunink?['#f9dec3','#dff6fc','#f2b6a6','#d2d3d4']:['#d0aa70','#ebe3d3','#c4906a','#b3a596'];// sand, salt flats, red rocks, old town
 const BIOME_NAME=['Dunes','Salt Flats','Red Rocks','Old Town'];
-function biomeW(x,y){const d=Math.hypot(x,y);const f=smooth(600,1300,d);if(f<=0)return [1,0,0,0];const a=Math.atan2(y,x);
-  const w=c=>Math.pow(Math.max(0,Math.cos(a-c)),3);const ws=w(Math.PI/2),wn=w(-Math.PI/2),we=w(0),ww=w(Math.PI),sum=ws+wn+we+ww||1;
-  return [1-f*(wn+we+ww)/sum,f*wn/sum,f*we/sum,f*ww/sum];}
+function biomeW(x,y){const s=axS(x,y);if(s<NECKS[0]-350)return [1,0,0,0];
+  const a=smooth(NECKS[0]-350,NECKS[0]+350,s),b=smooth(NECKS[1]-350,NECKS[1]+350,s),c=smooth(NECKS[2]-350,NECKS[2]+350,s),d=smooth(19600,21600,s);
+  return [1-a+d,c*(1-d),a*(1-b),b*(1-c)];}// [dunes, salt flats, red rocks, old town]; past the signal the mainland is dunes again
 function biomeAt(x,y){const w=biomeW(x,y);let bi=0;for(let i=1;i<4;i++)if(w[i]>w[bi])bi=i;return w[bi]>0.45?bi:0;}
 // tileable sand texture (wind ripples + specks), multiplied with the biome colour
 function sandTex(){if(ST.sunink)return canTex('sandH',256,256,(g,w,h)=>{g.fillStyle='#ffffff';g.fillRect(0,0,w,h);const r=mulberry32(77);
@@ -1607,6 +1638,7 @@ function enterBase(){
   $('bhud').classList.remove('hidden');$('bbar').classList.remove('hidden');$('mute').classList.remove('hidden');
   $('xhud').classList.add('hidden');$('bMelon').classList.add('hidden');$('bSling').classList.add('hidden');$('bDrop').classList.add('hidden');$('sum').classList.add('hidden');$('decorBar').classList.add('hidden');
   B.decorMode=false;BS.decorRing.visible=false;for(const k in BLD)rebuildBuilding(k);rebuildDecor();rebuildBaseChars();refreshBaseUI();
+  if(WORLD_NOTE){WORLD_NOTE=false;save();setTimeout(()=>toast('{compass}','A new map','We live on the tip of a peninsula now. The village, the gear and the stock stayed – the map starts blank.'),1400);}
   if(X){disposeExp();X=null;}
 }
 document.querySelectorAll('.wic[data-ic],#bDrop [data-ic],#bSling [data-ic]').forEach(e=>{e.innerHTML=icSvg(e.dataset.ic);});
@@ -1827,7 +1859,7 @@ function genChunk(cx,cy,noMesh){
   // scrap – denser than before so a longer trip is worth it (Robin 19. 11.)
   // Robin 20. 11.: a bit less scrap – sparse near home, more value further out
   const ns=Math.max(1,(dist<420?2+Math.floor(rng()*2):3+Math.floor(rng()*2))+(bio===3?1:0)-(bio===1?1:0));
-  for(let i=0;i<ns;i++){const p=Pp(),v=1+Math.floor(rng()*(1.6+dist/700)),sid=id('s',i),ph=rng()*6,tt=SV.scrapT[sid];if(tt===undefined||SV.exp-tt>=6)c.scrap.push({id:sid,...p,v,ph});}
+  for(let i=0;i<ns;i++){const p=Pp(),v=1+Math.floor(rng()*(1.6+Math.min(dist,4500)/700+Math.max(0,dist-4500)/3000)),sid=id('s',i),ph=rng()*6,tt=SV.scrapT[sid];if(tt===undefined||SV.exp-tt>=6)c.scrap.push({id:sid,...p,v,ph});}
   // wrecks: motorbikes near home, cars further, helicopters far away
   if(dist>200&&rng()<(bio===3?0.55:0.32)){const p=Pp(30),sid=id('w',0),wt=SV.scrapT[sid];const q=rng()+Math.min(0.5,dist/4000);
     let kind=q<0.6?2:q<0.95?0:1;if(dist>1600&&rng()<0.22)kind=3;const W=WRECK[kind];const v=W.s[0]+Math.floor(rng()*(W.s[1]-W.s[0]+1));let gold=Math.floor(W.g)+(rng()<W.g%1?1:0);if(kind===1&&rng()<0.5)gold++;
@@ -1855,10 +1887,10 @@ function genChunk(cx,cy,noMesh){
   c.obst=obstOf(cx,cy);
 
   const clear=(o,m)=>!c.obst.some(ob=>segPt(o.x,o.y,ob).d<ob.r+(m||10))&&coastSD(o.x,o.y).d>(m||10)+14;
-  c.ruins=c.ruins.filter(r=>clear(r,70));
-  c.foes=c.foes.filter(f=>f.ruin?c.ruins.includes(f.ruin):(f.wp.every(w=>walkable(w.x,w.y)&&Math.hypot(w.x,w.y)>300&&!CAMPS.some(cp=>Math.hypot(w.x-cp.x,w.y-cp.y)<90))));
-  const far=o=>Math.hypot(o.x,o.y)>95;const offCamp=o=>!CAMPS.some(cp=>Math.hypot(o.x-cp.x,o.y-cp.y)<40);
-  for(const k of ['scrap','cacti','waters','rocks','crates','props','wrecks','fata','dust'])c[k]=c[k].filter(o=>far(o)&&offCamp(o)&&(o.rim||clear(o,k==='wrecks'?(o.kind===3?80:40):k==='dust'?0:12)));
+  c.ruins=c.ruins.filter(r=>clear(r,70)&&!campNear(r.x,r.y,CAMP_CLEAR+130));
+  c.foes=c.foes.filter(f=>f.ruin?c.ruins.includes(f.ruin):(f.wp.every(w=>walkable(w.x,w.y)&&Math.hypot(w.x,w.y)>300&&!campNear(w.x,w.y,CAMP_CLEAR+70))));
+  const far=o=>Math.hypot(o.x,o.y)>95;const offCamp=o=>!campNear(o.x,o.y,60);
+  for(const k of ['scrap','cacti','waters','rocks','crates','props','wrecks','fata','dust'])c[k]=c[k].filter(o=>far(o)&&(k==='wrecks'?!campNear(o.x,o.y,130):offCamp(o))&&(o.rim||clear(o,k==='wrecks'?(o.kind===3?80:40):k==='dust'?0:12)));
   c.foes=c.foes.filter(f=>!f.guard||c.wrecks.includes(f.guard));
   if(!noMesh)buildChunkMeshes(c);
   return c;
@@ -1871,10 +1903,11 @@ function buildChunkMeshes(c){
   const pos=geo.attributes.position;for(let i=0;i<pos.count;i++)pos.setY(i,Hd(pos.getX(i),pos.getZ(i)));
   const gn=geo;const gp=gn.attributes.position;const cols=new Float32Array(gp.count*3);
   const BC=BIOME_COL.map(C),dust=C(DUSTC),home=C(PLAZA),OB_WALL=C('#8e6648'),OB_FLOOR=C('#a88663'),WET=C(ST.sunink?'#d7b497':'#b88f5c'),FOAM=C(ST.sunink?'#ffffff':'#f4f8f2'),SHAL=C(ST.sunink?'#73d1e2':'#6fc2c6'),DEEP=C(ST.sunink?'#089bbf':'#2f7f95');
-  const nearSea=coastSD(c.cx*CH+CH/2,c.cy*CH+CH/2).d<CH*1.2;
+  const nearSea=coastSD(c.cx*CH+CH/2,c.cy*CH+CH/2).d<CH*1.2;const cps=CAMPS.filter(cp=>Math.hypot(cp.x-clamp(cp.x,c.cx*CH,c.cx*CH+CH),cp.y-clamp(cp.y,c.cy*CH,c.cy*CH+CH))<70);
   for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i);const bw=biomeW(x/S,z/S);let col=new T.Color(0,0,0);for(let b=0;b<4;b++)if(bw[b]>0){col.r+=BC[b].r*bw[b];col.g+=BC[b].g*bw[b];col.b+=BC[b].b*bw[b];}
     for(const d of c.dust){const q=Math.hypot(x-d.x*S,z-d.y*S)/(d.r*S);if(q<1)col.lerp(dust,1-smooth(0.72,1,q));}
     const r=Math.hypot(x,z);if(r<9.5)col.lerp(home,1-smooth(8.2,9.2,r));
+    for(const cp of cps){const q=Math.hypot(x-cp.x*S,z-cp.y*S);if(q<6.4)col.lerp(home,(1-smooth(4.8,6.2,q))*0.85);}
     if(nearSea){const cs=coastSD(x/S,z/S).d;if(cs<34){const sand=col.clone();if(cs>10)col.lerp(WET,(34-cs)/24*0.7);else{const wet=sand.clone().lerp(WET,0.7),water=SHAL.clone().lerp(DEEP,smooth(-14,-170,cs));const foam=1-smooth(2,9,Math.abs(cs+2));col.copy(cs>-2?wet:water).lerp(wet,cs>-2?0:smooth(-12,-2,cs)*0).lerp(FOAM,foam*0.9);if(cs<=-2&&cs>-12)col.lerp(SHAL,0.0);}}}
     if(hasOb){const h=Hd(x,z);if(h<0)col.lerp(OB_WALL,Math.min(1,-h/1.1)*0.6).lerp(OB_FLOOR,smooth(1.6,2.6,-h)*0.5);}
     cols[i*3]=col.r;cols[i*3+1]=col.g;cols[i*3+2]=col.b;}
@@ -1958,6 +1991,12 @@ onPressLater.push(()=>onPress($('bDrop'),()=>dropCache()));
 onPressLater.push(()=>onPress($('bMelon'),()=>{if(!X||X.end||X.bottles<=0)return;if(X.cap-X.water<0.15){xText('Flask is full','#3f8fa1');return;}X.bottles--;X.water=Math.min(X.cap,X.water+BOTTLE);sfx.drink();heroPlay(X.hero,'drink',1.5);xText('+0.5 L {bottle}','#3f8fa1');updateMelonBtn();}));
 function xText(t,c){float3(X.x*S,H2(X.x,X.y)+3.2,X.y*S,t,c);}
 function xBurst(x,y,col,n,s){burst3(X.scene,x*S,H2(x,y)+0.6,y*S,col,n,(s||80)/22);}
+// 2.4: a camp is paid from what you carry first, the rest comes from the village stock (so a far camp is something you save up for at home)
+const campHave=()=>({s:X.scrap+SV.scrap,c:X.cores+SV.cores,x:(X.chips||0)+(SV.chips||0)});
+const campCan=n=>{const h=campHave();return h.s>=(n.s||0)&&h.c>=(n.c||0)&&h.x>=(n.x||0);};
+const campTxt=n=>[n.s?n.s+' {scrap}':'',n.c?n.c+' {core}':'',n.x?n.x+' {chip}':''].filter(Boolean).join(' · ');
+const campLack=n=>{const h=campHave();return campTxt({s:Math.max(0,(n.s||0)-h.s),c:Math.max(0,(n.c||0)-h.c),x:Math.max(0,(n.x||0)-h.x)});};
+function campPay(n){let a=Math.min(X.scrap,n.s||0);X.scrap-=a;SV.scrap-=(n.s||0)-a;a=Math.min(X.cores,n.c||0);X.cores-=a;SV.cores-=(n.c||0)-a;a=Math.min(X.chips||0,n.x||0);X.chips=(X.chips||0)-a;SV.chips=(SV.chips||0)-((n.x||0)-a);}
 const weight=()=>X.scrap+X.cores*2+(X.chips||0);
 const room=()=>Math.max(0,bagCap()-weight());
 function fullMsg(){if(X.fullCd<=0){xText('Backpack full','#c0532f');X.fullCd=1.5;}}
@@ -1977,8 +2016,8 @@ function xAction(){if(!X||X.end||X.intro)return;
   if(slingReady()){slingShoot();return;}
   if(X.goHome&&!X.dis){comeHome();return;}
   if(X.nearWreck&&!X.dis){const W=WRECK[X.nearWreck.kind];if(gearLv('kladivo')<W.need){xText('Needs {hammer} Hammer '+ROMAN[W.need],'#c8643c');return;}if(room()<=0){fullMsg();return;}X.dis={w:X.nearWreck,c:X.nearWreckC,t:0};X.dest=null;sfx.clink();return;}
-  if(X.nearCamp&&!SV.camps[X.nearCamp.id]){const cp=X.nearCamp;if(X.scrap<CAMP_COST){xText('Need '+CAMP_COST+' {scrap}','#c0532f');return;}
-    X.scrap-=CAMP_COST;SV.camps[cp.id]=1;save();sfx.repair();xBurst(cp.x,cp.y,'#e0b04c',20,100);
+  if(X.nearCamp&&!SV.camps[X.nearCamp.id]){const cp=X.nearCamp;if(!campCan(cp.cost)){xText('Still missing '+campLack(cp.cost),'#c0532f');return;}
+    campPay(cp.cost);SV.camps[cp.id]=1;save();sfx.repair();xBurst(cp.x,cp.y,'#e0b04c',20,100);
     if(cp.m&&cp.m.parent){const par=cp.m.parent,pos=cp.m.position.clone();par.remove(cp.m);cp.m=makeCamp(true);cp.m.position.copy(pos);par.add(cp.m);}
     toast('{home}',cp.name+' built!','From home you can now travel here in one tap ('+cp.trip+' L from the well).');X.events.push({x:cp.x,y:cp.y,t:'camp'});}
 }
@@ -1995,7 +2034,7 @@ function autopilotX(dt){
   const sp=safePoint(),hd=sp.d,wr=weight()/bagCap();
   const per=(WATER_PER_U*(1+0.6*wr))*(X.inDust&&!SV.craft.maska?2:1);const need=hd*per*1.35+0.1;
   if(X.nearWreck&&!X.dis&&gearLv('kladivo')>=WRECK[X.nearWreck.kind].need&&room()>0)xAction();
-  if(X.nearCamp&&!SV.camps[X.nearCamp.id]&&X.scrap>=CAMP_COST+4)xAction();
+  if(X.nearCamp&&!SV.camps[X.nearCamp.id]&&campCan(X.nearCamp.cost))xAction();
   if(X.dis){X.dest=null;return;}
   if(X.water<need&&X.bottles>0&&X.water<X.cap*0.3){X.bottles--;X.water=Math.min(X.cap,X.water+BOTTLE);updateMelonBtn();}
   if(X.water<need||room()<=0){X.botHome=true;X.dest={x:sp.x,y:sp.y};return;}
@@ -2003,14 +2042,14 @@ function autopilotX(dt){
   forX(X.x-sr*2,X.y-sr*2,X.x+sr*2,X.y+sr*2,c=>{for(const k of c.crates){if(Math.hypot(k.x,k.y)<180)continue;const d=Math.hypot(k.x-X.x,k.y-X.y);if(d<sr*2&&d*0.45<bd){bd=d*0.45;tgt=k;}}});
   forX(X.x-sr,X.y-sr,X.x+sr,X.y+sr,c=>{
     const con=(o,w)=>{if(Math.hypot(o.x,o.y)<180)return;const d=Math.hypot(o.x-X.x,o.y-X.y);if(d<sr&&d*w<bd){bd=d*w;tgt=o;}};
-    for(const s of c.scrap)con(s,1);for(const w of c.wrecks)if(gearLv('kladivo')>=WRECK[w.kind].need)con(w,0.7);for(const k of c.crates)con(k,0.8);for(const cp of c.camps)if(!SV.camps[cp.id]&&X.scrap>=CAMP_COST+4)con(cp,0.5);
+    for(const s of c.scrap)con(s,1);for(const w of c.wrecks)if(gearLv('kladivo')>=WRECK[w.kind].need)con(w,0.7);for(const k of c.crates)con(k,0.8);for(const cp of c.camps)if(!SV.camps[cp.id]&&campCan(cp.cost))con(cp,0.5);
     if(X.water/X.cap<0.6){for(const w of c.waters)if(!w.taken)con(w,0.5);}
     for(const r of c.ruins)if(r.core)con(r.core,0.7);for(const b of SV.bags)con(b,0.4);for(const d of (X.drops||[]))con(d,0.3);});
   const sl=gearLv('prak');let hunt=null;
   if(sl&&X.scrap>5){forX(X.x-sr,X.y-sr,X.x+sr,X.y+sr,c=>{for(const f of c.foes){if(f.dead)continue;const d=Math.hypot(f.x-X.x,f.y-X.y);if(d<sr&&d*0.55<bd){bd=d*0.55;hunt=f;}}},true);
     if(hunt){const d=Math.hypot(hunt.x-X.x,hunt.y-X.y),k=Math.max(0,d-(SLING.range(sl)-12))/Math.max(1,d);tgt={x:X.x+(hunt.x-X.x)*k,y:X.y+(hunt.y-X.y)*k};}}
   if(tgt){X.dest={x:tgt.x,y:tgt.y};}
-  else{X.botT-=dt;if(X.botT<=0){X.botT=2+Math.random()*2;const out=Math.atan2(X.y,X.x);X.botDir=lerp(X.botDir,out,0.4)+(Math.random()-0.5)*1.2;}X.dest={x:X.x+Math.cos(X.botDir)*100,y:X.y+Math.sin(X.botDir)*100};}
+  else{X.botT-=dt;if(X.botT<=0){X.botT=2+Math.random()*2;const out=Math.atan2(X.y,X.x);X.botDir=lerp(X.botDir,out,0.4)+(Math.random()-0.5)*1.2;}{const cs=coastSD(X.x+Math.cos(X.botDir)*120,X.y+Math.sin(X.botDir)*120);if(cs.d<25){X.botDir=Math.atan2(cs.ny,cs.nx)+(Math.random()-0.5)*1.8;X.botT=2+Math.random()*2;}}X.dest={x:X.x+Math.cos(X.botDir)*100,y:X.y+Math.sin(X.botDir)*100};}
   forX(X.x-160,X.y-160,X.x+160,X.y+160,c=>{for(const f of c.foes){if(f.dead||f.stun>0||f===hunt)continue;const dx=X.x-f.x,dy=X.y-f.y,dd=Math.hypot(dx,dy);if(dd<f.R+30&&X.dest){X.dest.x+=dx/dd*110;X.dest.y+=dy/dd*110;}}},true);
   if(X.foeNear&&!X.foeNear.dead&&X.scrap>4)slingShoot();if(X.nearFoe&&gearLv('kladivo')&&(X.nearFoe.stun>0||X.nearFoe.alert<0.3))smash();
 }
@@ -2328,7 +2367,7 @@ function updExpHUD(){const cap=X.cap,can=canteenCap(),w=clamp(X.water,0,cap);
   else if(X.nearWreck){const W=WRECK[X.nearWreck.kind],hl=gearLv('kladivo');st='w'+X.nearWreck.id+hl+room();
     if(hl>=W.need){txt='Woof! '+W.name+'. Your {hammer} Hammer '+ROMAN[hl]+' can take it apart.';btn='{hammer} Dismantle';dis=room()<=0;if(dis)txt='Your backpack is full – nothing more fits.';}
     else{txt=W.name+'. We need {hammer} Hammer '+ROMAN[W.need]+' from the Workshop.';btn='{hammer} Needs Hammer '+ROMAN[W.need];dis=true;}}
-  else if(X.nearCamp&&!SV.camps[X.nearCamp.id]){st='c'+X.nearCamp.id+(X.scrap>=CAMP_COST);txt='A good spot for '+X.nearCamp.name+'. Build it and you can travel here from home.';btn='{home} Build camp · '+CAMP_COST+' {scrap}';dis=X.scrap<CAMP_COST;}
+  else if(X.nearCamp&&!SV.camps[X.nearCamp.id]){const cp=X.nearCamp,ok=campCan(cp.cost);st='c'+cp.id+ok;txt='A good spot for '+cp.name+'. It takes '+campTxt(cp.cost)+(ok?' – then we can travel here from home.':' – we are still short of '+campLack(cp.cost)+'.');btn='{home} Build camp';dis=!ok;}
   updCombatBtns();
   if(st!==X._act){X._act=st;const el=$('xact');if(!st)el.classList.add('hidden');else{el.classList.remove('hidden');$('xactTxt').innerHTML=zSay(txt);const b=$('bAct'),m=btn.match(/^\{(\w+)\}\s*(.*)$/);b.innerHTML=icx(m?`<span class="ai">{${m[1]}}</span><small>${m[2]}</small>`:`<small>${btn}</small>`);b.disabled=dis;}}}
 function drawFloaters(){
@@ -2392,7 +2431,7 @@ function drawMap(){const cv=$('mapc'),g=cv.getContext('2d'),dpr=Math.min(2,windo
    if(!ST.sunink){g.globalAlpha=0.55;g.drawImage(oc,sx-MC*sc*0.5,sy-MC*sc*0.5,(w+1)*MC*sc,(h+1)*MC*sc);}g.globalAlpha=ST.sunink?1:0.85;g.drawImage(oc,sx,sy,w*MC*sc,h*MC*sc);g.restore();}
   // inked coastline with little wave strokes (only where explored)
   {const P=coastPts();g.strokeStyle=MT.coast;g.lineWidth=1.8*dpr;for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1];if(!isSeen((a[0]+b[0])/2,(a[1]+b[1])/2))continue;const [ax,ay]=toS(a[0],a[1]),[bx,by]=toS(b[0],b[1]);g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();
-    const n=coastSD((a[0]+b[0])/2,(a[1]+b[1])/2);const wx=(ax+bx)/2-n.nx*10*dpr,wy=(ay+by)/2-n.ny*10*dpr;g.lineWidth=1.2*dpr;g.beginPath();g.moveTo(wx-5*dpr,wy);g.quadraticCurveTo(wx-2.5*dpr,wy-3*dpr,wx,wy);g.quadraticCurveTo(wx+2.5*dpr,wy+3*dpr,wx+5*dpr,wy);g.stroke();g.lineWidth=1.8*dpr;}}
+    if(i%3!==1)continue;const n=coastSD((a[0]+b[0])/2,(a[1]+b[1])/2);const wx=(ax+bx)/2-n.nx*10*dpr,wy=(ay+by)/2-n.ny*10*dpr;g.lineWidth=1.2*dpr;g.beginPath();g.moveTo(wx-5*dpr,wy);g.quadraticCurveTo(wx-2.5*dpr,wy-3*dpr,wx,wy);g.quadraticCurveTo(wx+2.5*dpr,wy+3*dpr,wx+5*dpr,wy);g.stroke();g.lineWidth=1.8*dpr;}}
   const FULL=MV.mode==='view'||MV.mode==='exp',F=SV.mapF||{water:1},NEAR=sc>=0.09*dpr;
   // discoveries: only on the explorer's map, filtered (Robin 20. 11.: too many dots) – wrecks and gold only when zoomed in
   let budget={n:6},pend=false;
@@ -2450,7 +2489,13 @@ function drawMap(){const cv=$('mapc'),g=cv.getContext('2d'),dpr=Math.min(2,windo
 }
 function openMap(mode){sfx.ui('open');MV.open=true;MV.mode=mode;MV.sel=null;const cx=mode==='exp'&&X?X.x:0,cy=mode==='exp'&&X?X.y:0;MV.cx=cx;MV.cy=cy;
   let R=600;if(mode!=='go')for(const k in SV.seen){const [i,j]=k.split(',').map(Number);R=Math.max(R,Math.hypot((i+0.5)*MC-cx,(j+0.5)*MC-cy)+MC);}for(const cp of CAMPS)if(SV.camps[cp.id])R=Math.max(R,Math.hypot(cp.x-cx,cp.y-cy)+200);if(mode==='scout'&&SV.b.dron)R=DRONE.range[SV.b.dron]*1.12;
-  const cv=$('mapc');$('mapv').classList.remove('hidden');MV.sc=clamp(Math.min(cv.clientWidth,cv.clientHeight-120)/(2*R),0.04,1.2);
+  const cv=$('mapc');$('mapv').classList.remove('hidden');let Rx=R,Ry=R;
+  // 2.4: the land is long and narrow, so the map at home frames what is known (not a circle around home, half of which would be sea)
+  if(mode==='view'||mode==='go'){let x0=-600,x1=600,y0=-600,y1=600;const ex=(x,y,m)=>{x0=Math.min(x0,x-m);x1=Math.max(x1,x+m);y0=Math.min(y0,y-m);y1=Math.max(y1,y+m);};
+    if(mode==='view')for(const k in SV.seen){const [i,j]=k.split(',').map(Number);ex((i+0.5)*MC,(j+0.5)*MC,MC);}for(const cp of CAMPS)if(SV.camps[cp.id])ex(cp.x,cp.y,260);
+    MV.cx=(x0+x1)/2;MV.cy=(y0+y1)/2;Rx=(x1-x0)/2;Ry=(y1-y0)/2;
+    MV.sc=clamp(Math.min((cv.clientWidth-90)/(2*Rx),(cv.clientHeight-290)/(2*Ry)),0.02,1.2);}// room for the title above and the scale below
+  else MV.sc=clamp(Math.min(cv.clientWidth,cv.clientHeight-120)/(2*R),0.02,1.2);
   MV.pick=null;MV.plan=null;MAPD.clear();$('mapTitle').textContent=mode==='go'?'Where to?':mode==='scout'?'Pick a spot to scout':'Map';syncMapFil();$('mcard').classList.add('hidden');drawMap();}
 const MAPD=new Map();
 function mapChunk(cx,cy,budget){const k=cx+','+cy;if(X&&X.chunks&&X.chunks.has(k)&&scene==='exp')return X.chunks.get(k);let c=MAPD.get(k);if(!c){if(budget&&budget.n--<=0)return null;c=genChunk(cx,cy,true);MAPD.set(k,c);}return c;}
@@ -2478,7 +2523,7 @@ function mapSelect(h){MV.sel=h;const c=$('mcard');if(!h){c.classList.add('hidden
     $('mcT').textContent=t;$('mcS').innerHTML=icx(sub);const b=$('mcB');b.style.display='';b.innerHTML=icx(btn);b.disabled=!ok;c.classList.remove('hidden');return;}
   if(h.t==='home'){t='Home';sub='Your village in the oasis. Well: '+Math.floor(SV.well)+' / '+wellCap()+' L';if(MV.mode==='go'){btn='Fill up &amp; go · '+fmtL(fillAmount())+' L';ok=fillAmount()>=0.5;}}
   else{const cp=h.cp;t=SV.camps[cp.id]?cp.name:'Camp site';sub=BIOME_NAME[biomeAt(cp.x,cp.y)]+' · '+fmtM(Math.hypot(cp.x,cp.y))+' from home';
-    if(!SV.camps[cp.id])sub+='<br>Walk there and build the camp for '+CAMP_COST+' {scrap}.';
+    if(!SV.camps[cp.id])sub+='<br>Walk there and build the camp for '+campTxt(cp.cost)+'.';
     else if(MV.mode==='go'){btn='Travel · '+cp.trip+' L + fill up';ok=SV.well>=cp.trip+0.5;if(!ok)sub+='<br>Not enough water in the well yet.';}}
   $('mcT').textContent=t;$('mcS').innerHTML=icx(sub);const b=$('mcB');b.style.display=btn?'':'none';b.innerHTML=btn;b.disabled=!ok;c.classList.remove('hidden');}
 (function(){const cv=()=>$('mapc');let P=new Map(),drag=null,pin=null,moved=0;
@@ -2489,7 +2534,7 @@ function mapSelect(h){MV.sel=h;const c=$('mcard');if(!h){c.classList.add('hidden
   const startPin=()=>{const a=[...P.values()],m=mid(a),r=el.getBoundingClientRect();pin={d:Math.max(20,Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)),sc:MV.sc,m,wx:MV.cx+(m.x-r.left-r.width/2)/MV.sc,wy:MV.cy+(m.y-r.top-r.height/2)/MV.sc};drag=null;};
   el.addEventListener('pointerdown',e=>{e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(_){}P.set(e.pointerId,{x:e.clientX,y:e.clientY});if(P.size===1){moved=0;drag={x:e.clientX,y:e.clientY,cx:MV.cx,cy:MV.cy};}if(P.size===2){moved=99;startPin();}});
   el.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(pin&&P.size>=2){const a=[...P.values()],m=mid(a),r=el.getBoundingClientRect();MV.sc=clamp(pin.sc*Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)/pin.d,0.04,1.2);MV.cx=pin.wx-(m.x-r.left-r.width/2)/MV.sc;MV.cy=pin.wy-(m.y-r.top-r.height/2)/MV.sc;rd();}
+    if(pin&&P.size>=2){const a=[...P.values()],m=mid(a),r=el.getBoundingClientRect();MV.sc=clamp(pin.sc*Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)/pin.d,0.02,1.2);MV.cx=pin.wx-(m.x-r.left-r.width/2)/MV.sc;MV.cy=pin.wy-(m.y-r.top-r.height/2)/MV.sc;rd();}
     else if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;moved=Math.max(moved,Math.hypot(dx,dy));MV.cx=drag.cx-dx/MV.sc;MV.cy=drag.cy-dy/MV.sc;rd();}});
   const up=e=>{if(!P.has(e.pointerId))return;P.delete(e.pointerId);if(P.size===2)startPin();if(P.size===1){pin=null;const q=[...P.values()][0];drag={x:q.x,y:q.y,cx:MV.cx,cy:MV.cy};}
     if(P.size===0){if(moved<6){const dpr=Math.min(2,window.devicePixelRatio||1),r=el.getBoundingClientRect(),x=(e.clientX-r.left)*dpr,y=(e.clientY-r.top)*dpr;
@@ -2497,7 +2542,7 @@ function mapSelect(h){MV.sel=h;const c=$('mcard');if(!h){c.classList.add('hidden
       else{let best=null,bd=30*dpr;for(const h of MV.hits){const d=Math.hypot(h.x-x,h.y-y);if(d<bd){bd=d;best=h;}}
         if(!best&&(MV.mode==='view'||MV.mode==='exp')){const W=el.clientWidth*dpr,H=el.clientHeight*dpr,sc=MV.sc*dpr;best={t:'plan',x:MV.cx+(x-W/2)/sc,y:MV.cy+(y-H/2)/sc};}mapSelect(best);}}drag=null;}};
   el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
-  el.addEventListener('wheel',e=>{e.preventDefault();const r=el.getBoundingClientRect(),ox=e.clientX-r.left-r.width/2,oy=e.clientY-r.top-r.height/2,wx=MV.cx+ox/MV.sc,wy=MV.cy+oy/MV.sc;MV.sc=clamp(MV.sc*Math.exp(-e.deltaY*0.0015),0.04,1.2);MV.cx=wx-ox/MV.sc;MV.cy=wy-oy/MV.sc;rd();},{passive:false});
+  el.addEventListener('wheel',e=>{e.preventDefault();const r=el.getBoundingClientRect(),ox=e.clientX-r.left-r.width/2,oy=e.clientY-r.top-r.height/2,wx=MV.cx+ox/MV.sc,wy=MV.cy+oy/MV.sc;MV.sc=clamp(MV.sc*Math.exp(-e.deltaY*0.0015),0.02,1.2);MV.cx=wx-ox/MV.sc;MV.cy=wy-oy/MV.sc;rd();},{passive:false});
   $('mapX').addEventListener('click',closeMap);
   $('mcB').addEventListener('click',()=>{const h=MV.sel;
     if(h&&h.t==='way'){if(X)X.way=null;mapSelect(null);drawMap();return;}
@@ -2612,7 +2657,7 @@ function frame(nowT){
 }
 window.__dbg={makeScrap,makeWreck,makeCrate,makeDrone,makeSeeker,makeGoldCog,makeBag,makeCamp,makeDeadTree,makeBoulder,makePuddle,makeCactus,makeBot,makeBuilding,makeRuin,makeChipDrop,makeCacheBottle,makeSaltCrystals,makeRubble,makeBrine,makeHero,makeDog,makePalm,makeHouse,heroGear,dogGear,makeLamp,makeBench,makeFlowers};
 window.__hicons=only=>ST.sunink?hIconAtlas(only).toDataURL('image/png'):null;window.__woltReady=()=>!!WOLT;
-window.__snd=()=>Object.keys(SBUF).length;window.__ps=(k)=>ps(k);window.__obst=(cx,cy)=>obstOf(cx,cy);window.__coast=(x,y)=>coastSD(x,y);window.__markSeen=(x,y,r)=>markSeen(x,y,r);window.__MVhits=()=>(MV.hits||[]).map(h=>({x:h.x,y:h.y,t:h.t,id:h.cp&&h.cp.id}));window.__segPt=segPt;window.__BS=BS;window.__camT=camT;window.__house=()=>openHouse();window.__close=()=>closeSheet();window.__SV=()=>SV;window.__rebuild=()=>{for(const k in BLD)rebuildBuilding(k);};window.__X=()=>X;window.__go=()=>startExpedition();window.__open=k=>openBuilding(k);window.__fix=p=>fixDest(p);
+window.__snd=()=>Object.keys(SBUF).length;window.__ps=(k)=>ps(k);window.__obst=(cx,cy)=>obstOf(cx,cy);window.__coast=(x,y)=>coastSD(x,y);window.__camps=()=>CAMPS;window.__biome=(x,y)=>biomeAt(x,y);window.__markSeen=(x,y,r)=>markSeen(x,y,r);window.__MVhits=()=>(MV.hits||[]).map(h=>({x:h.x,y:h.y,t:h.t,id:h.cp&&h.cp.id}));window.__segPt=segPt;window.__BS=BS;window.__camT=camT;window.__house=()=>openHouse();window.__close=()=>closeSheet();window.__SV=()=>SV;window.__rebuild=()=>{for(const k in BLD)rebuildBuilding(k);};window.__X=()=>X;window.__go=()=>startExpedition();window.__open=k=>openBuilding(k);window.__fix=p=>fixDest(p);
 // balance sims (tools/sim_fast.py): the bot plays expeditions without drawing – whole minutes of play in a blink. A stuck bot gets a nudge sideways (counted).
 window.__simExp=(camp)=>{window.SIMBOT=1;const w0=SV.well;startExpedition(camp||null);if(!X||scene!=='exp'){window.SIMBOT=0;return null;}const fill=X.water,nb0=X.bottles,st=1/30,stk=[];let n=0,stuck=0,lx=X.x,ly=X.y,lt=0;
   while(!X.end&&n<90000){updateExp(st);n++;if((n&15)===0){if(Math.hypot(X.x-lx,X.y-ly)<3&&!X.dis&&!X.intro){if(X.t-lt>3){if(stk.length<6){let nb=null,nd=1e9;obstNear(X.x,X.y,o=>{const d=segPt(X.x,X.y,o).d-o.r;if(d<nd){nd=d;nb=o.t;}});let rw=0;forX(X.x-80,X.y-80,X.x+80,X.y+80,c=>{for(const r of c.ruins)for(const w of r.walls)if(Math.abs(X.x-w.x)<w.w/2+12&&Math.abs(X.y-w.y)<w.h/2+12)rw++;},true);stk.push([Math.round(X.x),Math.round(X.y),nb,Math.round(nd),rw,Math.round(coastSD(X.x,X.y).d),X.dest?Math.round(Math.hypot(X.dest.x-X.x,X.dest.y-X.y)):-1,X.botHome?1:0,X.scrap,X.foeNear?[X.foeNear.type,Math.round(X.foeNearD),Math.round(X.foeNear.stun*10)/10,X.foeNear.hp,Math.round(X.slingCd*10)/10]:null,(X.drops||[]).map(d=>[d.kind,d.n,Math.round(Math.hypot(d.x-X.x,d.y-X.y))]).slice(0,3),room(),Math.round(X.water*100)/100]);}const a=Math.atan2(X.y,X.x)+1.57;X.x+=Math.cos(a)*70;X.y+=Math.sin(a)*70;stuck++;lt=X.t;}}else{lx=X.x;ly=X.y;lt=X.t;}}}

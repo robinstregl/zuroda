@@ -24,3 +24,7 @@ for(const n of [1,2,3,5,7,10]){let s=0,c=0,x=0,e=0;for(const k of ['pump','solar
 let bs=0;for(let i=0;i<2;i++)bs+=6+4*i;console.log('2 bottles scrap',bs);
 // hero / dog levels
 const hr=n=>60*Math.pow(n-1,1.7),dr=n=>120*Math.pow(n-1,1.7);console.log('hero lvl m:',[2,3,5,10,15,20,25,30].map(n=>n+':'+Math.round(hr(n))).join(' '),'| dog:',[2,3,5,10,15].map(n=>n+':'+Math.round(dr(n))).join(' '));
+// 2.4: camps on the way to the signal (CAMP_DEF in game.js) – name, metres from home, scrap, gold, chips, well water for the one-tap trip
+const CAMPS=[['Dune',216,12,0,0,2],['Rock Gate',454,40,2,0,3],['Red Mesa',675,80,5,4,4],['Broken Road',902,130,8,8,5],['Station',1130,190,12,14,6],['Salt Gate',1350,260,16,20,7],['Salt Lake',1580,340,22,28,8]];
+for(const c of CAMPS)console.log('camp',c[0].padEnd(12),(c[1]+' m').padEnd(7),'scrap',String(c[2]).padEnd(4),'gold',String(c[3]).padEnd(3),'chips',String(c[4]).padEnd(3),'trip',c[5]+' L');
+console.log('TOTAL camps',JSON.stringify({s:CAMPS.reduce((a,c)=>a+c[2],0),c:CAMPS.reduce((a,c)=>a+c[3],0),x:CAMPS.reduce((a,c)=>a+c[4],0)}));

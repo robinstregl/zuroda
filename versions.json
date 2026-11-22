@@ -2,6 +2,21 @@
   "root": "1.0",
   "versions": [
     {
+      "v": "2.4",
+      "date": "22. 11. 2026",
+      "title": "Poloostrov",
+      "notes": [
+        "Svět už není poušť do všech stran. Je to poloostrov: domov stojí na jeho cípu, moře je z něj 260 až 430 m na tři strany a pevnina vede na severovýchod k signálu (1,8 km).",
+        "Poloostrov má čtyři laloky, každý je jedno území: duny u domu, pak červené skály, staré město a solné pláně. Mezi nimi jsou tři úžiny široké asi 300 m, kterými se musí projít.",
+        "Sedm míst pro kempy leží cestou k signálu po 216 až 245 m: první 216 m od domu, poslední 1,58 km, od něj je to k signálu 256 m. Každé druhé je v úžině. Staré čtyři kempy zmizely.",
+        "Kolem každého místa pro kemp je volno: do 20 m žádný kráter, strom ani skála, do 33 m žádná ruina a roboti tam nechodí.",
+        "Kempy zatím fungují postaru (postavit, pak cesta z domu na jedno klepnutí za vodu). Stojí ale čím dál víc: první 12 šrotu, poslední 340 šrotu, 22 zlatých a 28 čipů. Platí se z batohu a zbytek ze zásob ve vesnici.",
+        "Mapa doma se sama zarovná na to, co už znáš, a jde oddálit tak, aby se na ni vešel celý poloostrov.",
+        "Uložená hra z dřívějška si nechá vesnici, výbavu i zásoby. Mapa začíná prázdná a šrot za staré kempy a ztracené vaky se vrátí do zásob.",
+        "Výpravy z domu jsou podle automatu stejně dlouhé jako ve 2.3 (46 s na začátku, 121 s na konci). Robotů je kolem domu míň, protože celý první lalok jsou duny: čipů za výpravu vychází asi o čtvrtinu až třetinu míň. Víc robotů je dál, v červených skalách a ve starém městě."
+      ]
+    },
+    {
       "v": "2.3",
       "date": "22. 11. 2026",
       "title": "Zelená vesnice",
