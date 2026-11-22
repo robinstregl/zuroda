@@ -1,12 +1,12 @@
-# Bakes the look-H icon sheet (site/img/hicons.png) from the game's own models and its own pen.
+# Bakes the look-H icon sheet (assets/img/hicons.png) from the game's own models and its own pen.
 #   sh build.sh <local three.min.js> /tmp/zt/www/index.html      (any page the browser can open over http)
-#   python3 tools/render_icons.py http://localhost:8765/index.html [site/img/hicons.png]
+#   python3 tools/render_icons.py http://localhost:8765/index.html [assets/img/hicons.png]
 # The models are in hIconDefs() in src/lookh.js, the order and the grid in HICON in src/icons.js.
 # After baking, bump the ?v= number of HICON.url so browsers fetch the new sheet.
 import asyncio, base64, sys
 from playwright.async_api import async_playwright
 url = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8765/index.html'
-out = sys.argv[2] if len(sys.argv) > 2 else 'site/img/hicons.png'
+out = sys.argv[2] if len(sys.argv) > 2 else 'assets/img/hicons.png'
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'])

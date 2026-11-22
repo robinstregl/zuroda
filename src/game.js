@@ -93,7 +93,12 @@ const STARTERS=[{x:250,y:-190},{x:-290,y:-250},{x:110,y:-430},{x:-420,y:120}];
 const CH=240,W=360;
 
 // ================= save =================
-const SAVE_KEY='daleko3_save';
+// numbered builds (zuroda.com/v2.0/ – Robin 22. 11.: every update under its own number, so the history stays playable) keep a save of their own:
+// an old version never reads the save of a newer one. On its first run a version takes over the save of the newest older version (or of the main page).
+const ZVER=window.ZVER||'';const SAVE_KEY='daleko3_save'+(ZVER?'_v'+ZVER:'');
+if(ZVER)try{if(localStorage.getItem(SAVE_KEY)===null){const pv=v=>v.split('.').map(Number),lt=(a,b)=>{for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x!==y)return x<y;}return false;};
+  let src='daleko3_save',bv=null;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i),m=k&&k.match(/^daleko3_save_v([0-9.]+)$/);if(m&&lt(pv(m[1]),pv(ZVER))&&(!bv||lt(bv,pv(m[1])))){bv=pv(m[1]);src=k;}}
+  const o=localStorage.getItem(src);if(o!==null)localStorage.setItem(SAVE_KEY,o);}}catch(_){}
 function freshSave(){return {v:1,eco:2,seed:(Math.random()*4294967295)>>>0,scrap:0,cores:0,chips:0,bottles:0,b:{cerpadlo:0,solar:0,dilna:0,dron:0,radio:0},energy:30,scout:null,
   craft:{},decor:[],taken:[],bags:[],exp:0,best:0,msg:0,lore:0,scrapT:{},meters:0,name:'Wanderer',tod:0.12,zoom:14,mscale:1,seen:{},lastPath:null,well:24,wellAt:Date.now(),camps:{},fetch:null,caches:[]};}
 function loadSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.v===1){s.takenSet=new Set(s.taken||[]);s.scrapT=s.scrapT||{};s.meters=s.meters||0;s.name=s.name||'Wanderer';if(s.tod===undefined)s.tod=0.12;s.zoom=clamp(s.zoom||14,10,18);
@@ -1880,6 +1885,7 @@ function buildExpScene(){
 }
 function disposeExp(){if(!X||!X.scene)return;for(const c of X.chunks.values())disposeChunk(c);X.scene=null;}
 
+let PWAY=null;// a destination picked on the map in the village – the next expedition starts with it
 function startExpedition(campId){
   const cp=campId?CAMPS.find(c=>c.id===campId&&SV.camps[c.id]):null;const trip=cp?cp.trip:0;
   if(SV.fetch){toast('{paw}','Zuro is still out','He is fetching your lost bag. Wait until he is back.');return;}
@@ -1890,7 +1896,7 @@ function startExpedition(campId){
   X={t:0,x:sx,y:sy,start:{x:sx,y:sy},camp:cp,dest:null,water:fill,cap:waterCap(),scrap:0,cores:0,chips:0,shots:[],cacheM:{},slingCd:0,smashCd:0,foeWarn:{},face:1,walkPh:0,moving:false,vx:0,vy:1,
     path:[{x:sx,y:sy}],pathAcc:0,footAcc:0,events:[],maxD:0,end:null,endT:0,hitCd:0,fullCd:0,chunks:new Map(),
     leftHome:false,inDust:false,bottles:nb,lore:null,camStart:null,botT:0,botDir:Math.atan2(sy,sx||0.001)+(Math.random()-0.5)*2.5,
-    walked:0,face:Math.PI,dx:sx+12,dy:sy+15,dface:Math.PI,dmoving:false,dph:0,lv0:[heroLv(),dogLv()],dis:null};
+    walked:0,face:Math.PI,dx:sx+12,dy:sy+15,dface:Math.PI,dmoving:false,dph:0,lv0:[heroLv(),dogLv()],dis:null,way:PWAY,goHome:null};PWAY=null;
   buildExpScene();scene='exp';scene3=X.scene;
   forX(X.x-CH*2,X.y-CH*2,X.x+CH*2,X.y+CH*2,()=>{});
   camT.set(sx*S,0,sy*S+1.5);
@@ -1919,9 +1925,11 @@ function sightR(){return 220*((ST.sunink?ZOOM*1.094:ZOOM)/14)*(1-0.28*DAY.n);}
 const WATER_PER_U=0.00042;// litres per game unit walked (≈ 2.4 km per litre out and back… with weight and heat less)
 function safePoint(){let best={x:0,y:0,d:Math.hypot(X.x,X.y)};for(const cp of CAMPS)if(SV.camps[cp.id]){const d=Math.hypot(X.x-cp.x,X.y-cp.y);if(d<best.d)best={x:cp.x,y:cp.y,d};}return best;}
 const slingReady=()=>{const l=gearLv('prak'),f=X.foeNear;return l&&f&&!f.dead&&X.foeNearD<=SLING.range(l);};
+function comeHome(){const g=X&&X.goHome;if(!g||X.end)return;if(g.t==='home')endExp('home');else endExp('camp',g.cp);}
 function xAction(){if(!X||X.end||X.intro)return;
   if(X.nearFoe&&gearLv('kladivo')){smash();return;}
   if(slingReady()){slingShoot();return;}
+  if(X.goHome&&!X.dis){comeHome();return;}
   if(X.nearWreck&&!X.dis){const W=WRECK[X.nearWreck.kind];if(gearLv('kladivo')<W.need){xText('Needs {hammer} Hammer '+ROMAN[W.need],'#c8643c');return;}if(room()<=0){fullMsg();return;}X.dis={w:X.nearWreck,c:X.nearWreckC,t:0};X.dest=null;sfx.clink();return;}
   if(X.nearCamp&&!SV.camps[X.nearCamp.id]){const cp=X.nearCamp;if(X.scrap<CAMP_COST){xText('Need '+CAMP_COST+' {scrap}','#c0532f');return;}
     X.scrap-=CAMP_COST;SV.camps[cp.id]=1;save();sfx.repair();xBurst(cp.x,cp.y,'#e0b04c',20,100);
@@ -2055,7 +2063,8 @@ function updateExp(dt){
   updFoes(dt);updShots(dt);updCaches(dt);updDrops();
   if(X.dis){if(X.nearWreck!==X.dis.w)X.dis=null;else{X.dis.t+=dt;if(X.dis.t>=1.3){finishDismantle();X.dis=null;}}}
   const hd=Math.hypot(X.x,X.y);if(hd>X.maxD)X.maxD=hd;if(X.camp?Math.hypot(X.x-X.start.x,X.y-X.start.y)>130:hd>130)X.leftHome=true;
-  if(X.leftHome){if(hd<78)endExp('home');else for(const cp of CAMPS)if(SV.camps[cp.id]&&Math.hypot(X.x-cp.x,X.y-cp.y)<34){endExp('camp',cp);break;}}
+  X.goHome=null;if(X.leftHome){if(hd<84)X.goHome={t:'home'};else for(const cp of CAMPS)if(SV.camps[cp.id]&&Math.hypot(X.x-cp.x,X.y-cp.y)<42){X.goHome={t:'camp',cp};break;}}
+  if(BOT&&X.goHome)comeHome();
   if(!X.end&&X.water<=0){X.water=0;endExp('thirst');}
   // Zuro follows
   {const back=X.face+Math.PI;const tx=X.x+Math.sin(back)*16+Math.cos(back)*9,ty=X.y+Math.cos(back)*16-Math.sin(back)*9;
@@ -2216,10 +2225,19 @@ function drawExpOverlay(){
     if(SV.craft.kompas){let best=null,bd=1400;forX(X.x-1400,X.y-1400,X.x+1400,X.y+1400,c=>{for(const w of c.waters){if(w.taken)continue;const d=Math.hypot(w.x-X.x,w.y-X.y);if(d<bd){bd=d;best=w;}}for(const k of SV.caches){const d=Math.hypot(k.x-X.x,k.y-X.y);if(d<bd){bd=d;best=k;}}},true);
       if(best&&bd>40){const a=Math.atan2(best.y-X.y,best.x-X.x);const p=proj((X.x+Math.cos(a)*30)*S,wh+0.3,(X.y+Math.sin(a)*30)*S),q=proj(X.x*S,wh+0.3,X.y*S);const sa=Math.atan2(p.y-q.y,p.x-q.x);
         ctx.save();ctx.translate(p.x,p.y);ctx.rotate(sa);ctx.fillStyle='rgba(63,143,161,0.9)';ctx.beginPath();ctx.moveTo(8*dpr,0);ctx.lineTo(-5*dpr,-5*dpr);ctx.lineTo(-2*dpr,0);ctx.lineTo(-5*dpr,5*dpr);ctx.closePath();ctx.fill();ctx.restore();}}
+    if(X.way)drawWay(wh);
     const r=X.water/X.cap;if(r<0.25){const a=(0.25-r)/0.25*(0.35+0.15*Math.sin(tNow*7));const vg=ctx.createRadialGradient(cw/2,ch/2,Math.min(cw,ch)*0.3,cw/2,ch/2,Math.max(cw,ch)*0.75);
       vg.addColorStop(0,'rgba(170,60,30,0)');vg.addColorStop(1,`rgba(170,60,30,${a})`);ctx.fillStyle=vg;ctx.fillRect(0,0,cw,ch);}
   }
 }
+function drawWay(wh){const w=X.way,dx=w.x-X.x,dy=w.y-X.y,d=Math.hypot(dx,dy);
+  if(d<26){X.way=null;xText('Here we are!','#b8432e');sfx.ui('select');return;}
+  const INKC='#4a332b',RED='#b8432e',t=proj(w.x*S,H2(w.x,w.y)+0.1,w.y*S);
+  if(t.on&&t.z<1&&t.x>0&&t.x<cw&&t.y>0&&t.y<ch){const r=8*dpr,pu=1+0.08*Math.sin(tNow*4);ctx.save();ctx.translate(t.x,t.y);ctx.strokeStyle=RED;ctx.lineCap='round';ctx.lineWidth=3.2*dpr;ctx.beginPath();ctx.moveTo(-r,-r*0.62);ctx.lineTo(r,r*0.62);ctx.moveTo(r,-r*0.62);ctx.lineTo(-r,r*0.62);ctx.stroke();
+    ctx.setLineDash([4*dpr,6*dpr]);ctx.lineWidth=1.8*dpr;ctx.beginPath();ctx.ellipse(0,0,r*2.4*pu,r*1.5*pu,0,0,6.283);ctx.stroke();ctx.setLineDash([]);ctx.restore();}
+  const a=Math.atan2(dy,dx),R=40+Math.sin(tNow*4)*3,q=proj(X.x*S,wh+0.3,X.y*S),p=proj((X.x+Math.cos(a)*R)*S,wh+0.3,(X.y+Math.sin(a)*R)*S),sa=Math.atan2(p.y-q.y,p.x-q.x),k=dpr*1.3;
+  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(sa);ctx.beginPath();ctx.moveTo(12*k,0);ctx.lineTo(-7*k,-8*k);ctx.lineTo(-3*k,0);ctx.lineTo(-7*k,8*k);ctx.closePath();ctx.fillStyle='#f2957f';ctx.fill();ctx.lineJoin='round';ctx.lineWidth=1.7*dpr;ctx.strokeStyle=INKC;ctx.stroke();ctx.restore();
+  const lab=fmtM(d),lx=p.x+Math.cos(sa)*26*dpr,ly=p.y+Math.sin(sa)*22*dpr+4*dpr;ctx.font=`700 ${12.5*dpr}px ${FF}`;ctx.textAlign='center';ctx.lineJoin='round';ctx.lineWidth=4*dpr;ctx.strokeStyle='rgba(255,250,240,0.92)';ctx.strokeText(lab,lx,ly);ctx.fillStyle=INKC;ctx.fillText(lab,lx,ly);}
 function star4(sx,sy,s,col){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(sx,sy-s*1.6);ctx.lineTo(sx+s*0.35,sy-s*0.35);ctx.lineTo(sx+s*1.6,sy);ctx.lineTo(sx+s*0.35,sy+s*0.35);
   ctx.lineTo(sx,sy+s*1.6);ctx.lineTo(sx-s*0.35,sy+s*0.35);ctx.lineTo(sx-s*1.6,sy);ctx.lineTo(sx-s*0.35,sy-s*0.35);ctx.closePath();ctx.fill();}
 function edgeArrow(tx,ty,label,col){
@@ -2248,6 +2266,7 @@ function updExpHUD(){const cap=X.cap,can=canteenCap(),w=clamp(X.water,0,cap);
   else if(X.nearFoe&&gearLv('kladivo')){const f=X.nearFoe;st='f'+f.id+(X.smashCd>0);txt=f.stun>0?'It\'s stunned – hit it again!':f.alert<0.3?'It hasn\'t seen you. Hit it from behind!':'Careful, it sees you!';btn='{hammer} Smash';dis=X.smashCd>0;}
   else if(slingReady()){const f=X.foeNear;st='s'+f.id+(X.slingCd>0)+(X.scrap<1);txt=X.scrap<1?'No scrap left to shoot!':f.stun>0?'It\'s stunned – again!':'Shoot it with the slingshot!';btn='{sling} Shoot · 1 {scrap}';dis=X.slingCd>0||X.scrap<1;}
   else if(X.dis){st='dis';txt='Clang, clang… taking it apart!';btn='{hammer} Working…';dis=true;}
+  else if(X.goHome){const c=X.goHome.cp;st='gh'+(c?c.id:'');txt=c?'This is '+c.name+'. Shall we stop here for today?':'We\'re home! Shall we go in, or keep looking?';btn='{home} '+(c?'Rest here':'Go home');}
   else if(X.nearWreck){const W=WRECK[X.nearWreck.kind],hl=gearLv('kladivo');st='w'+X.nearWreck.id+hl+room();
     if(hl>=W.need){txt='Woof! '+W.name+'. Your {hammer} Hammer '+ROMAN[hl]+' can take it apart.';btn='{hammer} Dismantle';dis=room()<=0;if(dis)txt='Your backpack is full – nothing more fits.';}
     else{txt=W.name+'. We need {hammer} Hammer '+ROMAN[W.need]+' from the Workshop.';btn='{hammer} Needs Hammer '+ROMAN[W.need];dis=true;}}
@@ -2330,6 +2349,8 @@ function drawMap(){const cv=$('mapc'),g=cv.getContext('2d'),dpr=Math.min(2,windo
   // planned route (tap anywhere to check if your water reaches)
   if(FULL&&MV.plan){const P=MV.plan,[ax,ay]=toS(P.sx,P.sy),[bx,by]=toS(P.tx,P.ty),[hx,hy]=toS(0,0);g.setLineDash([7*dpr,5*dpr]);g.lineWidth=2.6*dpr;g.strokeStyle=P.col;g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();
     if(P.sx||P.sy){g.globalAlpha=0.55;g.beginPath();g.moveTo(bx,by);g.lineTo(hx,hy);g.stroke();g.globalAlpha=1;}g.setLineDash([]);g.fillStyle=P.col;g.beginPath();g.arc(bx,by,5*dpr,0,6.283);g.fill();}
+  if(FULL&&X&&scene==='exp'&&!X.end&&X.way){const [ax,ay]=toS(X.x,X.y),[bx,by]=toS(X.way.x,X.way.y),r=7*dpr;g.strokeStyle='#b8432e';g.setLineDash([2*dpr,6*dpr]);g.lineCap='round';g.lineWidth=2.4*dpr;g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();g.setLineDash([]);
+    g.lineWidth=3.2*dpr;g.beginPath();g.moveTo(bx-r,by-r);g.lineTo(bx+r,by+r);g.moveTo(bx+r,by-r);g.lineTo(bx-r,by+r);g.stroke();g.lineCap='butt';MV.hits.push({x:bx,y:by,t:'way'});}
   // last trip (dashed ink)
   if(FULL&&SV.lastPath&&SV.lastPath.length>1){g.setLineDash([5*dpr,4*dpr]);g.lineWidth=1.8*dpr;g.strokeStyle=MT.trip;g.beginPath();SV.lastPath.forEach((p,i)=>{const [sx,sy]=toS(p[0],p[1]);i?g.lineTo(sx,sy):g.moveTo(sx,sy);});g.stroke();g.setLineDash([]);}
   const label=(t,sx,sy,col,b)=>{g.font=`${b?'600 ':''}${12*dpr}px ${FF}`;g.textAlign='center';g.textBaseline='top';g.lineWidth=3.5*dpr;g.strokeStyle=ST.sunink?'rgba(255,247,238,0.92)':'rgba(29,26,24,0.92)';g.strokeText(t,sx,sy);g.shadowColor=ST.sunink?'rgba(255,247,238,0)':'rgba(255,176,96,0.6)';g.shadowBlur=6*dpr;g.fillStyle=col||MINK;g.fillText(t,sx,sy);g.shadowBlur=0;};
@@ -2385,11 +2406,12 @@ function planTo(tx,ty){const ex=MV.mode==='exp'&&X&&!X.end,sx=ex?X.x:0,sy=ex?X.y
 function planText(P){return fmtM(P.d)+(P.sx||P.sy?' from you':' from home')+' · needs ~'+fmtL(P.needT+P.needB)+' L there and back<br>You carry '+fmtL(P.have)+' L'+(P.n?' + '+fmtL(P.extra)+' L known water on the way ('+P.n+')':'')+'<br><small>Holes and robots can make the way longer.</small>';}
 function closeMap(){MV.open=false;$('mapv').classList.add('hidden');}
 function mapSelect(h){MV.sel=h;const c=$('mcard');if(!h){c.classList.add('hidden');if(MV.plan){MV.plan=null;drawMap();}return;}let t='',sub='',btn='',ok=true;
+  if(h.t==='way'){const w=X&&X.way;if(!w){c.classList.add('hidden');return;}$('mcT').textContent='Your destination';$('mcS').innerHTML=fmtM(Math.hypot(w.x-X.x,w.y-X.y))+' from you. The arrow by your side points there.';const b=$('mcB');b.style.display='';b.innerHTML='Forget it';b.disabled=false;c.classList.remove('hidden');return;}
   if(h.t==='plan'||h.t==='poi'){const o=h.t==='poi'?h.o:h;const P=planTo(o.x,o.y);MV.plan=P;drawMap();
     if(h.t==='plan')t=P.verdict;else if(h.k==='wreck'){const W=WRECK[o.kind];t=W.name;sub=(gearLv('kladivo')>=W.need?'Your hammer can take it apart. ':'Needs {hammer} Hammer '+ROMAN[W.need]+'. ');}
     else if(h.k==='water'){t='Water puddle';sub='About '+fmtL(o.v)+' L. ';}else if(h.k==='gold'){t='Gold scrap';sub='Guarded by a drone. ';}else if(h.k==='chest'){t='Old chest';sub='Who knows what\'s inside. ';}else if(h.k==='cache'){t='Your bottle';sub=fmtL(o.v)+' L waiting for you. ';}
     sub+='<b style="color:'+P.col+'">'+(h.t==='poi'?P.verdict:'')+'</b>'+(h.t==='poi'?'<br>':'')+planText(P);
-    $('mcT').textContent=t;$('mcS').innerHTML=icx(sub);$('mcB').style.display='none';c.classList.remove('hidden');return;}
+    $('mcT').textContent=t;$('mcS').innerHTML=icx(sub);{const b=$('mcB'),ex=MV.mode==='exp'&&X&&!X.end,vw=MV.mode==='view'&&scene==='base';if(ex||vw){b.style.display='';b.innerHTML=ex?'Go there':'Fill up &amp; go there';b.disabled=vw&&(!!SV.fetch||fillAmount()<0.5);}else b.style.display='none';}c.classList.remove('hidden');return;}
   if(h.t==='scout'){const l=SV.b.dron,d=Math.hypot(MV.pick.x,MV.pick.y),inR=d<=DRONE.range[l],c2=DRONE.cost[l];t=inR?'Scout this area':'Too far for the drone';
     sub=fmtM(d)+' from home'+(inR?' · maps '+fmtM(DRONE.r[l])+' around it':' · range '+fmtM(DRONE.range[l])+'. Upgrade the drone to fly further.');btn='Send the drone · '+c2+' {energy}';ok=inR&&!SV.scout&&(SV.energy||0)>=c2;
     $('mcT').textContent=t;$('mcS').innerHTML=icx(sub);const b=$('mcB');b.style.display='';b.innerHTML=icx(btn);b.disabled=!ok;c.classList.remove('hidden');return;}
@@ -2416,7 +2438,10 @@ function mapSelect(h){MV.sel=h;const c=$('mcard');if(!h){c.classList.add('hidden
   el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
   el.addEventListener('wheel',e=>{e.preventDefault();const r=el.getBoundingClientRect(),ox=e.clientX-r.left-r.width/2,oy=e.clientY-r.top-r.height/2,wx=MV.cx+ox/MV.sc,wy=MV.cy+oy/MV.sc;MV.sc=clamp(MV.sc*Math.exp(-e.deltaY*0.0015),0.04,1.2);MV.cx=wx-ox/MV.sc;MV.cy=wy-oy/MV.sc;rd();},{passive:false});
   $('mapX').addEventListener('click',closeMap);
-  $('mcB').addEventListener('click',()=>{const h=MV.sel;if(h&&h.t==='scout'&&MV.pick){if(startScout(MV.pick.x,MV.pick.y)){closeMap();openBuilding('dron');}return;}if(!h||MV.mode!=='go')return;closeMap();if(h.t==='home')startExpedition();else startExpedition(h.cp.id);});
+  $('mcB').addEventListener('click',()=>{const h=MV.sel;
+    if(h&&h.t==='way'){if(X)X.way=null;mapSelect(null);drawMap();return;}
+    if(h&&(h.t==='plan'||h.t==='poi')&&(MV.mode==='exp'||MV.mode==='view')){const o=h.t==='poi'?h.o:h,w={x:o.x,y:o.y};if(MV.mode==='exp'){if(X&&!X.end){X.way=w;sfx.ui('select');closeMap();}return;}if(scene==='base'){PWAY=w;closeMap();startExpedition();if(scene!=='exp')PWAY=null;}return;}
+    if(h&&h.t==='scout'&&MV.pick){if(startScout(MV.pick.x,MV.pick.y)){closeMap();openBuilding('dron');}return;}if(!h||MV.mode!=='go')return;closeMap();if(h.t==='home')startExpedition();else startExpedition(h.cp.id);});
   window.addEventListener('resize',()=>{if(MV.open)drawMap();});
 })();
 
@@ -2486,6 +2511,7 @@ window.__animSnap=(k,t,ry,sx,zm,gx)=>{try{const w=220,h=300,r2=new T.WebGLRender
   const keep=SV.sex;SV.sex=sx||'f';const H=makeHero(Object.assign(heroGear(),{tool:'hammer'},gx||{}));SV.sex=keep;H.root.rotation.y=ry||0;sc.add(H.root);if(H.sk){const P=new Float32Array(SK_NB*4+3);skSample(H.sk,skClip(k),t,P);skApply(H.sk,P);}else{const c=animClip(k);const P=new Float32Array(AF);sampleClip(c,t,P);applyPose(H,P);}if(k==='smash'||k==='fix')toolInHand(H,true);
   const cam=new T.PerspectiveCamera(30,w/h,0.1,50);if(zm){cam.position.set(0,2.0,2.3);cam.lookAt(0,1.62,0);}else{cam.position.set(0,1.6,5.2);cam.lookAt(0,1.0,0);}r2.render(sc,cam);const u=r2.domElement.toDataURL('image/png');r2.dispose();return u;}catch(e){return 'ERR '+e;}};
 SV.sex='m';
+if(ZVER){const t=document.querySelector('#title .tag');if(t)t.textContent='EARLY PROTOTYPE · '+ZVER;const f=document.querySelector('.side .fine');if(f)f.textContent='Early prototype '+ZVER+' · © 2026 Vabiko';}
 (function buildTitle(){const el=$('tbtns');el.innerHTML='';
   // one wanderer only (Robin 21. 11.); no pictures on the title – the live village is the picture (22. 11.)
   const inp=document.createElement('input');inp.maxLength=14;inp.value=SV.name||'Wanderer';inp.placeholder='Your name';inp.setAttribute('aria-label','Your wanderer’s name');

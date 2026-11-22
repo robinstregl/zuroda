@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+# numbered development versions and their history are for Robin, not for search
+Disallow: /v

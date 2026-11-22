@@ -1,0 +1,27 @@
+{
+  "root": "1.0",
+  "versions": [
+    {
+      "v": "2.0",
+      "date": "22. 11. 2026",
+      "title": "Cíl na mapě a návrat na tlačítko",
+      "notes": [
+        "Na mapě klepneš na místo, potvrdíš a u poutníka se drží šipka se vzdáleností, která tam ukazuje. Na zemi je cíl označený křížkem.",
+        "Jde to z vesnice (hra rovnou naplní vodu a vyrazí) i během výpravy. Cíl zrušíš klepnutím na křížek v mapě.",
+        "Výprava už neskončí tím, že přejdeš přes vesnici nebo kemp. Zuro se zeptá a domů jdeš tlačítkem.",
+        "První číslovaná verze: každá další úprava dostane vlastní číslo a vlastní uloženou hru."
+      ]
+    },
+    {
+      "v": "1.0",
+      "date": "22. 11. 2026",
+      "title": "Nový vzhled a zápisník",
+      "notes": [
+        "Celá hra je ve vybledlém tušovém stylu: poutník s čelenkou, nové vraky, roboti, budovy, území a moře.",
+        "Ikony jsou malé modely ze hry nakreslené stejnou tuší jako svět.",
+        "UI je poutníkův zápisník: utržený proužek papíru nahoře, visačka jako hlavní tlačítko, razítko pro akci, tužkou kreslený joystick.",
+        "Pravidla a ekonomika jsou stejné jako dřív."
+      ]
+    }
+  ]
+}
