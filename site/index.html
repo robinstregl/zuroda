@@ -4267,13 +4267,13 @@ function buildHeadH(H,gear,head,neck){H.head=head;const R=HD_R,V=HERO_VAR,Y=HD_C
   for(const s of [-1,1]){const e=mk(sph(0.07,14,10),HH.skin,head,{p:[s*0.34,Y-0.03,-0.02]});e.scale.set(0.45,0.82,0.7);}
   const fg=hdShape(new T.SphereGeometry(R*1.006,30,22,Math.PI/2-0.95,1.9,Math.PI/2-0.75,1.48),R*1.006);
   H.faceMat=MAT({map:H.F.idle,transparent:true,depthWrite:false});H.faceMat.userData.char=1;const face=new T.Mesh(fg,H.faceMat);face.position.y=Y;face.renderOrder=2;head.add(face);
-  const CL=G.hclump||(G.hclump=new T.SphereGeometry(1,12,9)),TF=G.htuft||(G.htuft=(()=>{const g=new T.ConeGeometry(0.5,1,6,1);g.translate(0,0.5,0);return g;})());
+  const CL=G.hclump||(G.hclump=new T.SphereGeometry(1,26,18)),TF=G.htuft||(G.htuft=(()=>{const g=new T.ConeGeometry(0.5,1,6,1);g.translate(0,0.5,0);return g;})());
   const clump=(col,x,y,z,sx,sy,sz,rx,ry,rz)=>{const m=mk(CL,col,head,{p:[x,Y+y,z],r:[rx||0,ry||0,rz||0]});m.scale.set(sx,sy,sz);return m;};
   const tuft=(col,x,y,z,w,l,d,rx,ry,rz)=>{const m=mk(TF,col,head,{p:[x,Y+y,z],r:[rx||0,ry||0,rz||0]});m.scale.set(w,l,d);return m;};
   const HC=HH.hair,HI=HH.hairHi;
   if(V!==3){
     // the mop: a cap that sits back on the head, big soft clumps over it, a fringe swept to one side and a cowlick on the crown
-    {const cg=hdShape(new T.SphereGeometry(R*1.06,26,14,0,Math.PI*2,0,Math.PI*0.55),R*1.06);mk(cg,HC,head,{p:[0,Y+0.006,-0.02],r:[-0.42,0,0]});}
+    {const cg=hdShape(new T.SphereGeometry(R*1.06,32,16,0,Math.PI*2,0,Math.PI*0.5),R*1.06);mk(cg,HC,head,{p:[0,Y+0.006,-0.02],r:[-0.7,0,0]});}
     clump(HC,0,0.27,-0.06,0.27,0.17,0.27,0.1);clump(HC,-0.19,0.2,-0.1,0.19,0.17,0.22,0,0,0.5);clump(HC,0.2,0.2,-0.09,0.19,0.17,0.22,0,0,-0.5);
     clump(HC,0,0.08,-0.27,0.25,0.22,0.16);
     clump(HC,-0.07,0.27,0.19,0.25,0.105,0.15,0.25,0,-0.3);clump(HC,0.19,0.23,0.15,0.13,0.11,0.13,0.2,0,-0.5);clump(HC,-0.24,0.2,0.1,0.11,0.13,0.13,0,0,0.3);
