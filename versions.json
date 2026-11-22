@@ -1,5 +1,5 @@
 {
-  "root": "2.9",
+  "root": "2.10",
   "versions": [
     {
       "v": "2.10",
@@ -11,7 +11,7 @@
         "I na opravdu pomalém telefonu už rozlišení neklesne tak hluboko jako dřív.",
         "Hra přidaná na plochu iPhonu (Sdílet → Přidat na plochu) má vlastní ikonu se Zurem a jméno Zuroda a spouští se bez lišt prohlížeče.",
         "V režimu aplikace se tlačítka dole drží nad domovskou linkou a horní panel pod stavovým řádkem. V prohlížeči se nic neposunulo.",
-        "Na skutečném iPhonu to ještě nikdo nezkoušel; tahle verze je na vyzkoušení, hlavní adresa zůstává na 2.9."
+        "Na skutečném iPhonu to ještě nikdo nezkoušel. Běží i na hlavní adrese zuroda.com."
       ]
     },
     {
