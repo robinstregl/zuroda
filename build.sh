@@ -15,11 +15,11 @@ page() { # $1 three.js url, $2 output file, $3 version number ('' = none: the ma
 }
 assets() { for d in img fonts sfx; do rm -rf "$1/$d"; cp -R "assets/$d" "$1/$d"; done; }
 case "$1" in
-  "") VER=$(cat VERSION); D="site/v$VER"; mkdir -p "$D"; page "$CDN" "$D/index.html" "$VER"; assets "$D"; python3 tools/versions_page.py ;;
+  "") VER=$(cat VERSION); D="site/v$VER"; mkdir -p "$D"; page "$CDN" "$D/index.html" "$VER"; assets "$D"; python3 tools/versions_page.py && python3 tools/looks_page.py ;;
   --root) page "$CDN" site/index.html ""; assets site
     # zuroda.com/h was the preview address of look H until it became the game itself (22. 11.) – old links land on the main page
     mkdir -p site/h; printf '%s\n' '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Zuroda</title><meta http-equiv="refresh" content="0;url=/"><link rel="canonical" href="https://zuroda.com/"><script>location.replace("/"+location.search+location.hash)</script></head><body><a href="/">zuroda.com</a></body></html>' > site/h/index.html
-    python3 tools/versions_page.py ;;
+    python3 tools/versions_page.py && python3 tools/looks_page.py ;;
   *) [ -n "$2" ] || { echo "usage: sh build.sh | sh build.sh --root | sh build.sh <three.js> <out.html>"; exit 1; }
     page "$1" "$2" "${ZVER:-}" ;;
 esac

@@ -2,6 +2,19 @@
   "root": "1.0",
   "versions": [
     {
+      "v": "2.7",
+      "date": "22. 11. 2026",
+      "title": "Dvacet vzhledů na zkoušku",
+      "max": true,
+      "notes": [
+        "Hra je stejná jako 2.6 a vypadá stejně, dokud si nevybereš jiný vzhled. Přibyl přepínač: adresa s ?look=číslo (0 až 19) pustí hru v jednom z dvaceti vzhledů.",
+        "Všech dvacet je na stránce zuroda.com/vzhledy/ s obrázky ze hry a tlačítkem na zahrání.",
+        "Vzhledy mění jen nastavení kreslení: tuš (vypnout, ztenčit, zesílit, obarvit), stíny (šrafy, tečky, barva, měkkost), barvy celého obrazu, opar, slunce a sklon kamery. Modely, textury ani zápisník se nemění.",
+        "Mezi vzhledy je Dioráma podle obrázku, který Robin poslal: bez obrysů, měkké stínování a rozmazané okraje stínů.",
+        "Ikony a obrázky budov zůstávají ve všech vzhledech stejné (mají tušovou linku). Vzhled se neukládá, platí jen pro adresu, na které je."
+      ]
+    },
+    {
       "v": "2.6",
       "date": "22. 11. 2026",
       "title": "Zkratka na zkoušení",

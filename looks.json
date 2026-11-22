@@ -1,0 +1,173 @@
+{
+  "looks": [
+    {
+      "n": 0,
+      "name": "Dnešní vzhled",
+      "what": "Tak hra vypadá teď: hnědá tuš na hranách, dva tóny světla a šrafované stíny. Je tu pro srovnání.",
+      "tags": []
+    },
+    {
+      "n": 1,
+      "name": "Bez obrysů",
+      "what": "Jen vypnutá tuš. Stínování, šrafování i barvy zůstávají.",
+      "tags": [
+        "obrysy"
+      ]
+    },
+    {
+      "n": 2,
+      "name": "Bez obrysů, hladké stíny",
+      "what": "Bez tuše a bez šrafování: čisté plochy ve dvou tónech.",
+      "tags": [
+        "obrysy",
+        "stíny"
+      ]
+    },
+    {
+      "n": 3,
+      "name": "Dioráma",
+      "what": "Nejblíž obrázku, který jsi poslal: bez tuše, měkké stínování, rozmazané okraje stínů a teplejší stín.",
+      "tags": [
+        "obrysy",
+        "stíny",
+        "barvy"
+      ]
+    },
+    {
+      "n": 4,
+      "name": "Dioráma s jemnou linkou",
+      "what": "Totéž, ale s tenkou světlou linkou, aby se drobné věci neslévaly se zemí.",
+      "tags": [
+        "obrysy",
+        "stíny"
+      ]
+    },
+    {
+      "n": 5,
+      "name": "Miniatura",
+      "what": "Dioráma vyfocené jako model: pohled víc shora, sytější barvy a rozostřený horní a dolní okraj.",
+      "tags": [
+        "kamera",
+        "barvy",
+        "stíny"
+      ]
+    },
+    {
+      "n": 6,
+      "name": "Jen siluety",
+      "what": "Tuš zůstává jen na vnějším obrysu věcí, vnitřní hrany mizí. Čára je silnější.",
+      "tags": [
+        "obrysy"
+      ]
+    },
+    {
+      "n": 7,
+      "name": "Tenká tužka",
+      "what": "Světlejší šedá linka místo hnědé tuše a o něco výraznější šrafování.",
+      "tags": [
+        "obrysy"
+      ]
+    },
+    {
+      "n": 8,
+      "name": "Silná tuš",
+      "what": "Tmavší a skoro dvakrát silnější čára, hustší šrafy. Blíž ke komiksu.",
+      "tags": [
+        "obrysy",
+        "stíny"
+      ]
+    },
+    {
+      "n": 9,
+      "name": "Barevné obrysy",
+      "what": "Čára nemá vlastní barvu, je to tmavší odstín toho, co obtahuje. Bez šrafování.",
+      "tags": [
+        "obrysy"
+      ]
+    },
+    {
+      "n": 10,
+      "name": "Vystřihovánka",
+      "what": "Bílá linka kolem věcí jako u vystřihovánky nebo samolepek. Písek je sytější, aby na něm bílá byla vidět.",
+      "tags": [
+        "obrysy",
+        "barvy"
+      ]
+    },
+    {
+      "n": 11,
+      "name": "Tečkovaný rastr",
+      "what": "Ve stínech tečky jako v tisku místo šikmých šrafů.",
+      "tags": [
+        "stíny"
+      ]
+    },
+    {
+      "n": 12,
+      "name": "Modré stíny",
+      "what": "Stín je chladně modrý místo šedofialového, bez šrafování.",
+      "tags": [
+        "stíny"
+      ]
+    },
+    {
+      "n": 13,
+      "name": "Teplé stíny",
+      "what": "Stín je terakotový, bez šrafování. Působí víc jako odpoledne.",
+      "tags": [
+        "stíny"
+      ]
+    },
+    {
+      "n": 14,
+      "name": "Pastel",
+      "what": "Všechno vybledlé do krémové, světlé stíny a slabá linka.",
+      "tags": [
+        "barvy",
+        "obrysy"
+      ]
+    },
+    {
+      "n": 15,
+      "name": "Syté barvy",
+      "what": "Stejná kresba, jen barvy o 40 % sytější a o něco větší kontrast.",
+      "tags": [
+        "barvy"
+      ]
+    },
+    {
+      "n": 16,
+      "name": "Stará pohlednice",
+      "what": "Skoro bez barev, do hněda, se zrnem papíru a ztmavenými rohy.",
+      "tags": [
+        "barvy"
+      ]
+    },
+    {
+      "n": 17,
+      "name": "Chladné ráno",
+      "what": "Celý obraz laděný do modra, stíny namodralé.",
+      "tags": [
+        "barvy",
+        "stíny"
+      ]
+    },
+    {
+      "n": 18,
+      "name": "Hustý opar",
+      "what": "Dohled se ztrácí v oparu mnohem dřív a celá scéna je zamlžená.",
+      "tags": [
+        "světlo"
+      ]
+    },
+    {
+      "n": 19,
+      "name": "Zlatá hodinka",
+      "what": "Nízké slunce: dlouhé stíny a teplé světlo po celý den.",
+      "tags": [
+        "světlo",
+        "stíny"
+      ]
+    }
+  ]
+}

@@ -269,7 +269,7 @@ const TOUCH=matchMedia('(pointer:coarse)').matches;
 const R=new T.WebGLRenderer({canvas,antialias:!ST.px&&!TOUCH,powerPreference:'high-performance'});
 // dynamic resolution (iPhone run was ~50 fps with uneven frames): render scale drops if frames are slow, creeps back up when there is headroom
 let RQ=0,RQmax=2,fpsAcc=0,fpsN=0,fpsT=0,fastT=0;
-R.shadowMap.enabled=ST.sh!=='none';R.shadowMap.type={basic:T.BasicShadowMap,pcf:T.PCFShadowMap,pcfsoft:TOUCH?T.PCFShadowMap:T.PCFSoftShadowMap,none:T.BasicShadowMap}[ST.sh];R.outputEncoding=T.sRGBEncoding;
+R.shadowMap.enabled=ST.sh!=='none';R.shadowMap.type={basic:T.BasicShadowMap,pcf:T.PCFShadowMap,pcfsoft:TOUCH?T.PCFShadowMap:T.PCFSoftShadowMap,none:T.BasicShadowMap}[ST.sh];if(ST.sunink&&LK.blur)R.shadowMap.type=T.PCFSoftShadowMap;R.outputEncoding=T.sRGBEncoding;
 const cam=ST.cam==='persp'?new T.PerspectiveCamera(ST.fov,0.56,1,900):new T.OrthographicCamera(-1,1,1,-1,1,600);let ASP=0.56,PXW=0.1,CAMDIST=120,VH=800;
 if(!ST.px)canvas.style.imageRendering='auto';
 if(ST.css)canvas.style.filter=ST.css;
@@ -305,7 +305,7 @@ const grain=ctx.createPattern(grainC,'repeat');
 
 const C=h=>new T.Color(h).convertSRGBToLinear();
 const matCache={};
-const TOON=(()=>{const gr=ST.grad||[100,178,255];const d=new Uint8Array(gr);const t=new T.DataTexture(d,gr.length,1,T.LuminanceFormat);t.minFilter=t.magFilter=ST.gradSmooth?T.LinearFilter:T.NearestFilter;t.generateMipmaps=false;t.needsUpdate=true;return t;})();
+const TOON=(()=>{const gr=ST.grad||[100,178,255];const d=new Uint8Array(gr);const t=new T.DataTexture(d,gr.length,1,T.LuminanceFormat);t.minFilter=t.magFilter=ST.gradSmooth||(ST.sunink&&LK.soft)?T.LinearFilter:T.NearestFilter;t.generateMipmaps=false;t.needsUpdate=true;return t;})();
 const PATS={'#c4875a':5,'#b97a50':5,'#7f6046':2,'#d6cfbf':3,'#4d7392':3,'#e6d2ad':1,'#dcc7a3':1,'#8f5b36':2,'#5d4632':2,'#5d4a3a':2,'#6e5a48':2,'#7d6a58':2,'#86765a':2,'#9c8a6a':2,'#b07a48':2,'#8a7a5c':2,
   '#8b8f96':3,'#7d8188':3,'#5d6168':3,'#6f8f9a':3,'#a0623c':3,'#b98a62':5,'#3d4f74':7,'#efe2c4':8,'#c8643c':9};
 function patOf(c){if(typeof c!=='string')return 9;c=c.toLowerCase();if(PATS[c]!==undefined)return PATS[c];const q={};new T.Color(c).getHSL(q);const h=q.h,s=q.s,l=q.l;
@@ -376,20 +376,23 @@ function MAT(o){o=Object.assign({},o);const k=ST.mat;
 // sunlit walls) or in shade (one grey-mauve tone for both unlit sides and cast shadows, with thin diagonal hatching). Shadow edges come out crisp.
 // Colours are only nudged toward the palette; the ground is bleached almost white so everything on it reads clearly.
 const PEACH={value:C('#f6e2cf')};
-const HU={ground:{value:C('#fdf2e9')},lit:{value:new T.Color(1,1,1)},shade:{value:new T.Color(0.5,0.43,0.47)},sunL:{value:1},pr:{value:2}};
+const HU={ground:{value:C('#fdf2e9')},lit:{value:new T.Color(1,1,1)},shade:{value:new T.Color(0.5,0.43,0.47)},sunL:{value:1},pr:{value:2},
+  lk:{value:new T.Vector4(LK.hatch,LK.soft,LK.dots,LK.gb)}};// look (2.7): hatching strength, softness of the shading, dots instead of hatching, how much the ground is bleached
 function sunify(m){m.onBeforeCompile=sh=>{const gr=!!(m.map&&m.vertexColors),ch=m.userData.char?1:0;
-  sh.uniforms.uPeach=PEACH;sh.uniforms.uGround=HU.ground;sh.uniforms.uLit=HU.lit;sh.uniforms.uShade=HU.shade;sh.uniforms.uSunL=HU.sunL;sh.uniforms.uPR=HU.pr;
+  sh.uniforms.uPeach=PEACH;sh.uniforms.uGround=HU.ground;sh.uniforms.uLit=HU.lit;sh.uniforms.uShade=HU.shade;sh.uniforms.uSunL=HU.sunL;sh.uniforms.uPR=HU.pr;sh.uniforms.uLK=HU.lk;
   if(gr){sh.vertexShader='varying vec3 vWP;\n'+sh.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
     sh.fragmentShader='varying vec3 vWP;\n'+sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n{float w=sin(vWP.x*0.11+sin(vWP.z*0.07)*2.3+vWP.z*0.035);float c=smoothstep(0.82,0.97,w);diffuseColor.rgb*=0.95+0.05*w;diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.0,0.98,0.95),c*0.35);}');}
-  sh.fragmentShader='uniform vec3 uPeach;uniform vec3 uGround;uniform vec3 uLit;uniform vec3 uShade;uniform float uSunL;uniform float uPR;\n'+sh.fragmentShader
-  .replace('#include <color_fragment>','#include <color_fragment>\n{float lum=dot(diffuseColor.rgb,vec3(.3,.59,.11));'+(gr?'diffuseColor.rgb=mix(diffuseColor.rgb,uGround,0.55);':ch?'':'diffuseColor.rgb=mix(diffuseColor.rgb,uPeach,0.06+0.14*(1.0-smoothstep(0.02,0.25,lum)));')+'}')
+  sh.fragmentShader='uniform vec3 uPeach;uniform vec3 uGround;uniform vec3 uLit;uniform vec3 uShade;uniform float uSunL;uniform float uPR;uniform vec4 uLK;\n'+sh.fragmentShader
+  .replace('#include <color_fragment>','#include <color_fragment>\n{float lum=dot(diffuseColor.rgb,vec3(.3,.59,.11));'+(gr?'diffuseColor.rgb=mix(diffuseColor.rgb,uGround,uLK.w);':ch?'':'diffuseColor.rgb=mix(diffuseColor.rgb,uPeach,0.06+0.14*(1.0-smoothstep(0.02,0.25,lum)));')+'}')
   .replace('vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;',
 `vec3 alb=diffuseColor.rgb;float kL=clamp(dot(reflectedLight.directDiffuse,vec3(1.0))/max(1e-4,dot(alb,vec3(1.0))*uSunL),0.0,1.0);
- float lit=smoothstep(0.40,0.60,kL);vec3 wn=normalize((vec4(normal,0.0)*viewMatrix).xyz);
+ float lit=smoothstep(0.40-0.34*uLK.y,0.60+0.34*uLK.y,kL);vec3 wn=normalize((vec4(normal,0.0)*viewMatrix).xyz);
  vec3 lc=uLit*mix(vec3(0.91,0.81,0.84),vec3(1.0),smoothstep(0.25,0.85,wn.y));
  vec3 sc=uShade*${ch?'vec3(1.30,1.36,1.34)':'vec3(1.0)'};
  float hs=${gr?'4.6':'4.0'}*uPR;float hv=abs(fract((gl_FragCoord.x-gl_FragCoord.y)/hs)-0.5)*hs;float hatch=1.0-smoothstep(0.3*uPR,0.3*uPR+1.0,hv);
- vec3 outgoingLight=alb*mix(sc*(1.0-hatch*${ch?'0.0':'0.14'}),lc,lit)+totalEmissiveRadiance;`);
+ vec2 dg=fract(vec2(gl_FragCoord.x+gl_FragCoord.y,gl_FragCoord.x-gl_FragCoord.y)/(hs*1.3))-0.5;float dots=1.0-smoothstep(0.20,0.31,length(dg));
+ float pat=mix(hatch,dots*1.4,uLK.z)*uLK.x;
+ vec3 outgoingLight=alb*mix(sc*(1.0-pat*${ch?'0.0':'0.14'}),lc,lit)+totalEmissiveRadiance;`);
   // alpha tells the ink pass how eagerly to draw fold lines here: characters only get their outlines and big overlaps, not every facet
   if(!m.transparent)sh.fragmentShader=sh.fragmentShader.replace('#include <dithering_fragment>','#include <dithering_fragment>\ngl_FragColor.a='+(ch?'0.22':gr?'0.3':'1.0')+';');};
   m.customProgramCacheKey=()=>'sun3'+(m.vertexColors?'v':'')+(m.map?'m':'')+(m.userData.char?'c':'')+(m.transparent?'t':'');return m;}
@@ -423,11 +426,11 @@ const _v=new T.Vector3();
 function proj(x3,y3,z3){_v.set(x3,y3,z3).project(cam);return {x:(_v.x*0.5+0.5)*cw,y:(-_v.y*0.5+0.5)*ch,z:_v.z,on:_v.z<1&&Math.abs(_v.x)<1.05&&Math.abs(_v.y)<1.05};}
 function setupLights(scene){
   const hm=ST.hemi||['#fff1d8','#9c7048'];const hemi=new T.HemisphereLight(C(hm[0]),C(hm[1]),ST.hemiI||0.62);scene.add(hemi);
-  const sun=new T.DirectionalLight(C(ST.sunC||'#ffeccc'),ST.sunI||0.98);sun.castShadow=ST.sh!=='none';sun.shadow.mapSize.set(ST.px||TOUCH?1024:2048,ST.px||TOUCH?1024:2048);
+  const sun=new T.DirectionalLight(C(ST.sunC||'#ffeccc'),ST.sunI||0.98);sun.castShadow=ST.sh!=='none';sun.shadow.mapSize.set(ST.px||TOUCH?1024:2048,ST.px||TOUCH?1024:2048);if(ST.sunink&&LK.blur)sun.shadow.mapSize.set(LK.blur>1?LK.blur:512,LK.blur>1?LK.blur:512);// look: the soft filter (a coarser map blurs the edges more)
   const sc=sun.shadow.camera;sc.left=-38;sc.right=38;sc.top=38;sc.bottom=-38;sc.near=1;sc.far=160;sun.shadow.bias=-0.0012;sun.shadow.normalBias=0.03;
   sun.userData.hemi=hemi;scene.add(sun);scene.add(sun.target);return sun;
 }
-function placeSun(sun,x,z){x=Math.round(x/8)*8;z=Math.round(z/8)*8;const so=ST.sun||DAY.off;sun.position.set(x+so[0],so[1],z+so[2]);sun.target.position.set(x,0,z);}
+function placeSun(sun,x,z){x=Math.round(x/8)*8;z=Math.round(z/8)*8;const so=ST.sun||(ST.sunink&&LK.sun)||DAY.off;sun.position.set(x+so[0],so[1],z+so[2]);sun.target.position.set(x,0,z);}
 // ================= day cycle =================
 const DAYLEN=360;
 const DK=[
@@ -465,19 +468,19 @@ function applyDay(scn,sun){if(!scn||!sun)return;const d=dayEval(SV.tod||0);DAY.o
   const lin=c=>c.clone().convertSRGBToLinear();
   sun.color.copy(lin(d.sun));sun.intensity=d.sI*0.8*(ST.sunK||1);const h=sun.userData.hemi;if(h){h.color.copy(lin(d.sky));h.groundColor.copy(lin(d.gnd));h.intensity=d.hI*0.85*(ST.hemiK||1);}
   if(ST.sunink){const L=HU.lit.value;L.copy(sun.color).multiplyScalar(sun.intensity);const hc=h?h.color:sun.color,hi=h?h.intensity:0;L.r=(L.r+hc.r*hi)*0.92;L.g=(L.g+hc.g*hi)*1.01;L.b=(L.b+hc.b*hi)*1.045;
-    HU.shade.value.setRGB(L.r*0.50,L.g*0.43,L.b*0.47);HU.sunL.value=Math.max(0.02,(sun.color.r+sun.color.g+sun.color.b)/3*sun.intensity);HU.pr.value=R.getPixelRatio();}
+    HU.shade.value.setRGB(L.r*LK.sh[0],L.g*LK.sh[1],L.b*LK.sh[2]);HU.sunL.value=Math.max(0.02,(sun.color.r+sun.color.g+sun.color.b)/3*sun.intensity);HU.pr.value=R.getPixelRatio();}
   const bg=lin(d.bg);if(ST.sunink)bg.lerp(C(ST.bg),0.85*(1-d.n));
   if(ST.sunink){const hb=bg.clone().convertLinearToSRGB();DAY.haze=Math.round(hb.r*255)+','+Math.round(hb.g*255)+','+Math.round(hb.b*255);if(DAY.haze!==DAY.hz0){DAY.hz0=DAY.haze;document.body.style.setProperty('--hfade',DAY.haze);}}// the edge of sight fades into the same peach haze as the distance
   if(scn.background)scn.background.copy(bg);if(scn.fog)scn.fog.color.copy(bg);
   if(!ST.sunink)DAY.haze=Math.round(d.bg.r*255)+','+Math.round(d.bg.g*255)+','+Math.round(d.bg.b*255);
   RIM.value.copy(lin(d.rim)).multiplyScalar(d.rI);BR_EDGE.value.copy(lin(d.rim)).multiplyScalar(0.10+0.12*d.n);
-  TINT.style.background='#'+d.tint.getHexString();TINT.style.opacity=d.tO.toFixed(3);HAZE.style.opacity=((ST.sunink?0.42:0.34)*(1-d.n)).toFixed(3);
+  TINT.style.background='#'+d.tint.getHexString();TINT.style.opacity=d.tO.toFixed(3);HAZE.style.opacity=Math.min(1,(ST.sunink?0.42*LK.haze:0.34)*(1-d.n)).toFixed(3);
   for(const m of EMIS)m.emissiveIntensity=m.userData.e0*d.em;
   for(const g of GLOWS)g.material.opacity=d.gl*(g.userData.g0||1);
   const t=SV.tod||0;const ic=t<0.07||t>0.955?'dawn':t<0.58?'sun':t<0.66?'dusk':'moon';if(ic!==dayIcon){dayIcon=ic;const e=$('rT');if(e)e.innerHTML=icSvg(ic)+' ';}}
 // ortho camera with pixel snapping
 const CAMD=120;const _r=new T.Vector3(),_u=new T.Vector3();
-function orthoView(tx,tz,width,el){const H=width/ASP;el+=ST.el||0;
+function orthoView(tx,tz,width,el){const H=width/ASP;el+=(ST.el||0)+(ST.sunink?LK.el:0);
   if(cam.isPerspectiveCamera){const d=(H/2)/Math.tan(cam.fov*Math.PI/360);cam.aspect=ASP;cam.near=Math.max(1,d*0.2);cam.far=d*6;cam.updateProjectionMatrix();CAMDIST=d;
     cam.position.set(tx,Math.sin(el)*d,tz+Math.cos(el)*d);}
   else{cam.left=-width/2;cam.right=width/2;cam.top=H/2;cam.bottom=-H/2;cam.updateProjectionMatrix();CAMDIST=CAMD;cam.position.set(tx,Math.sin(el)*CAMD,tz+Math.cos(el)*CAMD);}
@@ -2323,7 +2326,7 @@ function drawExpOverlay(){
   const rx=Math.abs(c1.x-c0.x),ry=Math.abs(c2.y-c0.y);
   const el=X.end?X.t-X.endT:0,hz=1-(X.end?clamp((el-1)/1.2,0,1):0);
   if(hz>0.01&&rx>2){const col=X.inDust?'190,178,190':DAY.haze;ctx.save();ctx.translate(c0.x,c0.y);ctx.scale(1,Math.max(0.4,ry/rx));
-    const g=ctx.createRadialGradient(0,0,rx*0.62,0,0,rx*1.05);g.addColorStop(0,`rgba(${col},0)`);g.addColorStop(1,`rgba(${col},${0.95*hz})`);
+    const g=ctx.createRadialGradient(0,0,rx*(ST.sunink?LK.fogIn:0.62),0,0,rx*1.05);g.addColorStop(0,`rgba(${col},0)`);g.addColorStop(1,`rgba(${col},${0.95*hz})`);
     ctx.fillStyle=g;ctx.fillRect(-cw*2,-ch*4,cw*4,ch*8);ctx.restore();}
   if(!X.end){
     const hr=0;
@@ -2663,7 +2666,7 @@ window.__animSnap=(k,t,ry,sx,zm,gx)=>{try{const w=220,h=300,r2=new T.WebGLRender
   const keep=SV.sex;SV.sex=sx||'f';const H=makeHero(Object.assign(heroGear(),{tool:'hammer'},gx||{}));SV.sex=keep;H.root.rotation.y=ry||0;sc.add(H.root);if(H.sk){const P=new Float32Array(SK_NB*4+3);skSample(H.sk,skClip(k),t,P);skApply(H.sk,P);}else{const c=animClip(k);const P=new Float32Array(AF);sampleClip(c,t,P);applyPose(H,P);}if(k==='smash'||k==='fix')toolInHand(H,true);
   const cam=new T.PerspectiveCamera(30,w/h,0.1,50);if(zm){cam.position.set(0,2.0,2.3);cam.lookAt(0,1.62,0);}else{cam.position.set(0,1.6,5.2);cam.lookAt(0,1.0,0);}r2.render(sc,cam);const u=r2.domElement.toDataURL('image/png');r2.dispose();return u;}catch(e){return 'ERR '+e;}};
 SV.sex='m';
-if(ZVER||CHEAT){const t=document.querySelector('#title .tag');if(t)t.textContent='EARLY PROTOTYPE'+(ZVER?' · '+ZVER:'')+(CHEAT?' · '+CHEAT.toUpperCase():'');}
+if(ZVER||CHEAT||LOOKN){const t=document.querySelector('#title .tag');if(t)t.textContent='EARLY PROTOTYPE'+(ZVER?' · '+ZVER:'')+(CHEAT?' · '+CHEAT.toUpperCase():'')+(LOOKN?' · LOOK '+LOOKN:'');}
 if(ZVER){const f=document.querySelector('.side .fine');if(f)f.textContent='Early prototype '+ZVER+' · © 2026 Vabiko';}
 (function buildTitle(){const el=$('tbtns');el.innerHTML='';
   // one wanderer only (Robin 21. 11.); no pictures on the title – the live village is the picture (22. 11.)

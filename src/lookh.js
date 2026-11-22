@@ -139,14 +139,45 @@ function makePuddleH(r){const g=grp();const k=S;
 // breaks there is an outer edge or a fold between two faces – exactly where a draughtsman would put a line.
 // One thin, even, warm line on everything (houses, wrecks, robots, Zuro, the wanderer), no doubled outline meshes.
 // ===================================================================
-const HINK={rt:null,w:0,h:0,sc:null,cam:null,mat:null,col:'#6f4a3e',px:1.05,on:true};
+// ---- 2.7: twenty looks on a switch (Robin 22. 11.: "show me what could change the look without redoing the game – for instance no dark outlines") ----
+// A look is only a set of numbers for things the renderer already does: the pen (strength, width, colour, what it draws with), the shadow tone and
+// its hatching, how soft the shading is, a colour grade in the last pass, the haze, the sun and the camera tilt. No model or texture is touched.
+// …/?look=3 picks one (0 = the game as it is). Names and descriptions for the page zuroda.com/vzhledy/ are in looks.json (same order).
+const LOOKS=[
+  {},                                                                                                              // 0 today
+  {ink:0},                                                                                                         // 1 no outlines
+  {ink:0,hatch:0},                                                                                                 // 2 no outlines, clean shadows
+  {ink:0,hatch:0,soft:0.6,blur:1024,sh:[0.54,0.46,0.45],sat:1.08},                                                 // 3 diorama
+  {ink:0.55,inkCol:'#a98672',hatch:0,soft:0.6,blur:1024,sh:[0.54,0.46,0.45],sat:1.08},                             // 4 diorama + faint line
+  {ink:0,hatch:0,soft:0.6,blur:1024,sh:[0.52,0.45,0.48],sat:1.22,con:1.06,tilt:1,el:0.2,haze:0.7},                 // 5 miniature
+  {sens:0.3,inkW:1.5,hatch:0},                                                                                     // 6 silhouettes only
+  {ink:0.7,inkCol:'#8f867f',inkW:0.6,hatch:1.2},                                                                   // 7 thin pencil
+  {inkCol:'#2a1c16',inkW:1.9,hatch:1.7,con:1.05},                                                                  // 8 heavy ink
+  {inkMode:1,hatch:0},                                                                                             // 9 coloured outlines
+  {inkMode:2,inkCol:'#fffaf2',inkW:1.9,sens:0.55,hatch:0,sat:1.15,gb:0.12},                                        // 10 white outlines on darker sand (paper cut-out)
+  {dots:1,hatch:1.5},                                                                                              // 11 halftone dots
+  {hatch:0,sh:[0.44,0.50,0.72]},                                                                                   // 12 blue shadows
+  {hatch:0,sh:[0.68,0.45,0.38]},                                                                                   // 13 warm shadows
+  {ink:0.5,inkCol:'#b08a78',hatch:0,soft:0.5,sh:[0.70,0.64,0.72],sat:0.85,wash:['#fff6ee',0.14]},                  // 14 pastel
+  {sat:1.4,con:1.1,lift:-0.02},                                                                                    // 15 vivid
+  {sat:0.35,con:0.96,tint:['#f1d9b8',0.6],vig:0.55,grain:0.55},                                                    // 16 faded sepia print
+  {tint:['#dcecff',0.6],sh:[0.42,0.47,0.62]},                                                                      // 17 cool morning
+  {ink:0.7,haze:2.2,fogIn:0.36,wash:['#f6dcc6',0.12]},                                                             // 18 thick haze
+  {sun:[-46,13,-5],tint:['#ffd9b0',0.55],sh:[0.56,0.40,0.52],sat:1.05}];                                           // 19 golden hour, long shadows
+const LOOKN=Math.max(0,Math.min(LOOKS.length-1,parseInt((location.search.match(/[?&]look=(\d+)/)||[])[1])||0));
+const LK=Object.assign({ink:1,inkW:1,inkCol:'#6f4a3e',inkMode:0,sens:1,hatch:1,dots:0,soft:0,blur:0,sh:[0.50,0.43,0.47],sat:1,con:1,lift:0,tint:['#ffffff',0],wash:['#ffffff',0],tilt:0,vig:0,grain:0,haze:1,fogIn:0.62,el:0,sun:null,gb:0.55},LOOKS[LOOKN]);
+const HINK={rt:null,w:0,h:0,sc:null,cam:null,mat:null,col:LK.inkCol,px:1.05,on:true};
 function inkInit(){if(HINK.sc)return;HINK.cam=new T.OrthographicCamera(-1,1,1,-1,0,1);HINK.sc=new T.Scene();
   HINK.mat=new T.ShaderMaterial({depthTest:false,depthWrite:false,
-    uniforms:{tC:{value:null},tD:{value:null},uPx:{value:new T.Vector2(1,1)},uK:{value:1},uR:{value:1},uInk:{value:new T.Color(HINK.col)},uA:{value:0.92},uFog:{value:new T.Vector3(0,1,0)},uIcon:{value:0},uSens:{value:1}},
+    uniforms:{tC:{value:null},tD:{value:null},uPx:{value:new T.Vector2(1,1)},uK:{value:1},uR:{value:1},uInk:{value:new T.Color(HINK.col)},uA:{value:0.92},uFog:{value:new T.Vector3(0,1,0)},uIcon:{value:0},uSens:{value:1},
+      uMode:{value:LK.inkMode},uGrade:{value:new T.Vector3(LK.sat,LK.con,LK.lift)},uTint:{value:new T.Vector4().fromArray([...new T.Color(LK.tint[0]).toArray(),LK.tint[1]])},uWash:{value:new T.Vector4().fromArray([...new T.Color(LK.wash[0]).toArray(),LK.wash[1]])},uFx:{value:new T.Vector3(LK.tilt,LK.vig,LK.grain)}},
     vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.0,1.0);}',
-    fragmentShader:`precision highp float;varying vec2 vUv;uniform sampler2D tC;uniform sampler2D tD;uniform vec2 uPx;uniform float uK;uniform float uR;uniform vec3 uInk;uniform float uA;uniform vec3 uFog;uniform float uIcon;uniform float uSens;
+    fragmentShader:`precision highp float;varying vec2 vUv;uniform sampler2D tC;uniform sampler2D tD;uniform vec2 uPx;uniform float uK;uniform float uR;uniform vec3 uInk;uniform float uA;uniform vec3 uFog;uniform float uIcon;uniform float uSens;uniform float uMode;uniform vec3 uGrade;uniform vec4 uTint;uniform vec4 uWash;uniform vec3 uFx;
 float D(vec2 o){return texture2D(tD,vUv+o*uPx).x;}
 void main(){vec4 c=texture2D(tC,vUv);float r=uR;float d0=D(vec2(0.0));
+ // look: tilt-shift – the top and the bottom of the picture go soft, like a photo of a model
+ float tb=0.0;if(uFx.x>0.0&&uIcon<0.5){tb=uFx.x*smoothstep(0.10,0.50,abs(vUv.y-0.5));vec2 o=uPx*tb*7.0;vec3 s=c.rgb;
+  for(int i=0;i<8;i++){float a=float(i)*0.7854;vec2 d=vec2(cos(a),sin(a));s+=texture2D(tC,vUv+o*d).rgb+texture2D(tC,vUv+o*d*0.5).rgb;}c.rgb=mix(c.rgb,s/17.0,min(1.0,tb*1.8));}
  // icons are drawn on nothing: outside the shape the pen writes on clear paper and the picture stays see-through
  float mask=step(0.004,c.a);if(uIcon>0.5)c.rgb=mix(vec3(1.0,0.965,0.93),c.rgb,mask);
  float l=D(vec2(-r,0.0)),rr=D(vec2(r,0.0)),u=D(vec2(0.0,r)),dn=D(vec2(0.0,-r));
@@ -155,7 +186,13 @@ void main(){vec4 c=texture2D(tC,vUv);float r=uR;float d0=D(vec2(0.0));
  float fold=max(max(abs(l+rr-2.0*d0),abs(u+dn-2.0*d0)),max(abs(a+b-2.0*d0),abs(e+f-2.0*d0)))*uK/r;
  float sens=c.a*uSens;float line=smoothstep(mix(1.7,0.30,sens),mix(2.8,0.60,sens),fold);
  float fogk=1.0-smoothstep(uFog.x,uFog.y,d0)*uFog.z;
- c.rgb=mix(c.rgb,c.rgb*uInk*(0.55+0.45*dot(c.rgb,vec3(0.333))),line*uA*fogk);
+ // what the pen draws with: 0 brown ink that darkens the colour under it, 1 a darker shade of the colour itself, 2 one flat colour (white = paper cut-out)
+ vec3 pen=uMode<0.5?c.rgb*uInk*(0.55+0.45*dot(c.rgb,vec3(0.333))):uMode<1.5?pow(c.rgb,vec3(1.9))*0.74:uInk;
+ c.rgb=mix(c.rgb,pen,line*uA*fogk*(1.0-0.85*tb));
+ if(uIcon<0.5){float lum=dot(c.rgb,vec3(0.299,0.587,0.114));c.rgb=mix(vec3(lum),c.rgb,uGrade.x);c.rgb=(c.rgb-0.5)*uGrade.y+0.5+uGrade.z;
+  c.rgb=mix(c.rgb,c.rgb*uTint.rgb,uTint.a);c.rgb=mix(c.rgb,uWash.rgb,uWash.a);
+  float vg=smoothstep(0.40,0.95,length((vUv-0.5)*vec2(0.9,1.0))*1.3);c.rgb=mix(c.rgb,c.rgb*vec3(0.80,0.69,0.64),vg*uFx.y);
+  float gn=fract(sin(dot(floor(gl_FragCoord.xy/1.5),vec2(12.9898,78.233)))*43758.5453);c.rgb*=1.0-uFx.z*(gn-0.5)*0.2;}
  gl_FragColor=vec4(c.rgb,uIcon>0.5?max(mask,line*uA):1.0);}`});
   const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array([-1,-1,0,3,-1,0,-1,3,0]),3));g.setAttribute('uv',new T.BufferAttribute(new Float32Array([0,0,2,0,0,2]),2));
   const m=new T.Mesh(g,HINK.mat);m.frustumCulled=false;HINK.sc.add(m);}
@@ -169,11 +206,11 @@ function inkRender(ren,scene,camera,st){st=st||HINK;inkInit();const _inkV=HINK.v
   const U=HINK.mat.uniforms,pr=ren.getPixelRatio();U.tC.value=st.rt.texture;U.tD.value=st.rt.depthTexture;U.uPx.value.set(1/w,1/h);
   // depth step -> slope: (depth range in world units) / (world units per device pixel)
   const wpp=camera.isOrthographicCamera?(camera.top-camera.bottom)/camera.zoom/h:0.02;U.uK.value=(camera.far-camera.near)/wpp;
-  U.uR.value=st.r||Math.max(1,Math.round(HINK.px*pr*0.5));U.uIcon.value=st.icon?1:0;U.uSens.value=st.sens||1;
+  U.uR.value=st.r||Math.max(1,Math.round(HINK.px*pr*0.5*LK.inkW));U.uIcon.value=st.icon?1:0;U.uSens.value=(st.sens||1)*(st.icon?1:LK.sens);
   // the wider the view, the smaller everything is on screen – the pen gets lighter so small things do not drown in ink
   U.uA.value=camera.isOrthographicCamera?0.92*Math.min(1,Math.max(0.5,Math.sqrt(13/((camera.right-camera.left)/camera.zoom)))):0.92;
   const fg=scene.fog;if(fg&&camera.isOrthographicCamera){U.uFog.value.set((fg.near-camera.near)/(camera.far-camera.near),(fg.far-camera.near)/(camera.far-camera.near),0.85);}else U.uFog.value.set(0,1,0);
-  if(st.icon)U.uA.value=0.95;
+  if(st.icon)U.uA.value=0.95;else U.uA.value*=LK.ink;
   ren.render(HINK.sc,HINK.cam);}
 
 // ===================================================================
