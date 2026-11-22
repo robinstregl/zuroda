@@ -2,6 +2,20 @@
   "root": "1.0",
   "versions": [
     {
+      "v": "2.3",
+      "date": "22. 11. 2026",
+      "title": "Zelená vesnice",
+      "notes": [
+        "Vodu ze studny teď můžeš vylít do vesnice: na stránce Water Pump je nová část The oasis s tlačítkem Water the village.",
+        "Vesnice má 10 stupňů zeleně. Začíná vyprahlá s jednou palmou, postupně přibývá tráva, květiny a palmy, v devátém stupni jezírko.",
+        "Stupně stojí 12 až 250 litrů (dohromady 1 012 L). Dá se zalévat po částech.",
+        "Ve studni vždycky zůstane voda na jedno plné naplnění před výpravou.",
+        "Je to jen pro krásu, nic to nepřidává. Když je studna skoro plná, Zuro zalévání připomene.",
+        "Vesnice, která už byla rozestavěná, si zeleň nechává (dřív rostla sama s budovami).",
+        "Automat, který vylévá všechno, co mu zbyde, měl po hodině stupeň 3 a po dvou a půl hodinách stupeň 6. V postupu ho to nezpomalilo."
+      ]
+    },
+    {
       "v": "2.2",
       "date": "22. 11. 2026",
       "title": "Roboti a čipy",

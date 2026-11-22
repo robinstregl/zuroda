@@ -51,7 +51,7 @@ async def hour(minutes):
             r = await pg.evaluate("""(()=>{const S=__SV(),g=window.__g;const r=__simExp();if(!r){g.t+=5;__simShop(5);g.idle++;return {wait:1,t:g.t,well:S.well};}
               g.n++;g.t+=r.t;if(r.ko)g.ko++;else if(r.end==='thirst')g.thirst++;g.nudges+=r.stuck;__simShop(r.t+15);g.t+=15;const lv=__lv();
               return {t:Math.round(g.t),n:g.n,b:Object.values(S.b).join('-'),gear:['kladivo','batoh','cutora','boty','prak','kompas'].map(k=>S.craft[k]||0).join('-'),scrap:S.scrap,gold:S.cores,chips:S.chips||0,energy:Math.round(S.energy||0),well:Math.round(S.well),
-                kills:(g.kills=(g.kills||0)+r.kills),chipsIn:(g.chipsIn=(g.chipsIn||0)+r.x),hero:lv[0],dog:lv[1],km:Math.round((S.meters||0)/100)/10,last:[r.s,Math.round(r.t),Math.round(100*r.left/r.cap),r.ko?'ko':r.end],ko:g.ko,thirst:g.thirst,nudges:g.nudges,camps:Object.keys(S.camps).length}})()""")
+                green:__green()[0],kills:(g.kills=(g.kills||0)+r.kills),chipsIn:(g.chipsIn=(g.chipsIn||0)+r.x),hero:lv[0],dog:lv[1],km:Math.round((S.meters||0)/100)/10,last:[r.s,Math.round(r.t),Math.round(100*r.left/r.cap),r.ko?'ko':r.end],ko:g.ko,thirst:g.thirst,nudges:g.nudges,camps:Object.keys(S.camps).length}})()""")
             if r.get('wait'):
                 if r['t'] > minutes * 60: break
                 continue

@@ -104,7 +104,7 @@ if(ZVER)try{if(localStorage.getItem(SAVE_KEY)===null){const pv=v=>v.split('.').m
   let src='daleko3_save',bv=null;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i),m=k&&k.match(/^daleko3_save_v([0-9.]+)$/);if(m&&lt(pv(m[1]),pv(ZVER))&&(!bv||lt(bv,pv(m[1])))){bv=pv(m[1]);src=k;}}
   const o=localStorage.getItem(src);if(o!==null)localStorage.setItem(SAVE_KEY,o);}}catch(_){}
 function freshSave(){return {v:1,eco:2,seed:(Math.random()*4294967295)>>>0,scrap:0,cores:0,chips:0,bottles:0,b:{cerpadlo:0,solar:0,dilna:0,dron:0,radio:0},energy:30,scout:null,
-  craft:{},decor:[],taken:[],bags:[],exp:0,best:0,msg:0,lore:0,scrapT:{},meters:0,name:'Wanderer',tod:0.12,zoom:14,mscale:1,seen:{},lastPath:null,well:24,wellAt:Date.now(),camps:{},fetch:null,caches:[]};}
+  craft:{},decor:[],green:0,greenW:0,taken:[],bags:[],exp:0,best:0,msg:0,lore:0,scrapT:{},meters:0,name:'Wanderer',tod:0.12,zoom:14,mscale:1,seen:{},lastPath:null,well:24,wellAt:Date.now(),camps:{},fetch:null,caches:[]};}
 function loadSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.v===1){s.takenSet=new Set(s.taken||[]);s.scrapT=s.scrapT||{};s.meters=s.meters||0;s.name=s.name||'Wanderer';if(s.tod===undefined)s.tod=0.12;s.zoom=clamp(s.zoom||14,10,18);
     if(!s.eco){s.eco=2;s.well=24;s.wellAt=Date.now();s.camps={};s.fetch=null;}// older save → new water economy
     s.camps=s.camps||{};if(s.well===undefined)s.well=24;
@@ -132,6 +132,15 @@ const fillAmount=()=>Math.max(FLASK,Math.min(waterCap(),Math.floor(SV.well*10)/1
 const BOTTLE=0.5;// litres per bottle
 const bottleMaxOf=l=>l>=3?2:1;const bottleMax=()=>bottleMaxOf(gearLv('batoh'));// the backpack decides how many bottles you can carry (2.1: two at most – with more, the longest trips ran well over two minutes)
 SV.bottles=Math.min(SV.bottles||0,bottleMax());// a save from before 2.1 may carry more
+// ---- 2.3 the green village: pour well water on the village and it grows greener in ten stages – grass, flowers, palms, at the end a pond.
+// cost = litres per stage, patch = how many grass patches show, fthr = which patches carry flowers (lower = more), palms = how many palms stand.
+const GREEN={cost:[12,20,32,48,70,95,125,160,200,250],patch:[6,22,40,60,82,104,126,148,168,182,190],fthr:[9,9,9,0.82,0.8,0.7,0.62,0.55,0.5,0.45,0.4],palms:[1,1,2,2,2,3,3,4,6,7,8],
+  what:['','Grass takes root around the house.','A second palm sprouts.','The first flowers open.','Grass spreads along the paths.','A third palm gives shade.','Flowers everywhere.','The green reaches the workshop and the pump.','Two more palms.','A little pond fills up.','A full oasis – palms, flowers and water.']};
+// a village from before 2.3 keeps the green it had (it used to grow with the buildings)
+if(SV.green===undefined){const had=4+9*Object.values(SV.b).reduce((a,b)=>a+b,0);let g=0;while(g<10&&GREEN.patch[g+1]<=had+8)g++;SV.green=SV.exp>0?g:0;SV.greenW=0;}
+const greenLv=()=>clamp(SV.green|0,0,10);
+const greenReserve=()=>waterCap()+bottleMax()*BOTTLE;// one full fill for the next trip always stays in the well
+function greenPour(){const lv=greenLv();if(lv>=10)return 0;const need=GREEN.cost[lv]-(SV.greenW||0),a=Math.max(0,Math.min(need,Math.floor((SV.well-greenReserve())*10)/10));return a>=Math.min(5,need)?a:0;}// a pour is at least 5 L (or what the stage still needs)
 const bottleCost=()=>6+4*(SV.bottles||0);
 const bottleFill=()=>Math.min(SV.bottles||0,Math.floor(Math.max(0,SV.well-fillAmount())/BOTTLE));
 function tickWell(dt){SV.well=Math.min(wellCap(),SV.well+wellRate()*dt/60);SV.energy=Math.min(energyCap(),(SV.energy||0)+energyRate()*dt/60);}
@@ -1502,7 +1511,7 @@ function float3(x3,y3,z3,t,c){floaters.push({x3,y3,z3,t,c,b:tNow});}
 // ===================================================================
 // ============================ BASE =================================
 // ===================================================================
-const BS={scene:null,sun:null,bld:{},bots:{},house:null,hero:null,dog:null,gInst:null,flowerPrefix:[],decor:null,smoke:[],palms:[],clickables:[],decorRing:null};
+const BS={scene:null,sun:null,bld:{},bots:{},house:null,hero:null,dog:null,gInst:null,flowerPrefix:[],decor:null,smoke:[],palms:[],palmG:[],pond:null,clickables:[],decorRing:null};
 function buildBase(){
   const sc=new T.Scene();sc.background=C(ST.bg||'#efd3a0');sc.fog=new T.Fog(C(ST.bg||'#efd3a0'),120,260);
   BS.scene=sc;BS.sun=setupLights(sc);placeSun(BS.sun,0,0);BS.wisps=makeWisps(sc,6);
@@ -1544,13 +1553,15 @@ function buildBase(){
     BS.flowerPrefix[i]=fi;});
   if(ST.sunink){[discs,blades,flowers].forEach((m,i)=>{m.material.depthWrite=false;m.renderOrder=1+i;m.castShadow=false;});}
   [discs,blades,flowers].forEach(m=>{m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;m.count=0;sc.add(m);});
-  BS.gInst={discs,blades,flowers,N};
+  BS.gInst={discs,blades,flowers,N,arr,fl};
 
   // house + pip
   BS.house=makeHouse();sc.add(BS.house);BS.house.userData.house=true;BS.clickables.push(BS.house);
   BS.heroG=grp(0,0,0,sc);BS.dogG=grp(0,0,0,sc);
   // outer palms/cacti/rocks
-  for(const [x,z,s] of [[-4.2,8.6,0.9],[15.8,-6.5,0.8],[-14,-1.2,0.85],[5,13.5,0.75],[2.5,-9,0.7]]){const p=makePalm(s);p.position.set(x,0,z);sc.add(p);BS.palms.push(p.userData.top);}
+  // palms in the order they grow (2.3): the one by the house stands from the start, the rest come with watering; the last three are new
+  for(const [x,z,s] of [[-4.2,8.6,0.9],[5,13.5,0.75],[-14,-1.2,0.85],[2.5,-9,0.7],[15.8,-6.5,0.8],[11.2,5.4,0.72],[-7.4,17,0.8],[-2.4,-13.4,0.7]]){const p=makePalm(s);p.position.set(x,0,z);sc.add(p);BS.palms.push(p.userData.top);BS.palmG.push(p);}
+  BS.pond=grp(8.6,0,9.4,sc);BS.gLv=undefined;BS.gShown=undefined;
   for(const [x,z,h] of [[-21,-5,2.4],[22,-16,2.1],[20,20,2.6],[-19,22,2],[-27,10,2.3],[26,6,2],[0,-30,2.2]]){const c=makeCactus(h);c.position.set(x,Math.max(0,0),z);sc.add(c);}
   for(let i=0;i<16;i++){const a=i*2.17,d=21+(i*13)%14;const m=makeRock(0.5+((i*7)%5)*0.2,i);m.position.set(Math.cos(a)*d,0.15,1+Math.sin(a)*d*1.25);sc.add(m);}
   // smoke
@@ -1562,6 +1573,16 @@ function buildBase(){
   for(const k in BLD) rebuildBuilding(k);
   rebuildDecor();
 }
+// what the village shows at the current stage of green; anim = something has just grown
+function applyGreen(anim){const lv=greenLv(),gi=BS.gInst;if(!gi)return;const o3=new T.Object3D(),thr=GREEN.fthr[lv],pre=[];let fi=0;
+  gi.arr.forEach((q,i)=>{if(q.c>thr){o3.position.set(q.x+q.rx*0.3,0.34,q.z);o3.rotation.set(0,0,0);o3.scale.set(0.24,0.24,0.24);o3.updateMatrix();gi.flowers.setMatrixAt(fi,o3.matrix);gi.flowers.setColorAt(fi,gi.fl[fi%3]);fi++;}pre[i]=fi;});
+  gi.flowers.instanceMatrix.needsUpdate=true;if(gi.flowers.instanceColor)gi.flowers.instanceColor.needsUpdate=true;BS.flowerPrefix=pre;BS.gTarget=GREEN.patch[lv];
+  BS.palmG.forEach((p,i)=>{const on=i<GREEN.palms[lv];if(on&&!p.visible&&anim){p.scale.setScalar(0.01);p.userData.pop=0;}else if(on&&p.userData.pop===undefined)p.scale.setScalar(1);p.visible=on;});
+  const had=BS.pond.children.length;while(BS.pond.children.length)BS.pond.remove(BS.pond.children[0]);if(lv>=9){BS.pond.add(makePuddle(lv>=10?17:11));if(anim&&!had){BS.pond.scale.setScalar(0.01);BS.pond.userData.pop=0;}}
+  BS.gLv=lv;}
+function waterVillage(){const a=greenPour();if(a<=0)return false;const lv=greenLv();SV.well-=a;SV.greenW=(SV.greenW||0)+a;sfx.drink();
+  if(SV.greenW>=GREEN.cost[lv]-0.05){SV.green=lv+1;SV.greenW=0;sfx.repair();toast('{palm}','The village is greener · '+SV.green+' of 10',GREEN.what[SV.green]);}
+  save();refreshBaseUI();return true;}
 function rebuildBuilding(k){
   const sc=BS.scene,b=BLD[k],lvl=SV.b[k];
   if(BS.bld[k]){sc.remove(BS.bld[k]);BS.clickables=BS.clickables.filter(o=>o!==BS.bld[k]);}
@@ -1608,6 +1629,7 @@ function refreshBaseUI(){
   else if(SV.exp<5&&canRepairAny())h='We can repair something! Tap a ruin with an orange ring.';
   else if(SV.b.dilna&&!gearLv('kladivo'))h='Make a Hammer in the Workshop – then we can take wrecks apart.';
   else if(chipShort())h='We need circuits {chip} for the next upgrade. Only robots carry them. '+(gearLv('prak')?'Stun one with the slingshot, finish it and pick up what falls out.':'Make a Slingshot in the Workshop – it stuns them from a safe distance.');
+  else if(greenLv()<10&&SV.well>=wellCap()*0.8&&greenPour()>0)h='The well is nearly full. Tap the Water Pump and let\'s water the village – it will turn greener.';
   else{const nb=bottleFill();h='The well holds '+Math.floor(SV.well)+' L. Shall I fill your flask'+(canteenCap()?' and canteen':'')+(nb?' and '+nb+' bottle'+(nb>1?'s':''):'')+'? That\'s '+fmtL(fill+nb*BOTTLE)+' L.';}
   $('hint').innerHTML=zSay(h);
   const anyCamp=CAMPS.some(c=>SV.camps[c.id]);
@@ -1673,6 +1695,8 @@ function openBuilding(k,keepScroll){
   let h=(ST.sunink?`<div class="hroom"><img src="${(k==='dilna'&&lvl>0?hRoom('work'):hScene(k,lvl))||''}" alt=""></div><div class="bhead">`:`<div class="bhead"><div class="bimg"><img src="${snapBld(k,lvl)}" alt=""></div>`)+(ST.sunink?`<div class="bht"><h2>${b.name}</h2><div class="blv"><div class="kick">${lvl===0?'ruin':'level '+lvl+' of '+b.lv.length}</div>${pips(lvl,b.lv.length)}</div></div></div>`:`<div class="bht"><div class="kick">${lvl===0?'ruin':'level '+lvl+' of '+b.lv.length}</div><h2>${b.name}</h2>${pips(lvl,b.lv.length)}</div></div>`)+`<p class="bdesc">${b.desc}</p>`;
   // what the building does right now
   if(k==='cerpadlo')h+=`<div class="stat"><span>{water}</span><div><b>${Math.floor(SV.well)} / ${wellCap()} L</b> in the well<br><small>refills ${wellRate()} L/min</small></div></div>`;
+  if(k==='cerpadlo'){const gl=greenLv(),pr=greenPour();h+=`<div class="sect">The oasis</div><div class="upc grn"><div class="grl">${pips(gl,10)}<span>stage ${gl} of 10</span></div><div class="eff">${gl>=10?'A full oasis – palms, flowers and water. {check}':'Pour well water on the village and it turns greener. '+(SV.greenW?fmtL(SV.greenW)+' of '+GREEN.cost[gl]+' L poured for the next stage.':'The next stage takes '+GREEN.cost[gl]+' L.')}</div>`
+    +(gl>=10?'':`<button class="btn primary full two" data-act="water" ${pr>0?'':'disabled'}>Water the village${pr>0?'<small>'+fmtL(pr)+' L from the well</small>':''}</button>`+(pr>0?'':`<p class="grn-note">The well keeps ${fmtL(greenReserve())} L for your next trip. Come back when it holds more.</p>`))+`</div>`;}
   if(k==='solar')h+=`<div class="stat"><span>{energy}</span><div><b>${Math.floor(SV.energy||0)} / ${energyCap()}</b> in the battery<br><small>${energyRate()?'charges '+energyRate()+' energy/min':'not charging – repair the panels'}</small></div></div>`;
   if(k==='dron'&&lvl>0){if(SV.scout){const r=Math.max(0,Math.ceil((SV.scout.until-Date.now())/1000));h+=`<div class="stat"><span>{drone}</span><div><b>The drone is out</b><br><small>back in ${Math.floor(r/60)}:${String(r%60).padStart(2,'0')}</small></div></div>`;}
     else h+=`<div class="stat"><span>{drone}</span><div><b>Ready to fly</b><br><small>range ${fmtM(DRONE.range[lvl])} · maps ${fmtM(DRONE.r[lvl])} around the spot</small></div></div><button class="btn primary full" data-act="scout" ${(SV.energy||0)>=DRONE.cost[lvl]?'':'disabled'}>Send the drone · ${DRONE.cost[lvl]} {energy}</button>`;}
@@ -1686,7 +1710,7 @@ function openBuilding(k,keepScroll){
 }
 function openHouse(){
   openSheet((ST.sunink?`<div class="hroom"><img src="${hRoom('home')||''}" alt=""></div>`:'')+`<div class="kick" style="margin-bottom:6px">your home</div><div class="portraits"><figure><img src="${PORTRAIT[SV.sex==='f'?'f':'m']||''}" alt=""><figcaption>${SV.name||'Wanderer'} · Lv ${heroLv()}</figcaption></figure><figure><img src="${PORTRAIT.dog||''}" alt=""><figcaption>Zuro · Lv ${dogLv()}</figcaption></figure></div><h2>Home</h2><div class="lv">Expeditions: ${SV.exp} · farthest: ${fmtM(SV.best)}</div><p>This is where you and Zuro live. Zuro always brings you back.</p>
-  <div class="eff"><b>${SV.name||'Wanderer'}</b> · level ${heroLv()}/30 &nbsp; · &nbsp; <b>Zuro</b> · level ${dogLv()}/15<br>Walked together: ${fmtMeters(SV.meters||0)} · Rescue keeps ${100-Math.round(rescueLoss()*100)} % of the load</div><div class="eff">Flask <b>${FLASK} L</b>${canteenCap()?' + canteen <b>'+canteenCap()+' L</b>':''} · Well <b>${Math.floor(SV.well)} / ${wellCap()} L</b> (+${wellRate()} L/min) · Backpack <b>${bagCap()}</b><br>Gear: ${Object.keys(SV.craft).filter(k=>CRAFT[k]&&gearLv(k)).map(k=>'{'+CRAFT[k].icon+'}'+(CRAFT[k].lv.length>1?' '+ROMAN[gearLv(k)]:'')).join(' &nbsp;')||'—'} · Camps found: ${CAMPS.filter(c=>SV.camps[c.id]).length}<br>Bottles: {bottle} ${SV.bottles||0} / ${bottleMax()} (${BOTTLE} L each)</div>
+  <div class="eff"><b>${SV.name||'Wanderer'}</b> · level ${heroLv()}/30 &nbsp; · &nbsp; <b>Zuro</b> · level ${dogLv()}/15<br>Walked together: ${fmtMeters(SV.meters||0)} · Rescue keeps ${100-Math.round(rescueLoss()*100)} % of the load</div><div class="eff">Flask <b>${FLASK} L</b>${canteenCap()?' + canteen <b>'+canteenCap()+' L</b>':''} · Well <b>${Math.floor(SV.well)} / ${wellCap()} L</b> (+${wellRate()} L/min) · Backpack <b>${bagCap()}</b><br>Gear: ${Object.keys(SV.craft).filter(k=>CRAFT[k]&&gearLv(k)).map(k=>'{'+CRAFT[k].icon+'}'+(CRAFT[k].lv.length>1?' '+ROMAN[gearLv(k)]:'')).join(' &nbsp;')||'—'} · Camps found: ${CAMPS.filter(c=>SV.camps[c.id]).length} · Oasis: stage ${greenLv()} of 10<br>Bottles: {bottle} ${SV.bottles||0} / ${bottleMax()} (${BOTTLE} L each)</div>
   <button class="btn full" data-act="reset" style="margin-top:8px">Start over completely</button>`,true);
 }
 function openSheet(h,page){if($('sheet').classList.contains('hidden'))sfx.ui('open');$('shBody').innerHTML=icx(h);$('sheet').classList.toggle('page',!!page);$('sheet').classList.remove('hidden');}
@@ -1697,6 +1721,7 @@ $('shBody').addEventListener('click',e=>{
   if(act==='repair')doRepair(k);
   if(act==='pick'){sfx.ui('select');B.wsel=k;openBuilding('dilna',true);}
   if(act==='craft'){const c=CRAFT[k],gl=gearLv(k),nx=c.lv[gl];if(nx&&canPay(nx)){pay(nx);SV.craft[k]=gl+1;save();sfx.repair();toast('{'+c.icon+'}',c.name+(c.lv.length>1?' '+ROMAN[gl+1]:''),nx.eff);refreshBaseUI();openBuilding('dilna',true);if(k==='kladivo'||k==='batoh')rebuildBaseChars();}}
+  if(act==='water'){if(waterVillage())openBuilding('cerpadlo',true);}
   if(act==='scout'){closeSheet();openMap('scout');}
   if(act==='go'){startExpedition(k||null);}
   if(act==='fetch'){sendWolt();}
@@ -1750,7 +1775,9 @@ function updateBase(dt){
   if(BS.hero){BS.hero.idleK=Math.floor(tq/9)%3===2?'fold':'idle';heroPose(BS.hero,tq,false);blinkFace(BS.hero,BS.dog,tq,Math.floor(tq/5)%4===3?'happy':'idle',Math.floor(tq/4)%3===2?'happy':'idle');if(BS.dog)dogPose(BS.dog,tq,'idle',0);}
   for(const k in BS.bots){animBot(BS.bots[k],tq);BS.bots[k].g.rotation.y=Math.sin(t*0.4+k.length)*0.6;}
   for(const p of BS.palms)p.rotation.z=Math.sin(t*0.9+p.parent.position.x)*0.05;
-  const gi=BS.gInst,ng=Math.min(gi.N,4+totalLevels()*9+(SV.b.sklenik?22:0)+SV.decor.length*2);gi.discs.count=ng;gi.blades.count=ng*3;gi.flowers.count=ng?BS.flowerPrefix[ng-1]:0;
+  if(BS.gLv!==greenLv())applyGreen(BS.gLv!==undefined);
+  const gi=BS.gInst;BS.gShown=BS.gShown===undefined||BS.gShown>BS.gTarget?BS.gTarget:Math.min(BS.gTarget,BS.gShown+dt*38);const ng=Math.min(gi.N,Math.floor(BS.gShown));gi.discs.count=ng;gi.blades.count=ng*3;gi.flowers.count=ng?BS.flowerPrefix[ng-1]:0;
+  for(const g of BS.palmG.concat(BS.pond))if(g.userData.pop!==undefined){g.userData.pop+=dt*1.8;const p=g.userData.pop;g.scale.setScalar(p>=1?1:clamp(p*1.12,0.01,1.12));if(p>=1.15){g.scale.setScalar(1);delete g.userData.pop;}}
   for(const k in BS.bld){const g=BS.bld[k],a=g.userData.anim;
     if(g.userData.pop!==undefined){g.userData.pop+=dt*2.2;const p=g.userData.pop;const s=p>=1?1:1+Math.sin(p*Math.PI)*0.25*(1-p)+ (p<1?(p-1):0)*0+0;g.scale.setScalar(p>=1?1:clamp(p*1.15,0.01,1.15));if(p>=1.2){g.scale.setScalar(1);delete g.userData.pop;}}
     if(g.userData.ring){const ok=canRepair(k);g.userData.ring.visible=ok;if(ok){const s=1+Math.sin(t*4)*0.06;g.userData.ring.scale.set(7*s,1,4.4*s);}}
@@ -2314,6 +2341,7 @@ function drawFloaters(){
 // ================= bot (testing only) =================
 let botWait=0;
 function botShop(){
+  if(greenLv()<10&&SV.well>=greenReserve()*2&&greenPour()>0){waterVillage();return true;}// waters with what is left after two full fills
   const order=['cerpadlo','solar','dilna','solar','cerpadlo','dilna','dron','solar','cerpadlo','dilna','radio'];
   if(SV.b.dilna&&(SV.bottles||0)<Math.min(2,bottleMax())&&SV.scrap>=bottleCost()+20){SV.scrap-=bottleCost();SV.bottles=(SV.bottles||0)+1;save();return true;}
   for(const k of order){if(canRepair(k)){doRepair(k);closeSheet();return true;}}
@@ -2592,6 +2620,6 @@ window.__simExp=(camp)=>{window.SIMBOT=1;const w0=SV.well;startExpedition(camp||
   window.SIMBOT=0;enterBase();return r;};
 window.__walk=(sx,sy,tx,ty,maxT)=>{if(!X||X.end)return null;X.x=sx;X.y=sy;X.dx=sx;X.dy=sy+10;X.intro=null;X.slideOb=null;X.slide=0;X.dest=fixDest({x:tx,y:ty});if(!X.dest)return {skip:1};const D=X.dest,d0=Math.hypot(D.x-sx,D.y-sy),t0=X.t;
   while(X.dest&&!X.end&&X.t-t0<maxT){X.water=X.cap;X.scrap=0;updateExp(1/30);}return {arr:Math.hypot(X.x-D.x,X.y-D.y)<8,t:Math.round((X.t-t0)*10)/10,d0:Math.round(d0),left:Math.round(Math.hypot(X.x-D.x,X.y-D.y)),end:X.end};};
-window.__simShop=secs=>{tickWell(secs);let n=0;while(n<200&&botShop())n++;return n;};window.__ret=()=>X&&typeof retNeed==='function'?retNeed():0;window.__refresh=()=>refreshBaseUI();window.__step=n=>{for(let i=0;i<n&&X&&!X.end;i++)updateExp(1/30);};window.__bottleMax=()=>bottleMax();window.__lv=()=>[heroLv(),dogLv(),bagCap(),waterCap()];window.__forX=(a,b,c,d,f)=>forX(a,b,c,d,f);
+window.__simShop=secs=>{tickWell(secs);let n=0;while(n<200&&botShop())n++;return n;};window.__ret=()=>X&&typeof retNeed==='function'?retNeed():0;window.__refresh=()=>refreshBaseUI();window.__green=n=>{if(n!==undefined){SV.green=n;SV.greenW=0;}return [greenLv(),SV.greenW||0,greenPour()];};window.__step=n=>{for(let i=0;i<n&&X&&!X.end;i++)updateExp(1/30);};window.__bottleMax=()=>bottleMax();window.__lv=()=>[heroLv(),dogLv(),bagCap(),waterCap()];window.__forX=(a,b,c,d,f)=>forX(a,b,c,d,f);
 requestAnimationFrame(frame);
 })();

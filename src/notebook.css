@@ -102,6 +102,8 @@
   body.lookH .costs{gap:6px 18px;margin:10px 0 14px}body.lookH .cc{background:none;border:0;border-radius:0;padding:0;gap:5px;font:600 18px/1 var(--ff)}body.lookH .cc svg{width:23px;height:23px}
   body.lookH .cc.no{color:var(--nst);text-decoration:underline wavy;text-decoration-thickness:1px;text-underline-offset:4px}
   body.lookH .upc{background:#e2f0f1;border:0;border-radius:0;padding:13px 14px 16px;transform:rotate(.5deg);box-shadow:2px 3px 0 rgba(74,51,43,.22)}
+  body.lookH .upc.grn{background:#e7f0d6;transform:rotate(-.5deg)}.grl{display:flex;align-items:center;gap:10px;margin-bottom:6px}.grl span{font-weight:600;font-size:13px;color:var(--wd-dim)}.grn-note{margin:10px 0 0;font-size:12.5px;line-height:1.4;color:var(--wd-dim)}
+  body.lookH .btn.two{display:flex;flex-direction:column;align-items:center;justify-content:center}body.lookH .btn.two small{font:600 13px/1.15 var(--ff);opacity:.92}
   body.lookH .msg{font-family:var(--ff);font-style:normal;background:var(--np);color:var(--ni);border:1.5px dashed rgba(74,51,43,.55);border-radius:0}
   body.lookH .crow{border-top:1.5px dashed rgba(74,51,43,.3)}body.lookH .cost .no{color:var(--nst)}
   body.lookH .portraits{gap:16px;margin:6px 4px 16px}body.lookH .portraits img{box-sizing:border-box;border:6px solid #fffdf8;border-radius:0;outline:1px solid rgba(74,51,43,.5);box-shadow:2px 3px 0 rgba(74,51,43,.25);background:#fbeee2}
