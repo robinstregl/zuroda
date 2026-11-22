@@ -21,12 +21,13 @@ const S=0.1; // 2D game units -> 3D units
 // ===== economy (Robin 20. 11. evening): every building has 10 levels, costs grow ~×1.45 per level, gold scrap from level 3, circuits from level 5, building stays instant =====
 const r5=v=>v<20?Math.round(v):Math.round(v/5)*5;
 // sc = scrap base, g = growth, c = gold per level, x = circuits per level, e0/eg = energy, eff = text for level n
-function mkLv(o){return Array.from({length:10},(_,i)=>({s:r5(o.sc*Math.pow(o.g,i)),c:o.c[i]||0,x:o.x[i]||0,en:i<2?0:Math.round(o.e0*Math.pow(o.eg,i)),get eff(){return o.eff(i+1);}}));}
+// 2.1: no energy in any price (e0/eg stay in the tables unused) – the battery must never be the reason to stop playing
+function mkLv(o){return Array.from({length:10},(_,i)=>({s:r5(o.sc*Math.pow(o.g,i)),c:o.c[i]||0,x:o.x[i]||0,en:0,get eff(){return o.eff(i+1);}}));}
 const BLD={
   // village layout (Robin 20. 11.): a small settlement that grew along a road
   cerpadlo:{name:'Water Pump',x:-74,y:-66,rot:0.35,col:'#5aa9b8',desc:'An old pump robot. It pumps water from deep underground into your well – more and faster with every level.',
     lv:mkLv({sc:10,g:1.5,c:[0,0,1,2,3,4,6,8,11,15],x:[0,0,0,0,1,2,3,4,6,8],e0:6,eg:1.38,eff:n=>'Well refills '+wellRateOf(n)+' L/min, holds '+wellCapOf(n)+' L'}),bot:[-26,10]},
-  solar:{name:'Solar Field',x:-122,y:96,rot:0.45,col:'#3d4f74',desc:'Panels catching the sun again. They charge the village battery – every repair, upgrade and drone flight runs on that energy.',
+  solar:{name:'Solar Field',x:-122,y:96,rot:0.45,col:'#3d4f74',desc:'Panels catching the sun again. They charge the village battery. The scout drone and the furnace run on it – and Zuro\'s dynamo adds a little with every walk.',
     lv:mkLv({sc:18,g:1.45,c:[0,0,1,2,3,5,7,9,12,16],x:[0,0,0,0,1,2,3,5,7,9],e0:0,eg:1,eff:n=>'+'+energyRateOf(n)+' energy/min · battery '+energyCapOf(n)}),bot:[38,12],botCol:'#e0b04c'},
   dilna:{name:'Workshop',x:96,y:-42,rot:-0.3,col:'#c8643c',desc:'The workshop robot turns scrap into gear for your journeys. Every level lets it make better gear.',
     lv:mkLv({sc:24,g:1.45,c:[0,0,1,2,3,4,6,8,10,13],x:[0,0,0,0,1,2,3,4,6,8],e0:10,eg:1.36,eff:n=>wsUnlockText(n)}),bot:[-30,12]},
@@ -35,6 +36,7 @@ const BLD={
   radio:{name:'Radio Tower',x:-108,y:-186,rot:0.25,col:'#c0532f',desc:'A huge old transmitter on the edge of the village. Getting it to work will take a long time – but then you might hear someone out there.',
     lv:mkLv({sc:400,g:1.3,c:[12,15,19,24,30,37,46,57,70,86],x:[3,4,5,7,9,11,14,17,21,25],e0:120,eg:1.15,eff:n=>n===1?'Picks up a signal – and shows you which way it comes from':n<=7?'Clearer signal – you can hear message '+n+' of 7':n===8?'Shows roughly how far away the signal is':n===9?'Hears every whisper on the band':'Locks onto the source of the signal'}),bot:[26,12]},
 };
+const DYNAMO_M=60;// 2.1: Zuro's dynamo – one unit of energy for every 60 m you walk together
 const DRONE={range:[0,3200,4500,6000,7600,9200,11000,13000,15000,17500,20000],r:[0,900,1050,1200,1350,1500,1650,1800,1950,2100,2300],cost:[0,8,9,10,11,12,13,14,15,16,18]};
 // paths of the village (3D units): a main road from the desert, branches and narrow trails – drawn as curved ribbons
 const VPATHS=[
@@ -45,23 +47,25 @@ const VPATHS=[
   {w:0.75,p:[[-7,-6.2],[-8.6,-10],[-9.2,-14],[-10.2,-17]]},
   {w:0.8,p:[[9,-3.4],[8.8,-7.6],[7.4,-11.2],[6.2,-13.6]]},
 ];
-const BAG=[14,22,30,40,52,66,82,100,120,145,175];
+// 2.1: the backpack is big enough that the WATER sends you home, not a full bag (measured with tools/sim_fast.py)
+const BAG=[28,40,54,76,110,150,185,220,255,285,315];
 // gear (Robin 20. 11. evening): few items, each with 10 levels; the Workshop level caps the gear level (w = n)
 const IG=[0,0,1,2,3,4,6,8,10,13],IX=[0,0,0,0,1,2,3,4,6,8];
-function mkGear(sc,e0,eff){return Array.from({length:10},(_,i)=>({s:r5(sc*Math.pow(1.45,i)),c:IG[i],x:IX[i],en:i<2?0:Math.round(e0*Math.pow(1.33,i)),w:i+1,get eff(){return eff(i+1);}}));}
+function mkGear(sc,e0,eff){return Array.from({length:10},(_,i)=>({s:r5(sc*Math.pow(1.45,i)),c:IG[i],x:IX[i],en:0,w:i+1,get eff(){return eff(i+1);}}));}
 const HAMMER_NEED={2:1,0:3,1:5,3:7};// wreck kind → hammer level
 const hammerDmg=l=>l?1+Math.floor((l-1)/3):0,hammerYield=l=>1+0.06*Math.max(0,l-1);
 const SLING={range:l=>95+l*8,dmg:l=>l<5?1:l<9?2:3,cd:l=>0.85-l*0.045};
 const bootsMul=l=>1+0.02*l;
 const CRAFT={
   kladivo:{icon:'hammer',name:'Hammer',lv:mkGear(10,4,n=>{const top=n>=7?'planes':n>=5?'helicopters':n>=3?'cars':'motorbikes';const nw=[1,3,5,7].includes(n);return (nw?'NEW – ':'')+'Takes apart wrecks up to '+top+' · hits robots for '+hammerDmg(n)+(n>1?' · +'+Math.round((hammerYield(n)-1)*100)+' % from wrecks':'')+'.';})},
-  batoh:{icon:'pack',name:'Backpack',lv:mkGear(16,6,n=>'Holds '+BAG[n]+' · carries '+(2+n)+' bottles.')},
+  batoh:{icon:'pack',name:'Backpack',lv:mkGear(16,6,n=>'Holds '+BAG[n]+' · carries '+bottleMaxOf(n)+(bottleMaxOf(n)>1?' bottles.':' bottle.'))},
   cutora:{icon:'canteen',name:'Canteen',lv:mkGear(14,5,n=>'+'+fmtL(canteenOf(n))+' L of water on your belt.')},
   boty:{icon:'boots',name:'Boots',lv:mkGear(16,6,n=>'You walk '+Math.round((bootsMul(n)-1)*100)+' % faster – same water per metre.')},
   prak:{icon:'sling',name:'Slingshot',lv:mkGear(30,8,n=>'Range '+fmtM(SLING.range(n))+' · hits for '+SLING.dmg(n)+' · 1 {scrap} per shot.')},
-  kompas:{icon:'compass',name:'Compass',lv:[{s:24,c:1,en:6,w:2,eff:'Shows the way home – and to the nearest known water.'}]},
+  kompas:{icon:'compass',name:'Compass',lv:[{s:24,c:1,en:0,w:2,eff:'Shows the way home and the nearest known water – and marks on your water how much the way back takes.'}]},
 };
-const canteenOf=l=>[0,0.5,1,1.5,2,2.5,3,3.6,4.2,5,6][l|0];
+// 2.1: a quarter of a litre per level – a trip grows from under a minute to about two, the far desert opens through camps, not through a bigger canteen
+const canteenOf=l=>[0,0.25,0.5,0.75,1,1.25,1.5,1.7,1.9,2.05,2.2][l|0];
 function wsUnlockText(n){const u=[];for(const k in CRAFT)CRAFT[k].lv.forEach((l,i)=>{if(l.w===n)u.push(CRAFT[k].name+(CRAFT[k].lv.length>1?' '+ROMAN[i+1]:''));});return u.length?'Can make: '+u.join(', '):'Faster, cleaner work – needed for the next gear';}
 const ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
 const gearLv=k=>SV.craft[k]|0;
@@ -123,9 +127,11 @@ const wellCap=()=>wellCapOf(SV.b.cerpadlo),wellRate=()=>wellRateOf(SV.b.cerpadlo
 const FLASK=2;
 const canteenCap=()=>canteenOf(gearLv('cutora'));
 const waterCap=()=>FLASK+canteenCap();
-const fillAmount=()=>Math.min(waterCap(),Math.floor(SV.well*10)/10);
+// 2.1: you can always set out – even a dry well still gives one flask (the spring never quite stops)
+const fillAmount=()=>Math.max(FLASK,Math.min(waterCap(),Math.floor(SV.well*10)/10));
 const BOTTLE=0.5;// litres per bottle
-const bottleMax=()=>2+gearLv('batoh');// the backpack decides how many bottles you can carry
+const bottleMaxOf=l=>l>=3?2:1;const bottleMax=()=>bottleMaxOf(gearLv('batoh'));// the backpack decides how many bottles you can carry (2.1: two at most – with more, the longest trips ran well over two minutes)
+SV.bottles=Math.min(SV.bottles||0,bottleMax());// a save from before 2.1 may carry more
 const bottleCost=()=>6+4*(SV.bottles||0);
 const bottleFill=()=>Math.min(SV.bottles||0,Math.floor(Math.max(0,SV.well-fillAmount())/BOTTLE));
 function tickWell(dt){SV.well=Math.min(wellCap(),SV.well+wellRate()*dt/60);SV.energy=Math.min(energyCap(),(SV.energy||0)+energyRate()*dt/60);}
@@ -1366,7 +1372,7 @@ const QS=Math.PI/4,qph=p=>ST.q?Math.round(p/QS)*QS:p;
 const heroReq=n=>60*Math.pow(n-1,1.7),dogReq=n=>120*Math.pow(n-1,1.7);// metres walked (rescaled with the real metre scale)
 function lvOf(m,req,max){let l=1;while(l<max&&m>=req(l+1))l++;return l;}
 const heroLv=()=>lvOf(SV.meters||0,heroReq,30),dogLv=()=>lvOf(SV.meters||0,dogReq,15);
-const heroWaterMul=()=>1-0.015*(heroLv()-1),heroSpeedMul=()=>1+0.006*(heroLv()-1),rescueLoss=()=>(50-(dogLv()-1)*2.2)/100;
+const heroWaterMul=()=>1,/* 2.1: levels no longer stretch the water – how long a trip lasts is decided by the canteen and the bottles alone */heroSpeedMul=()=>1+0.006*(heroLv()-1),rescueLoss=()=>(50-(dogLv()-1)*2.2)/100;
 // terrain height for the desert (3D units)
 // the walkable desert is completely flat (Robin 19. 11.: dunes broke the look – buried bodies, tilted and cut objects).
 // Craters and sunken rocky canyons (Robin 19. 11.) are the only dips – and they can't be entered, so nothing ever stands on a slope.
@@ -1401,7 +1407,7 @@ function Hd(x,z){const px=x/S,py=z/S;const os=obstOf(Math.floor(px/CH),Math.floo
 // keep a walker out of craters/canyons and slide around them (so tapping across one walks around it)
 function blockObst(P,dir,step,isX){let hit=false;
   {const cs=coastSD(P.x,P.y);if(cs.d<6){hit=true;P.x+=cs.nx*(6-cs.d);P.y+=cs.ny*(6-cs.d);if(dir&&step>0){const tx=-cs.ny,ty=cs.nx,dt=tx*dir.x+ty*dir.y,dn=cs.nx*dir.x+cs.ny*dir.y;if(dn<0){const sg=dt>=0?1:-1;P.x+=tx*sg*step*(-dn)*0.95;P.y+=ty*sg*step*(-dn)*0.95;}}}}obstNear(P.x,P.y,o=>{const q=segPt(P.x,P.y,o),R=o.r+5;if(q.d<R){hit=true;const nx=q.d>0.01?(P.x-q.x)/q.d:1,ny=q.d>0.01?(P.y-q.y)/q.d:0;P.x=q.x+nx*R;P.y=q.y+ny*R;
-  if(dir&&step>0){const tx=-ny,ty=nx,dt=tx*dir.x+ty*dir.y,dn=nx*dir.x+ny*dir.y;let sg;if(isX&&X.slideOb===o&&X.slide)sg=X.slide;else{sg=Math.abs(dt)>0.05?(dt>0?1:-1):1;if(isX){X.slide=sg;X.slideOb=o;}}if(isX)X.slideT=X.t;if(dn<0){P.x+=tx*sg*step*(-dn)*0.95;P.y+=ty*sg*step*(-dn)*0.95;}}}});return hit;}
+  if(dir&&step>0){const tx=-ny,ty=nx,dt=tx*dir.x+ty*dir.y,dn=nx*dir.x+ny*dir.y;let sg;if(isX&&X.slide&&X.slideOb&&(X.slideOb===o||X.t-(X.slideT||0)<0.4)){sg=X.slide;X.slideOb=o;}else{sg=Math.abs(dt)>0.05?(dt>0?1:-1):1;if(isX){X.slide=sg;X.slideOb=o;}}if(isX)X.slideT=X.t;if(dn<0){P.x+=tx*sg*step*(-dn)*0.95;P.y+=ty*sg*step*(-dn)*0.95;}}}});return hit;}
 // tap targets (Robin 20. 11.): you can't walk into a crater, canyon or the sea – a tap there means "go to its edge"
 function walkable(x,y){if(coastSD(x,y).d<9)return false;let ok=true;obstNear(x,y,o=>{if(ok&&segPt(x,y,o).d<o.r+7)ok=false;});return ok;}
 function fixDest(p){if(!p||!X)return null;if(walkable(p.x,p.y))return p;const dx=X.x-p.x,dy=X.y-p.y,L=Math.hypot(dx,dy);if(L<1)return null;
@@ -1594,16 +1600,15 @@ function refreshBaseUI(){
   let h='';const fill=fillAmount();
   if(SV.fetch)h='I\'m out fetching your lost bag! Back soon.';
   else if(SV.exp===0)h='Fill your flask at the well and let\'s find scrap! If you run dry, I\'ll drag you home.';
-  else if(fill<1)h='The well is almost dry. Let\'s wait a little – the pump is working.';
+  else if(SV.well<FLASK)h='The well is nearly dry – but the spring always leaves us one flask. Let\'s go!';
   else if(SV.bags.length&&dogLv()>=3)h='Your lost bag is still out there. Want me to fetch it?';
   else if(totalLevels()===0)h=canRepair('cerpadlo')?'Tap the ruined Water Pump – it will fill the well faster.':'We need '+BLD.cerpadlo.lv[0].s+' {scrap} to fix the Water Pump. Back to the desert!';
   else if(SV.exp<5&&canRepairAny())h='We can repair something! Tap a ruin with an orange ring.';
-  else if((SV.energy||0)<6&&SV.b.solar===0&&!canRepair('solar'))h='The battery is almost empty. Repair the Solar Field to charge it.';
   else if(SV.b.dilna&&!gearLv('kladivo'))h='Make a Hammer in the Workshop – then we can take wrecks apart.';
   else{const nb=bottleFill();h='The well holds '+Math.floor(SV.well)+' L. Shall I fill your flask'+(canteenCap()?' and canteen':'')+(nb?' and '+nb+' bottle'+(nb>1?'s':''):'')+'? That\'s '+fmtL(fill+nb*BOTTLE)+' L.';}
   $('hint').innerHTML=zSay(h);
   const anyCamp=CAMPS.some(c=>SV.camps[c.id]);
-  const go=$('bGo');go.disabled=!!SV.fetch||fill<0.5;
+  const go=$('bGo');go.disabled=!!SV.fetch;
   go.innerHTML=SV.fetch?'Zuro is out…':(anyCamp?'Choose on the map':'Fill up &amp; go')+`<small>${anyCamp?'home or a camp':fmtL(fill+bottleFill()*BOTTLE)+' L from the well'}</small>`;
   const fb=$('bFetch');const canF=SV.bags.length&&dogLv()>=3&&!SV.fetch;fb.style.display=canF?'':'none';fb.innerHTML=icx('{paw} Fetch bag<small>3 L</small>');
   updWellUI(true);
@@ -1889,8 +1894,8 @@ let PWAY=null;// a destination picked on the map in the village – the next exp
 function startExpedition(campId){
   const cp=campId?CAMPS.find(c=>c.id===campId&&SV.camps[c.id]):null;const trip=cp?cp.trip:0;
   if(SV.fetch){toast('{paw}','Zuro is still out','He is fetching your lost bag. Wait until he is back.');return;}
-  if(SV.well<trip+0.5){toast('{water}','The well is almost dry','Wait a moment – the pump is refilling it.');return;}
-  SV.well-=trip;const fill=Math.min(waterCap(),Math.floor(SV.well*10)/10);SV.well-=fill;const nb=Math.min(SV.bottles||0,Math.floor(SV.well/BOTTLE));SV.well-=nb*BOTTLE;save();
+  if(trip&&SV.well<trip+0.5){toast('{water}','Not enough water for the trip','Travelling to '+cp.name+' takes '+trip+' L from the well. You can still set out from home.');return;}
+  SV.well-=trip;const fill=fillAmount();SV.well=Math.max(0,SV.well-fill);const nb=Math.min(SV.bottles||0,Math.floor(SV.well/BOTTLE));SV.well-=nb*BOTTLE;save();
   ZOOM=viewW();closeSheet();initAudio();
   const sx=cp?cp.x:0,sy=cp?cp.y+34:105;
   X={t:0,x:sx,y:sy,start:{x:sx,y:sy},camp:cp,dest:null,water:fill,cap:waterCap(),scrap:0,cores:0,chips:0,shots:[],cacheM:{},slingCd:0,smashCd:0,foeWarn:{},face:1,walkPh:0,moving:false,vx:0,vy:1,
@@ -1922,7 +1927,10 @@ function fullMsg(){if(X.fullCd<=0){xText('Backpack full','#c0532f');X.fullCd=1.5
 function viewW(){return ST.sunink?16:17.5;}
 function sightR(){return 220*((ST.sunink?ZOOM*1.094:ZOOM)/14)*(1-0.28*DAY.n);}
 
-const WATER_PER_U=0.00042;// litres per game unit walked (≈ 2.4 km per litre out and back… with weight and heat less)
+const WATER_PER_U=0.00048;// 2.1: was 0.00042
+// water the way to the nearest safe place (home or a built camp) takes right now, with a little to spare – the compass draws it on the water bar
+function retNeed(){const sp=safePoint(),wr=weight()/bagCap(),spd=78*bootsMul(gearLv('boty'))*heroSpeedMul()*(1-0.32*Math.min(1.3,wr));
+  return sp.d*(WATER_PER_U+0.002/spd)*(1+0.6*wr)*(X.inDust&&!SV.craft.maska?2:1)*heroWaterMul()*(1-0.25*DAY.n)*1.15+0.03;}// litres per game unit walked (≈ 2.4 km per litre out and back… with weight and heat less)
 function safePoint(){let best={x:0,y:0,d:Math.hypot(X.x,X.y)};for(const cp of CAMPS)if(SV.camps[cp.id]){const d=Math.hypot(X.x-cp.x,X.y-cp.y);if(d<best.d)best={x:cp.x,y:cp.y,d};}return best;}
 const slingReady=()=>{const l=gearLv('prak'),f=X.foeNear;return l&&f&&!f.dead&&X.foeNearD<=SLING.range(l);};
 function comeHome(){const g=X&&X.goHome;if(!g||X.end)return;if(g.t==='home')endExp('home');else endExp('camp',g.cp);}
@@ -1952,7 +1960,7 @@ function autopilotX(dt){
   if(X.nearCamp&&!SV.camps[X.nearCamp.id]&&X.scrap>=CAMP_COST+4)xAction();
   if(X.dis){X.dest=null;return;}
   if(X.water<need&&X.bottles>0&&X.water<X.cap*0.3){X.bottles--;X.water=Math.min(X.cap,X.water+BOTTLE);updateMelonBtn();}
-  if(X.water<need||room()<=0){X.dest={x:sp.x,y:sp.y};return;}
+  if(X.water<need||room()<=0){X.botHome=true;X.dest={x:sp.x,y:sp.y};return;}
   const sr=sightR();let tgt=null,bd=1e9;
   forX(X.x-sr*2,X.y-sr*2,X.x+sr*2,X.y+sr*2,c=>{for(const k of c.crates){if(Math.hypot(k.x,k.y)<180)continue;const d=Math.hypot(k.x-X.x,k.y-X.y);if(d<sr*2&&d*0.45<bd){bd=d*0.45;tgt=k;}}});
   forX(X.x-sr,X.y-sr,X.x+sr,X.y+sr,c=>{
@@ -1984,7 +1992,7 @@ function updFoes(dt){X.nearFoe=null;X.foeNear=null;let nfd=1e9,fnd=1e9;X.slingCd
     if(see&&!(f.cool>0))f.alert=Math.min(1,f.alert+dt/f.tDet*see);else if(!(f.chase>0))f.alert=Math.max(0,f.alert-dt*0.45);
     if(f.alert>=1){if(f.type==='drone'){knockout(f,'A guard drone zapped you.');return;}if(!(f.chase>0)){f.chase=4.5;sfx.alarm();}}
     if(f.type==='bot'&&f.chase>0&&dd<13){knockout(f,'A seeker robot caught you.');return;}}},true);}
-function knockout(f,msg){if(X.end)return;X.ko=msg+' Zuro dragged you home.';X.dest=null;sfx.zap();xBurst(X.x,X.y,'#ff6a4a',24,130);X.zapLine={x0:f.x,y0:f.y,t:X.t};endExp('thirst');}
+function knockout(f,msg){if(X.end||window.NOKO)return;X.ko=msg+' Zuro dragged you home.';X.dest=null;sfx.zap();xBurst(X.x,X.y,'#ff6a4a',24,130);X.zapLine={x0:f.x,y0:f.y,t:X.t};endExp('thirst');}
 function hitFoe(f,dmg,src){if(f.dead)return;f.hp-=dmg;f.stun=src==='hammer'?1.1:1.3;f.hitT=0.3;f.aware=1;f.alert=Math.max(f.alert,0.5);xBurst(f.x,f.y,'#ffd36e',10,90);sfx.hit();
   if(f.hp<=0)killFoe(f);else xText(f.type==='drone'?'Hit! It wobbles…':'Hit! It\'s stunned…','#9a6a14');}
 function killFoe(f){f.dead=true;SV.scrapT[f.id]=SV.exp;xBurst(f.x,f.y,'#ff6a4a',22,140);xBurst(f.x,f.y,'#8b8f96',18,110);sfx.boom();
@@ -2023,17 +2031,22 @@ function updateExp(dt){
   if(X.end){updateExpCam(dt);animExp(dt);return;}
   if(X.intro){X.intro.t+=dt;if(X.intro.t>2.6){X.intro=null;if(X.introLine){X.scene.remove(X.introLine);X.introLine=null;}}else{updateExpCam(dt);animExp(dt);return;}}
   X.fullCd=Math.max(0,X.fullCd-dt);X.hitCd=Math.max(0,X.hitCd-dt);
-  if(BOT)autopilotX(dt);
+  if(BOT||window.SIMBOT)autopilotX(dt);
   let mx=kb.r-kb.l,my=kb.d-kb.u,joyK=1;
   if(JOY&&JOY.on){const dx=JOY.x-JOY.x0,dy=JOY.y-JOY.y0,L=Math.hypot(dx,dy);if(L>8){mx=dx/L;my=dy/L;joyK=clamp(L/42,0.4,1);}}
   if(mx||my)X.dest=null;else if(X.dest){mx=X.dest.x-X.x;my=X.dest.y-X.y;const dd=Math.hypot(mx,my);if(dd<4){X.dest=null;mx=my=0;}
-    else if(!BOT){const D=X.dest;if(D._b===undefined||dd<D._b-3){D._b=dd;D._t=X.t;}else if(X.t-D._t>2.2&&!ptr){X.dest=null;mx=my=0;}}}
+    else if(!BOT&&!window.SIMBOT){const D=X.dest;// give up only when really stuck: going round a hole takes you away from the spot for a while (2.1)
+      if(D._b===undefined){D._b=dd;D._t=D._bt=X.t;D._px=X.x;D._py=X.y;}if(dd<D._b-3){D._b=dd;D._bt=X.t;}if(Math.hypot(X.x-D._px,X.y-D._py)>12){D._px=X.x;D._py=X.y;D._t=X.t;}
+      if((X.t-D._t>1.6||X.t-D._bt>14)&&!ptr){X.dest=null;mx=my=0;}}}
   const ml=Math.hypot(mx,my),wr=weight()/bagCap();
   const spd=(X.dis?0:78)*joyK*bootsMul(gearLv('boty'))*heroSpeedMul()*(1-0.32*Math.min(1.3,wr));
   let moved=0;
   if(ml>0.001){const vx=mx/ml*spd,vy=my/ml*spd;const ox=X.x,oy=X.y;X.x+=vx*dt;X.y+=vy*dt;
     forX(X.x-80,X.y-80,X.x+80,X.y+80,c=>{for(const r of c.ruins)for(const w of r.walls){const nx=clamp(X.x,w.x-w.w/2,w.x+w.w/2),ny=clamp(X.y,w.y-w.h/2,w.y+w.h/2);const dx=X.x-nx,dy=X.y-ny,d=Math.hypot(dx,dy);
-      if(d<6){if(d>0.01){X.x=nx+dx/d*6;X.y=ny+dy/d*6;}else{X.x=ox;X.y=oy;}}}});
+      if(d<6){if(d>0.01){const ux=dx/d,uy=dy/d;X.x=nx+ux*6;X.y=ny+uy*6;
+          // 2.1: walking straight at a ruin wall slides along it (the same way round as along a hole), so a tap behind a wall gets you there
+          const qx=mx/ml,qy=my/ml,dn=ux*qx+uy*qy;if(dn<0){const tx=-uy,ty=ux,dt2=tx*qx+ty*qy;let sg;if(X.slide&&X.slideOb&&(X.slideOb===w||X.t-(X.slideT||0)<0.4)){sg=X.slide;X.slideOb=w;}else{sg=Math.abs(dt2)>0.05?(dt2>0?1:-1):1;X.slide=sg;X.slideOb=w;}X.slideT=X.t;X.x+=tx*sg*spd*dt*(-dn)*0.95;X.y+=ty*sg*spd*dt*(-dn)*0.95;}}
+        else{X.x=ox;X.y=oy;}}}});
     {const P={x:X.x,y:X.y};if(blockObst(P,{x:mx/ml,y:my/ml},spd*dt,true)){X.x=P.x;X.y=P.y;}else if(X.slideOb&&X.t-(X.slideT||0)>0.8)X.slideOb=null;}
     moved=Math.hypot(X.x-ox,X.y-oy);X.moving=true;X.vx=lerp(X.vx,vx,0.25);X.vy=lerp(X.vy,vy,0.25);{const tg=Math.atan2(X.vx,X.vy);let da=tg-X.face;da=Math.atan2(Math.sin(da),Math.cos(da));X.face+=da*0.3;}
     const pp=X.walkPh;X.walkPh+=dt*spd*0.13;if(Math.floor(pp/Math.PI)!==Math.floor(X.walkPh/Math.PI))sfx.step();}
@@ -2064,7 +2077,7 @@ function updateExp(dt){
   if(X.dis){if(X.nearWreck!==X.dis.w)X.dis=null;else{X.dis.t+=dt;if(X.dis.t>=1.3){finishDismantle();X.dis=null;}}}
   const hd=Math.hypot(X.x,X.y);if(hd>X.maxD)X.maxD=hd;if(X.camp?Math.hypot(X.x-X.start.x,X.y-X.start.y)>130:hd>130)X.leftHome=true;
   X.goHome=null;if(X.leftHome){if(hd<84)X.goHome={t:'home'};else for(const cp of CAMPS)if(SV.camps[cp.id]&&Math.hypot(X.x-cp.x,X.y-cp.y)<42){X.goHome={t:'camp',cp};break;}}
-  if(BOT&&X.goHome)comeHome();
+  if((BOT||window.SIMBOT)&&X.goHome&&X.botHome)comeHome();// the bot goes in only when it has decided to return, not whenever it passes the village
   if(!X.end&&X.water<=0){X.water=0;endExp('thirst');}
   // Zuro follows
   {const back=X.face+Math.PI;const tx=X.x+Math.sin(back)*16+Math.cos(back)*9,ty=X.y+Math.cos(back)*16-Math.sin(back)*9;
@@ -2096,6 +2109,7 @@ function endExp(type,cp){
   else{sfx.home();window._cheer=1;X.back=Math.round(X.water*10)/10;SV.well=Math.min(wellCap(),SV.well+X.water);}
   SV.scrap+=X.scrap;SV.cores+=X.cores;SV.chips=(SV.chips||0)+(X.chips||0);SV.exp++;if(X.maxD>SV.best){SV.best=X.maxD;X.record=true;}
   X.addM=Math.round(X.walked*M_PER_U);SV.meters=(SV.meters||0)+X.addM;X.lv1=[heroLv(),dogLv()];
+  {const e0=SV.energy||0;SV.energy=Math.min(Math.max(e0,energyCap()),e0+Math.floor(X.addM/DYNAMO_M));X.dyn=Math.round(SV.energy-e0);}// Zuro's dynamo
   X.msg=null;if(SV.b.radio&&SV.msg<Math.min(MSGS.length,SV.b.radio)){X.msg=MSGS[SV.msg];SV.msg++;}
   save();
   // journey line
@@ -2109,7 +2123,7 @@ function showSummary(){
   let h=`<h3>Expedition ${SV.exp}</h3><div class="big">${X.end==='home'?'You made it home':X.end==='camp'?'You made it to '+X.endCamp.name:'Zuro dragged you home'}</div>${X.ko?'<div class="info">'+X.ko+'</div>':''}`;
   h+=`<div class="gain">+${X.scrap} {scrap}${X.cores?' &nbsp; +'+X.cores+' {core}':''}${X.chips?' &nbsp; +'+X.chips+' {chip}':''}</div>`;
   if(X.end==='thirst'&&(X.lostS||X.lostC||X.lostX))h+=`<div class="lost">Zuro could only save part of the load (${X.lossPct} % left in the sand): ${X.lostS} {scrap}${X.lostC?' '+X.lostC+' {core}':''}${X.lostX?' '+X.lostX+' {chip}':''}. You can go back for the bag.</div>`;
-  h+=`<div class="info">Walked together: +${X.addM} m${X.back?' · '+fmtL(X.back)+' L poured back into the well':''}</div>`;
+  h+=`<div class="info">Walked together: +${X.addM} m${X.dyn?' · Zuro\'s dynamo +'+X.dyn+' {energy}':''}${X.back?' · '+fmtL(X.back)+' L poured back into the well':''}</div>`;
   if(X.lv1[0]>X.lv0[0])h+=`<div class="gain" style="font-size:16px">{levelup} ${SV.name||'Wanderer'} reached level ${X.lv1[0]}!</div>`;
   if(X.lv1[1]>X.lv0[1])h+=`<div class="gain" style="font-size:16px">{levelup} Zuro reached level ${X.lv1[1]}!</div>`;
   h+=`<div class="info">Farthest: ${fmtM(X.maxD)}${X.record?' · new record!':''}</div>`;
@@ -2259,6 +2273,9 @@ function updExpHUD(){const cap=X.cap,can=canteenCap(),w=clamp(X.water,0,cap);
   const cW=Math.min(w,can)/cap*100,fW=Math.max(w-can,0)/cap*100;DW('wfC','width',cW.toFixed(1)+'%');DW('wf','left',(can/cap*100).toFixed(1)+'%');DW('wf','width',fW.toFixed(1)+'%');
   DW('wdiv','left',(can/cap*100).toFixed(1)+'%');DW('wdiv','display',can?'':'none');
   DT('wt',fmtL(w)+' L');$('wt').classList.toggle('low',w/cap<0.25);
+  if(SV.craft.kompas&&X.leftHome){const nd=retNeed();DW('wret','display','');DW('wret','left',(clamp(nd/cap,0,1)*100).toFixed(1)+'%');
+    if(w+X.bottles*BOTTLE<nd){if(!X.retSaid){X.retSaid=true;sfx.ui('select');toast('{compass}','Time to turn back','The water just about gets us home from here.');}}else if(w>nd*1.3)X.retSaid=false;}
+  else DW('wret','display','none');
   DT('xd',fmtM(Math.hypot(X.x,X.y)));const wgt=weight();DT('xbag',wgt+'/'+bagCap());$('xbag').classList.toggle('warn',wgt>=bagCap());DT('xgold',X.cores);DT('xchip',X.chips||0);
   // context action (Zuro bubble + button)
   let st='',txt='',btn='',dis=false;
@@ -2282,17 +2299,19 @@ function drawFloaters(){
 
 // ================= bot (testing only) =================
 let botWait=0;
+function botShop(){
+  const order=['cerpadlo','solar','dilna','solar','cerpadlo','dilna','dron','solar','cerpadlo','dilna','radio'];
+  if(SV.b.dilna&&(SV.bottles||0)<Math.min(2,bottleMax())&&SV.scrap>=bottleCost()+20){SV.scrap-=bottleCost();SV.bottles=(SV.bottles||0)+1;save();return true;}
+  for(const k of order){if(canRepair(k)){doRepair(k);closeSheet();return true;}}
+  if(SV.b.dilna&&SV.scrap>=70&&SV.cores<2&&canPay(SMELT_COST)){pay(SMELT_COST);SV.cores++;save();return true;}
+  for(const ck of ['kladivo','batoh','cutora','prak','boty','kompas']){const nx=CRAFT[ck].lv[gearLv(ck)];if(SV.b.dilna&&nx&&SV.scrap>=nx.s+10&&canPay(nx)){pay(nx);SV.craft[ck]=gearLv(ck)+1;save();return true;}}
+  return false;}
 function botBase(dt){
   botWait-=dt;if(botWait>0)return;botWait=0.25;
-  if(SV.fetch)return;
-  const order=['cerpadlo','solar','dilna','solar','cerpadlo','dilna','dron','solar','cerpadlo','dilna','radio'];
-  if(SV.b.dilna&&(SV.bottles||0)<2&&SV.scrap>=bottleCost()+20){SV.scrap-=bottleCost();SV.bottles=(SV.bottles||0)+1;save();return;}
-  for(const k of order){if(canRepair(k)){doRepair(k);closeSheet();return;}}
-  if(SV.b.dilna&&SV.scrap>=70&&SV.cores<2){SV.scrap-=30;SV.cores++;save();return;}
-  for(const ck of ['kladivo','batoh','cutora','prak','boty','kompas']){const nx=CRAFT[ck].lv[gearLv(ck)];if(SV.b.dilna&&nx&&SV.scrap>=nx.s+10&&canPay(nx)){pay(nx);SV.craft[ck]=gearLv(ck)+1;save();return;}}
+  if(SV.fetch||window.BOTHOLD)return;
+  if(botShop())return;
   if(SV.b.dron&&!SV.scout&&(SV.energy||0)>=DRONE.cost[SV.b.dron]+20){const a=Math.random()*6.283;startScout(Math.cos(a)*DRONE.range[SV.b.dron]*0.7,Math.sin(a)*DRONE.range[SV.b.dron]*0.7);}
   if(SV.bags.length&&dogLv()>=3&&SV.well>=3+waterCap()){sendWolt();return;}
-  if(fillAmount()<Math.min(waterCap(),2))return;// wait for the well
   const camps=CAMPS.filter(c=>SV.camps[c.id]&&SV.well>=c.trip+waterCap());
   if(camps.length&&Math.random()<0.5)startExpedition(camps[Math.floor(Math.random()*camps.length)].id);else startExpedition();
 }
@@ -2551,6 +2570,14 @@ function frame(nowT){
 }
 window.__dbg={makeScrap,makeWreck,makeCrate,makeDrone,makeSeeker,makeGoldCog,makeBag,makeCamp,makeDeadTree,makeBoulder,makePuddle,makeCactus,makeBot,makeBuilding,makeRuin,makeChipDrop,makeCacheBottle,makeSaltCrystals,makeRubble,makeBrine,makeHero,makeDog,makePalm,makeHouse,heroGear,dogGear,makeLamp,makeBench,makeFlowers};
 window.__hicons=only=>ST.sunink?hIconAtlas(only).toDataURL('image/png'):null;window.__woltReady=()=>!!WOLT;
-window.__snd=()=>Object.keys(SBUF).length;window.__ps=(k)=>ps(k);window.__obst=(cx,cy)=>obstOf(cx,cy);window.__coast=(x,y)=>coastSD(x,y);window.__markSeen=(x,y,r)=>markSeen(x,y,r);window.__MVhits=()=>(MV.hits||[]).map(h=>({x:h.x,y:h.y,t:h.t,id:h.cp&&h.cp.id}));window.__segPt=segPt;window.__BS=BS;window.__camT=camT;window.__house=()=>openHouse();window.__close=()=>closeSheet();window.__SV=()=>SV;window.__rebuild=()=>{for(const k in BLD)rebuildBuilding(k);};window.__X=()=>X;window.__go=()=>startExpedition();window.__open=k=>openBuilding(k);window.__fix=p=>fixDest(p);window.__forX=(a,b,c,d,f)=>forX(a,b,c,d,f);
+window.__snd=()=>Object.keys(SBUF).length;window.__ps=(k)=>ps(k);window.__obst=(cx,cy)=>obstOf(cx,cy);window.__coast=(x,y)=>coastSD(x,y);window.__markSeen=(x,y,r)=>markSeen(x,y,r);window.__MVhits=()=>(MV.hits||[]).map(h=>({x:h.x,y:h.y,t:h.t,id:h.cp&&h.cp.id}));window.__segPt=segPt;window.__BS=BS;window.__camT=camT;window.__house=()=>openHouse();window.__close=()=>closeSheet();window.__SV=()=>SV;window.__rebuild=()=>{for(const k in BLD)rebuildBuilding(k);};window.__X=()=>X;window.__go=()=>startExpedition();window.__open=k=>openBuilding(k);window.__fix=p=>fixDest(p);
+// balance sims (tools/sim_fast.py): the bot plays expeditions without drawing – whole minutes of play in a blink. A stuck bot gets a nudge sideways (counted).
+window.__simExp=(camp)=>{window.SIMBOT=1;const w0=SV.well;startExpedition(camp||null);if(!X||scene!=='exp'){window.SIMBOT=0;return null;}const fill=X.water,nb0=X.bottles,st=1/30,stk=[];let n=0,stuck=0,lx=X.x,ly=X.y,lt=0;
+  while(!X.end&&n<90000){updateExp(st);n++;if((n&15)===0){if(Math.hypot(X.x-lx,X.y-ly)<3&&!X.dis&&!X.intro){if(X.t-lt>3){if(stk.length<6){let nb=null,nd=1e9;obstNear(X.x,X.y,o=>{const d=segPt(X.x,X.y,o).d-o.r;if(d<nd){nd=d;nb=o.t;}});let rw=0;forX(X.x-80,X.y-80,X.x+80,X.y+80,c=>{for(const r of c.ruins)for(const w of r.walls)if(Math.abs(X.x-w.x)<w.w/2+12&&Math.abs(X.y-w.y)<w.h/2+12)rw++;},true);stk.push([Math.round(X.x),Math.round(X.y),nb,Math.round(nd),rw,Math.round(coastSD(X.x,X.y).d),X.dest?Math.round(Math.hypot(X.dest.x-X.x,X.dest.y-X.y)):-1,X.botHome?1:0]);}const a=Math.atan2(X.y,X.x)+1.57;X.x+=Math.cos(a)*70;X.y+=Math.sin(a)*70;stuck++;lt=X.t;}}else{lx=X.x;ly=X.y;lt=X.t;}}}
+  const r={s:X.scrap,c:X.cores,x:X.chips||0,t:Math.round(X.t*10)/10,end:X.end||'timeout',ko:!!X.ko,fill,left:X.end==='thirst'?0:Math.round(X.water*100)/100,cap:X.cap,nb0,nb:X.bottles,walk:Math.round(X.walked*M_PER_U),maxD:Math.round(X.maxD*M_PER_U),bag:bagCap(),load:weight(),stuck,stk,dyn:X.dyn||0,lost:X.lostS||0};
+  window.SIMBOT=0;enterBase();return r;};
+window.__walk=(sx,sy,tx,ty,maxT)=>{if(!X||X.end)return null;X.x=sx;X.y=sy;X.dx=sx;X.dy=sy+10;X.intro=null;X.slideOb=null;X.slide=0;X.dest=fixDest({x:tx,y:ty});if(!X.dest)return {skip:1};const D=X.dest,d0=Math.hypot(D.x-sx,D.y-sy),t0=X.t;
+  while(X.dest&&!X.end&&X.t-t0<maxT){X.water=X.cap;X.scrap=0;updateExp(1/30);}return {arr:Math.hypot(X.x-D.x,X.y-D.y)<8,t:Math.round((X.t-t0)*10)/10,d0:Math.round(d0),left:Math.round(Math.hypot(X.x-D.x,X.y-D.y)),end:X.end};};
+window.__simShop=secs=>{tickWell(secs);let n=0;while(n<200&&botShop())n++;return n;};window.__ret=()=>X&&typeof retNeed==='function'?retNeed():0;window.__bottleMax=()=>bottleMax();window.__lv=()=>[heroLv(),dogLv(),bagCap(),waterCap()];window.__forX=(a,b,c,d,f)=>forX(a,b,c,d,f);
 requestAnimationFrame(frame);
 })();

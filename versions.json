@@ -2,6 +2,20 @@
   "root": "1.0",
   "versions": [
     {
+      "v": "2.1",
+      "date": "22. 11. 2026",
+      "title": "Voda rozhoduje, baterie nebrzdí",
+      "notes": [
+        "Domů tě teď vrací docházející voda, ne plný batoh. Batoh je od začátku větší (28 místo 14) a roste rychleji než zásoba vody.",
+        "Výprava trvá asi 50 vteřin na začátku a necelé 2 minuty s nejlepší výbavou. Čutora přidává po čtvrt litru (nejvýš +2,2 L), láhve jsou nejvýš dvě.",
+        "Energie zmizela ze všech cen. Baterii navíc dobíjí Zurovo dynamo: 1 jednotka za každých 60 m chůze.",
+        "Vyrazit jde vždycky: i z vyschlé studny naplníš jednu láhev.",
+        "Kompas kreslí na ukazatel vody červenou značku, kolik vody stojí cesta zpátky, a Zuro řekne, kdy se otočit.",
+        "Chůze klepnutím už obejde krátery, kaňony a zdi ruin (dřív se postava zasekla v zářezu).",
+        "Úrovně poutníka už nešetří vodu, dál přidávají rychlost a místo v batohu."
+      ]
+    },
+    {
       "v": "2.0",
       "date": "22. 11. 2026",
       "title": "Cíl na mapě a návrat na tlačítko",

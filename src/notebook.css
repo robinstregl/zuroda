@@ -22,6 +22,7 @@
   body.lookH .hbar,body.lookH .pbar{height:14px;box-sizing:border-box;border:1.5px solid var(--ni);border-radius:7px 5px 8px 4px/5px 8px 4px 7px;background:none;overflow:hidden}
   body.lookH .hbar i{top:1.5px;bottom:1.5px;border-radius:3px;background:var(--hx-teal) 0 50%/640px 16px no-repeat}body.lookH .hbar i.can{background-image:var(--hx-deep)}
   body.lookH .hbar em{width:1.5px;background:var(--ni)}
+  body.lookH .hbar s{width:3px;background:var(--nst);border-radius:1px}/* the point of return (compass): keep the water to the right of the red mark */
   body.lookH .pbar{padding:1.5px}body.lookH .pbar i{border-radius:3px;background:var(--hx-teal) 0 50%/640px 16px no-repeat}body.lookH .pbar.en i{background-image:var(--hx-gold)}
   body.lookH .wchips{padding:6px 74px 0 10px}body.lookH .wchips span{color:var(--ns);font:600 11.5px/1.2 var(--ff);letter-spacing:0}
   /* -- round buttons are stickers with a dashed edge -- */

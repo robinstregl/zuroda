@@ -99,6 +99,7 @@
   .hbar{position:relative;flex:1;height:8px;border-radius:4px;background:#3a332e;overflow:hidden}
   .hbar i{position:absolute;top:0;bottom:0;left:0;width:0;background:#8fe0ee;transition:width .25s linear,left .25s}.hbar i.can{background:#2f86a0}
   .hbar em{position:absolute;top:0;bottom:0;width:2px;background:#1d1a18}
+  .hbar s{position:absolute;top:0;bottom:0;width:3px;margin-left:-1.5px;background:#ff6e5a;transition:left .25s}
   .bubble{background:#1d1a18;color:#ffe2b8;border-radius:18px 18px 18px 4px;padding:10px 14px;font-size:14px;line-height:1.4;box-shadow:0 4px 14px rgba(58,42,32,.25);max-width:300px;align-self:flex-start}
   .bubble svg.ic{filter:drop-shadow(0 0 1px #ffe2b8)}
   #bbar{position:absolute;left:0;right:0;bottom:0;padding:0 14px 16px;display:flex;flex-direction:column;align-items:stretch;gap:10px;
@@ -306,7 +307,7 @@
       <div class="wi"><span class="wic" data-ic="chip"></span><b id="xchip" class="cx">0</b></div>
       <div class="wi"><span class="wic" data-ic="home"></span><b id="xd">0 m</b></div></div></div>
       <div class="wwater"><span class="wic" data-ic="water"></span><b id="wt" class="cw">0 L</b>
-        <span class="hbar"><i id="wfC" class="can"></i><i id="wf"></i><em id="wdiv"></em></span></div></div>
+        <span class="hbar"><i id="wfC" class="can"></i><i id="wf"></i><em id="wdiv"></em><s id="wret" style="display:none"></s></span></div></div>
     <i class="tape ta"></i><i class="tape tb"></i>
   </div>
   <button id="xMap" class="mapround" aria-label="Map"></button>
