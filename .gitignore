@@ -4,3 +4,4 @@ node_modules/
 .DS_Store
 site/tt.html
 site/three-test.min.js
+__pycache__/
