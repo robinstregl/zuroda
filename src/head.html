@@ -90,6 +90,12 @@
   body.lookH .ii.big{background:#fffaf3;border-color:rgba(90,61,52,.35)}
   .hroom{margin:0 0 14px}.hroom img{display:block;width:100%;aspect-ratio:33/20;object-fit:cover;border-radius:16px;background:#fbeee2;box-shadow:0 0 0 1.5px rgba(90,61,52,.5),4px 4px 0 rgba(90,61,52,.1)}
   body.lookH #bbar{background:linear-gradient(180deg,rgba(var(--hfade,251,238,226),0),rgba(var(--hfade,251,238,226),.75) 55%)}
+  /* look-H icons are baked pictures in two sizes: small by default, the large one where the icon is 30 px or more */
+  svg.ic .hl{display:none}
+  body.lookH .ii.t1 svg,body.lookH .ii.t2 svg,body.lookH .ii.t3 svg,body.lookH .ii.t4 svg,body.lookH .ii.t5 svg,body.lookH .sh-in svg.ic,body.lookH .bubble svg.ic{filter:none}
+  body.lookH .it .ii svg{width:42px;height:42px}body.lookH .ii.big svg{width:50px;height:50px}body.lookH #xMap svg.ic,body.lookH #bMap svg.ic{width:26px;height:26px}
+  .it .ii svg .hl,.ii.big svg .hl,#toast .ic>svg .hl,.crow .ic svg .hl,#bAct .ai svg .hl,#bSling svg .hl,#bMelon svg .hl,.stat>span svg .hl,.dchip svg .hl,#xMap svg .hl,#bMap svg .hl{display:inline}
+  .it .ii svg .hs,.ii.big svg .hs,#toast .ic>svg .hs,.crow .ic svg .hs,#bAct .ai svg .hs,#bSling svg .hs,#bMelon svg .hs,.stat>span svg .hs,.dchip svg .hs,#xMap svg .hs,#bMap svg .hs{display:none}
   body.lookH #toast{left:14px;top:116px;max-width:calc(100% - 126px);transform:translate(0,-10px)}body.lookH #toast.on{transform:none}
   body.lookH #mapv{background:rgba(246,226,207,.94)}body.lookH #sheet.page .sh-in{background:rgba(255,247,238,.97)}
   /* base hud – Zuro's display (HUD D) */

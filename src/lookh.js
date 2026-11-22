@@ -134,19 +134,21 @@ function makePuddleH(r){const g=grp();const k=S;
 const HINK={rt:null,w:0,h:0,sc:null,cam:null,mat:null,col:'#6f4a3e',px:1.05,on:true};
 function inkInit(){if(HINK.sc)return;HINK.cam=new T.OrthographicCamera(-1,1,1,-1,0,1);HINK.sc=new T.Scene();
   HINK.mat=new T.ShaderMaterial({depthTest:false,depthWrite:false,
-    uniforms:{tC:{value:null},tD:{value:null},uPx:{value:new T.Vector2(1,1)},uK:{value:1},uR:{value:1},uInk:{value:new T.Color(HINK.col)},uA:{value:0.92},uFog:{value:new T.Vector3(0,1,0)}},
+    uniforms:{tC:{value:null},tD:{value:null},uPx:{value:new T.Vector2(1,1)},uK:{value:1},uR:{value:1},uInk:{value:new T.Color(HINK.col)},uA:{value:0.92},uFog:{value:new T.Vector3(0,1,0)},uIcon:{value:0},uSens:{value:1}},
     vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.0,1.0);}',
-    fragmentShader:`precision highp float;varying vec2 vUv;uniform sampler2D tC;uniform sampler2D tD;uniform vec2 uPx;uniform float uK;uniform float uR;uniform vec3 uInk;uniform float uA;uniform vec3 uFog;
+    fragmentShader:`precision highp float;varying vec2 vUv;uniform sampler2D tC;uniform sampler2D tD;uniform vec2 uPx;uniform float uK;uniform float uR;uniform vec3 uInk;uniform float uA;uniform vec3 uFog;uniform float uIcon;uniform float uSens;
 float D(vec2 o){return texture2D(tD,vUv+o*uPx).x;}
 void main(){vec4 c=texture2D(tC,vUv);float r=uR;float d0=D(vec2(0.0));
+ // icons are drawn on nothing: outside the shape the pen writes on clear paper and the picture stays see-through
+ float mask=step(0.004,c.a);if(uIcon>0.5)c.rgb=mix(vec3(1.0,0.965,0.93),c.rgb,mask);
  float l=D(vec2(-r,0.0)),rr=D(vec2(r,0.0)),u=D(vec2(0.0,r)),dn=D(vec2(0.0,-r));
  float q=r*0.7071;float a=D(vec2(-q,-q)),b=D(vec2(q,q)),e=D(vec2(-q,q)),f=D(vec2(q,-q));
  // how sharply the slope of the surface changes here: 0 on any flat face, large on a fold between two faces or at an outer edge
  float fold=max(max(abs(l+rr-2.0*d0),abs(u+dn-2.0*d0)),max(abs(a+b-2.0*d0),abs(e+f-2.0*d0)))*uK/r;
- float sens=c.a;float line=smoothstep(mix(1.7,0.30,sens),mix(2.8,0.60,sens),fold);
+ float sens=c.a*uSens;float line=smoothstep(mix(1.7,0.30,sens),mix(2.8,0.60,sens),fold);
  float fogk=1.0-smoothstep(uFog.x,uFog.y,d0)*uFog.z;
  c.rgb=mix(c.rgb,c.rgb*uInk*(0.55+0.45*dot(c.rgb,vec3(0.333))),line*uA*fogk);
- gl_FragColor=vec4(c.rgb,1.0);}`});
+ gl_FragColor=vec4(c.rgb,uIcon>0.5?max(mask,line*uA):1.0);}`});
   const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array([-1,-1,0,3,-1,0,-1,3,0]),3));g.setAttribute('uv',new T.BufferAttribute(new Float32Array([0,0,2,0,0,2]),2));
   const m=new T.Mesh(g,HINK.mat);m.frustumCulled=false;HINK.sc.add(m);}
 // draws `scene` with the pen lines to whatever `ren` currently targets (its canvas); `st` keeps one set of buffers per renderer
@@ -159,11 +161,125 @@ function inkRender(ren,scene,camera,st){st=st||HINK;inkInit();const _inkV=HINK.v
   const U=HINK.mat.uniforms,pr=ren.getPixelRatio();U.tC.value=st.rt.texture;U.tD.value=st.rt.depthTexture;U.uPx.value.set(1/w,1/h);
   // depth step -> slope: (depth range in world units) / (world units per device pixel)
   const wpp=camera.isOrthographicCamera?(camera.top-camera.bottom)/camera.zoom/h:0.02;U.uK.value=(camera.far-camera.near)/wpp;
-  U.uR.value=Math.max(1,Math.round(HINK.px*pr*0.5));
+  U.uR.value=st.r||Math.max(1,Math.round(HINK.px*pr*0.5));U.uIcon.value=st.icon?1:0;U.uSens.value=st.sens||1;
   // the wider the view, the smaller everything is on screen – the pen gets lighter so small things do not drown in ink
   U.uA.value=camera.isOrthographicCamera?0.92*Math.min(1,Math.max(0.5,Math.sqrt(13/((camera.right-camera.left)/camera.zoom)))):0.92;
   const fg=scene.fog;if(fg&&camera.isOrthographicCamera){U.uFog.value.set((fg.near-camera.near)/(camera.far-camera.near),(fg.far-camera.near)/(camera.far-camera.near),0.85);}else U.uFog.value.set(0,1,0);
+  if(st.icon)U.uA.value=0.95;
   ren.render(HINK.sc,HINK.cam);}
+
+// ===================================================================
+// Icons of look H (Robin 22. 11.: the drawn vector set looked like "icons from a bank"). Every icon is now a small model
+// of the game – the nut you pick up, the hammer, Zuro's head – drawn by the game's own pen: same line, same two tones, same hatching.
+// They are baked into site/img/hicons.png by tools/render_icons.py (`__hicons()`); order and grid come from HICON in icons.js.
+// Two sizes per icon: a large one for tiles and toasts, and a small one whose line is as thick on screen as the lines of the world.
+// ===================================================================
+const HICM={};function hM(c){return HICM[c]||(HICM[c]=MAT({color:C(c)}));}
+function hExt(pts,d,holes){const sh=new T.Shape();pts.forEach((p,i)=>i?sh.lineTo(p[0],p[1]):sh.moveTo(p[0],p[1]));sh.closePath();
+  (holes||[]).forEach(h=>{const hp=new T.Path();h.forEach((p,i)=>i?hp.lineTo(p[0],p[1]):hp.moveTo(p[0],p[1]));hp.closePath();sh.holes.push(hp);});
+  const e=new T.ExtrudeGeometry(sh,{depth:d,bevelEnabled:false});e.translate(0,0,-d/2);return e;}
+function hArc(r,a0,a1,n,cx,cy){return Array.from({length:n+1},(_,i)=>{const a=a0+(a1-a0)*i/n;return [(cx||0)+Math.cos(a)*r,(cy||0)+Math.sin(a)*r];});}
+function hPoly(r,n,rot){return Array.from({length:n},(_,i)=>[Math.cos((rot||0)+i/n*6.2832)*r,Math.sin((rot||0)+i/n*6.2832)*r]);}
+function hGearPts(r1,r2,n){const p=[],w=6.2832/n;for(let i=0;i<n;i++){const a=i*w;for(const [k,r] of [[-0.3,r2],[-0.17,r1],[0.17,r1],[0.3,r2]])p.push([Math.cos(a+w*k)*r,Math.sin(a+w*k)*r]);}return p;}
+function hIconDefs(){const q=hGeo(),P=HP,gold=hM('#f6c960'),green=hM('#8fca9f'),red=hM('#ee6f62'),paper=hM('#fffaf2'),tealL=hM('#cfe6ea'),lilac=hM('#b9a7cf'),sandD=hM('#ecc9a8'),moon=hM('#fbe7ad');
+  const dome=G.hdome||(G.hdome=new T.SphereGeometry(0.5,36,12,0,6.2832,0,Math.PI/2));
+  // a flat round piece turned to face the viewer (its axis is z)
+  const face=(mat,x,y,z,d,t,par)=>{const m=part(q.cyl,mat,x,y,z,d,t,d,par);m.rotation.x=Math.PI/2;return m;};
+  const noSprites=o=>{const k=[];o.traverse(c=>{if(c.isSprite)k.push(c);});k.forEach(c=>c.parent.remove(c));return o;};
+  const D={};
+  // ---- what you carry home ----
+  D.scrap=g=>{part(hExt(hPoly(0.52,6,Math.PI/2),0.32,[hPoly(0.22,28)]),P.metal,0,0,0,1,1,1,g);};
+  D.core=g=>{part(hExt(hGearPts(0.54,0.41,8),0.3,[hPoly(0.17,28)]),gold,0,0,0,1,1,1,g);part(G.oct,paper,0.46,0.5,0.3,0.2,0.32,0.2,g);};
+  D.cog=g=>{part(hExt(hGearPts(0.54,0.42,9),0.28,[hPoly(0.16,28)]),P.metal,0,0,0,1,1,1,g);};
+  D.chip=g=>{part(rbox(0.8,0.8,0.14,0.06),green,0,0,0,1,1,1,g);part(rbox(0.4,0.4,0.08,0.03),P.slate,0,0,0.08,1,1,1,g);
+    for(const i of [-0.24,0,0.24]){for(const sgn of [-1,1]){part(G.box,gold,i,sgn*0.45,0,0.1,0.14,0.07,g);part(G.box,gold,sgn*0.45,i,0,0.14,0.1,0.07,g);}}};
+  D.energy=g=>{part(hExt([[0.12,0.63],[-0.4,-0.09],[-0.07,-0.09],[-0.16,-0.63],[0.4,0.14],[0.07,0.14]],0.26),gold,0,0,0,1,1,1,g);};
+  D.water=g=>{const pts=[];for(let i=0;i<=30;i++){const t=i/30*Math.PI;pts.push(new T.Vector2(Math.max(1e-4,0.6*Math.sin(t)*Math.cos(t/2)),-0.5*Math.cos(t)+0.18*(t/Math.PI)*(t/Math.PI)));}
+    part(new T.LatheGeometry(pts,44),P.teal,0,0,0,1,1,1,g);};
+  // ---- gear from the Workshop ----
+  D.pack=g=>{part(rbox(0.66,0.74,0.4,0.12),hM(HH.pack),0,0,0,1,1,1,g);part(rbox(0.7,0.3,0.44,0.1),hM(HH.packD),0,0.24,0,1,1,1,g);part(rbox(0.42,0.26,0.1,0.045),hM('#f3dcc6'),0,-0.17,0.22,1,1,1,g);
+    part(rbox(0.11,0.14,0.06,0.025),P.coral,0,0.11,0.23,1,1,1,g);const roll=part(q.cyl,hM(HH.wrap),0,0.5,0,0.25,0.82,0.25,g);roll.rotation.z=Math.PI/2;
+    for(const x of [-0.24,0.24]){const b=part(q.cyl,P.coral,x,0.5,0,0.27,0.07,0.27,g);b.rotation.z=Math.PI/2;}};
+  D.hammer=g=>{const h=grp(0,0,0,g);h.rotation.z=-0.6;part(q.cyl,P.wood,0,-0.12,0,0.11,1.0,0.11,h);part(q.cyl,P.coral,0,-0.5,0,0.14,0.22,0.14,h);
+    part(rbox(0.64,0.32,0.32,0.06),P.metal,0,0.42,0,1,1,1,h);part(rbox(0.17,0.35,0.35,0.04),P.metalD,0,0.42,0,1,1,1,h);};
+  D.canteen=g=>{face(P.teal,0,-0.08,0,0.84,0.28,g);face(paper,0,-0.08,0.13,0.44,0.06,g);part(q.cyl,P.metal,0,0.4,0,0.2,0.16,0.2,g);part(q.cyl,P.coral,0,0.52,0,0.27,0.1,0.27,g);
+    part(new T.TorusGeometry(0.5,0.03,8,40,Math.PI),P.woodD,0,0.0,0,1,1,1,g);for(const x of [-0.46,0.46])part(rbox(0.1,0.12,0.14,0.03),P.metalD,x,0.0,0,1,1,1,g);};
+  D.boots=g=>{const boot=(x,z)=>{const b=grp(x,0,z,g);part(rbox(0.66,0.08,0.32,0.03),P.woodD,0.12,0.04,0,1,1,1,b);part(rbox(0.62,0.24,0.3,0.1),P.wood,0.12,0.17,0,1,1,1,b);
+      part(rbox(0.32,0.62,0.3,0.1),P.wood,-0.06,0.5,0,1,1,1,b);part(rbox(0.37,0.15,0.35,0.05),paper,-0.06,0.79,0,1,1,1,b);for(const y of [0.42,0.56])part(G.box,P.coral,0.1,y,0,0.04,0.035,0.2,b);};
+    boot(-0.14,-0.34);boot(0.06,0.06);g.rotation.y=0.3;};
+  D.sling=g=>{part(q.cyl,P.wood,0,-0.33,0,0.14,0.56,0.14,g);part(q.cyl,P.coral,0,-0.5,0,0.17,0.2,0.17,g);part(q.sph,P.wood,0,-0.05,0,0.16,0.16,0.16,g);
+    for(const sx of [-1,1]){const a=part(q.cyl,P.wood,sx*0.16,0.225,0,0.12,0.64,0.12,g);a.rotation.z=-sx*0.527;part(q.sph,P.wood,sx*0.32,0.5,0,0.13,0.13,0.13,g);}
+    part(new T.TubeGeometry(new T.QuadraticBezierCurve3(new T.Vector3(-0.32,0.5,0.02),new T.Vector3(0,0.1,0.26),new T.Vector3(0.32,0.5,0.02)),24,0.03,8,false),P.coral,0,0,0,1,1,1,g);
+    part(rbox(0.2,0.12,0.07,0.02),P.woodD,0,0.3,0.14,1,1,1,g);};
+  D.compass=g=>{face(gold,0,0,0,0.92,0.2,g);face(paper,0,0,0.1,0.74,0.04,g);const n=grp(0,0,0.13,g);n.rotation.z=-0.5;part(hExt([[0,0.3],[0.09,0],[-0.09,0]],0.035),P.coral,0,0,0,1,1,1,n);
+    part(hExt([[0,-0.3],[-0.09,0],[0.09,0]],0.035),P.slate,0,0,0,1,1,1,n);part(q.sph,P.slate,0,0,0.03,0.09,0.09,0.05,n);part(new T.TorusGeometry(0.1,0.032,8,24),gold,0,0.57,0,1,1,1,g);};
+  D.bottle=g=>{part(q.cyl,tealL,0,-0.12,0,0.44,0.62,0.44,g);part(q.cyl,P.teal,0,-0.27,0,0.452,0.33,0.452,g);part(new T.CylinderGeometry(0.1,0.22,0.16,40),tealL,0,0.27,0,1,1,1,g);
+    part(q.cyl,tealL,0,0.4,0,0.2,0.12,0.2,g);part(q.cyl,P.coral,0,0.5,0,0.26,0.1,0.26,g);};
+  // ---- things you put in the village ----
+  D.flowers=g=>{g.add(makeFlowersH());};D.lamp=g=>{g.add(noSprites(makeLampH()));};D.bench=g=>{g.add(makeBenchH());};D.palm=g=>{g.add(makePalmH(0.5));};
+  // ---- time of day ----
+  D.sun=g=>{face(gold,0,0,0,0.56,0.16,g);for(let i=0;i<8;i++){const a=i/8*6.2832,m=part(rbox(0.11,0.22,0.12,0.04),gold,Math.cos(a)*0.48,Math.sin(a)*0.48,0,1,1,1,g);m.rotation.z=a-Math.PI/2;}};
+  D.moon=g=>{const R=0.5,cx=0.2,cy=0.1,r=0.43,d=Math.hypot(cx,cy),a=(R*R-r*r+d*d)/(2*d),h=Math.sqrt(R*R-a*a),px=a*cx/d,py=a*cy/d,p1=[px-h*cy/d,py+h*cx/d],p2=[px+h*cy/d,py-h*cx/d];
+    const A1=Math.atan2(p1[1],p1[0]),A2=Math.atan2(p2[1],p2[0])+6.2832,B2=Math.atan2(p2[1]-cy,p2[0]-cx)+6.2832,B1=Math.atan2(p1[1]-cy,p1[0]-cx);
+    const m=part(hExt(hArc(R,A1,A2,36).concat(hArc(r,B2,B1,30,cx,cy).slice(1,-1)),0.18),moon,0,0,0,1,1,1,g);m.rotation.z=0.3;};
+  const horizon=(g,mat,rays)=>{part(rbox(1.12,0.08,0.24,0.03),sandD,0,-0.16,0,1,1,1,g);part(hExt(hArc(0.36,0,Math.PI,26),0.18),mat,0,-0.12,0,1,1,1,g);
+    part(rbox(0.72,0.06,0.18,0.025),sandD,0,-0.34,0,1,1,1,g);part(rbox(0.4,0.06,0.18,0.025),sandD,0,-0.5,0,1,1,1,g);
+    if(rays)for(const a of [0.32,0.94,1.571,2.2,2.82]){const m=part(rbox(0.09,0.2,0.1,0.035),mat,Math.cos(a)*0.57,-0.12+Math.sin(a)*0.57,0,1,1,1,g);m.rotation.z=a-Math.PI/2;}};
+  D.dawn=g=>{horizon(g,gold,1);};
+  D.dusk=g=>{horizon(g,P.coral,0);for(const [x,y,d] of [[-0.42,0.36,0.11],[0.36,0.46,0.13],[0.02,0.52,0.09]])part(q.sph,lilac,x,y,0,d,d,d,g);};
+  // ---- the two of you ----
+  D.hero=g=>{const H=makeHero({head:null,eyes:null,neck:null,body:null,back:null,feet:null,hands:null,tool:null});H.root.rotation.y=0.35;g.add(H.root);return {c:new T.Vector3(0,2.14,0.1),half:0.95,az:0.2,el:0.22,sens:1};};
+  D.paw=g=>{if(!WOLT)return {c:new T.Vector3(0,0,0),half:1};const Dg=makeDog({});Dg.root.rotation.y=-0.3;g.add(Dg.root);return {c:new T.Vector3(-0.1,1.22,0.4),half:0.68,az:0.2,el:0.22,sens:1};};
+  // ---- signs ----
+  D.levelup=g=>{face(gold,0,0,0,0.98,0.18,g);part(hExt([[0,0.3],[0.27,0.02],[0.1,0.02],[0.1,-0.28],[-0.1,-0.28],[-0.1,0.02],[-0.27,0.02]],0.07),paper,0,0,0.11,1,1,1,g);};
+  D.check=g=>{face(P.sage,0,0,0,0.98,0.18,g);const a=part(rbox(0.34,0.12,0.07,0.03),paper,-0.155,-0.095,0.11,1,1,1,g);a.rotation.z=-0.84;const b=part(rbox(0.6,0.12,0.07,0.03),paper,0.1,0.005,0.11,1,1,1,g);b.rotation.z=0.854;};
+  D.close=g=>{for(const a of [-1,1]){const m=part(rbox(0.94,0.18,0.16,0.06),P.coral,0,0,a*0.01,1,1,1,g);m.rotation.z=a*Math.PI/4;}};
+  D.wrench=g=>{const R=0.25,cy=0.42,al=Math.asin(0.09/R),b0=Math.atan2(-Math.sqrt(R*R-0.0064),0.08),pts=[[-0.08,-0.62],[0.08,-0.62]].concat(hArc(R,b0,Math.PI/2-al,14,0,cy),[[0.09,0.42],[-0.09,0.42]],hArc(R,Math.PI/2+al,Math.PI-b0,14,0,cy));
+    const m=part(hExt(pts,0.16),P.metal,0,0,0,1,1,1,g);m.rotation.z=-0.7;};
+  D.signal=g=>{part(q.sph,P.coral,0,-0.42,0,0.22,0.22,0.22,g);for(const R of [0.3,0.54,0.78]){const m=part(new T.TorusGeometry(R,0.046,8,30,Math.PI/2),P.slate,0,-0.42,0,1,1,1,g);m.rotation.z=Math.PI/4;}};
+  const note=g=>{for(const [x,y,top] of [[-0.26,-0.4,0.42],[0.24,-0.28,0.54]]){const h=part(q.sph,P.slate,x,y,0,0.32,0.24,0.2,g);h.rotation.z=0.35;part(q.cyl,P.slate,x+0.13,(y+top)/2,0,0.065,top-y,0.065,g);}
+    const b=part(rbox(0.58,0.15,0.09,0.03),P.slate,0.12,0.46,0,1,1,1,g);b.rotation.z=0.236;};
+  D.sound=g=>{note(g);};
+  D.mute=g=>{note(g);const m=part(rbox(1.4,0.11,0.1,0.04),red,0,0.04,0.16,1,1,1,g);m.rotation.z=-Math.PI/4;};
+  // ---- places and finds ----
+  D.radio=g=>{part(rbox(0.92,0.56,0.32,0.1),P.coral,0,-0.12,0,1,1,1,g);face(paper,-0.2,-0.12,0.17,0.34,0.04,g);face(P.slate,-0.2,-0.12,0.19,0.14,0.03,g);
+    for(const y of [0.0,-0.12,-0.24])part(rbox(0.26,0.045,0.03,0.012),P.slate,0.22,y,0.165,1,1,1,g);const a=grp(0.3,0.16,0,g);a.rotation.z=-0.45;part(q.cyl10,P.metalD,0,0.3,0,0.04,0.6,0.04,a);part(q.sph,red,0,0.62,0,0.1,0.1,0.1,a);};
+  D.chest=g=>{const c=makeCrate();if(c.userData.spark)c.remove(c.userData.spark);g.add(c);};
+  D.empty=g=>{const W=1.5,Dp=1.0,Hh=0.72;PART_OL=0;part(G.box,'#8a5a34',0,Hh/2,0,W,Hh,Dp,g);part(G.box,'#3a2a20',0,Hh-0.03,0,W-0.14,0.08,Dp-0.14,g);
+    for(const x of [-W/2+0.12,0,W/2-0.12])part(G.box,'#5d6168',x,Hh/2,0,0.1,Hh+0.01,Dp+0.03,g);
+    const hinge=grp(0,Hh,-Dp/2,g);hinge.rotation.x=-1.75;const lg=new T.CylinderGeometry(Dp/2,Dp/2,W,24,1,false,0,Math.PI);lg.rotateZ(Math.PI/2);part(lg,'#8f5e36',0,0,Dp/2,1,1,1,hinge);part(G.box,'#3a2a20',0,0.01,Dp/2,W-0.1,0.02,Dp-0.1,hinge);};
+  D.map=g=>{const th=0.42;for(const i of [-1,0,1]){const pg=grp(i*0.36*Math.cos(th),0,0,g);pg.rotation.y=i===0?-th:th;part(rbox(0.36,0.84,0.03,0.012),i===0?P.sand:P.cream,0,0,0,1,1,1,pg);
+      if(i<0){part(rbox(0.2,0.24,0.012,0.005),P.teal,-0.03,0.2,0.02,1,1,1,pg);const d1=part(G.box,P.coral,0.06,-0.2,0.02,0.11,0.05,0.014,pg);d1.rotation.z=0.5;}
+      if(i===0)for(const [x,y] of [[-0.09,-0.1],[0.03,0.0],[0.12,0.12]]){const dsh=part(G.box,P.coral,x,y,0.02,0.1,0.05,0.014,pg);dsh.rotation.z=0.75;}
+      if(i>0)for(const a of [-1,1]){const xx=part(G.box,red,0.0,0.2,0.02,0.24,0.06,0.014,pg);xx.rotation.z=a*Math.PI/4;}}g.rotation.x=-0.15;};
+  D.scroll=g=>{part(rbox(0.62,0.76,0.03,0.012),P.cream,0,0,0,1,1,1,g);for(const y of [-0.4,0.4]){const r=part(q.cyl,P.sand,0,y,0.02,0.16,0.74,0.16,g);r.rotation.z=Math.PI/2;}
+    for(const [y,w] of [[0.17,0.38],[0.03,0.38],[-0.11,0.24]])part(G.box,P.slate,-(0.38-w)/2,y,0.022,w,0.04,0.012,g);};
+  D.desert=g=>{part(dome,P.sand,-0.24,-0.3,0.12,1.15,0.62,0.74,g);part(dome,sandD,0.36,-0.3,-0.22,0.95,0.92,0.62,g);face(gold,-0.3,0.42,-0.5,0.42,0.08,g);const c=makeCactusH(1.0);c.scale.setScalar(0.3);c.position.set(-0.4,-0.06,0.3);g.add(c);};
+  D.home=g=>{g.add(noSprites(makeHouseH()));return {az:0.75,el:0.52};};
+  D.drone=g=>{part(rbox(0.48,0.2,0.48,0.09),P.cream,0,0,0,1,1,1,g);part(dome,P.coral,0,0.08,0,0.42,0.36,0.42,g);for(const a of [-1,1]){const m=part(rbox(1.24,0.05,0.08,0.02),P.metalD,0,0.02,0,1,1,1,g);m.rotation.y=a*Math.PI/4;}
+    for(const x of [-0.43,0.43])for(const z of [-0.43,0.43]){part(q.cyl,P.metalD,x,0.08,z,0.08,0.12,0.08,g);part(q.cyl,tealL,x,0.15,z,0.42,0.03,0.42,g);}part(q.sph,P.glass,0,-0.07,0.23,0.15,0.15,0.1,g);return {el:0.6};};
+  return D;}
+// bakes every icon in HICON.names into one sheet (large cells first, small cells under them) and returns the canvas
+function hIconAtlas(only){const names=HICON.names,L=HICON.L,S=HICON.S,cols=HICON.cols,N=names.length,rowsL=Math.ceil(N/cols),W=cols*L,colsS=Math.floor(W/S),Ht=rowsL*L+Math.ceil(N/colsS)*S;
+  const out=document.createElement('canvas');out.width=W;out.height=Ht;const o2=out.getContext('2d');o2.imageSmoothingEnabled=true;o2.imageSmoothingQuality='high';
+  const r2=new T.WebGLRenderer({antialias:false,alpha:true,premultipliedAlpha:false,preserveDrawingBuffer:true});r2.setPixelRatio(1);r2.outputEncoding=T.sRGBEncoding;r2.shadowMap.enabled=true;r2.shadowMap.type=T.PCFShadowMap;r2.setClearColor(0x000000,0);
+  const D=hIconDefs(),keep=[HU.lit.value.clone(),HU.shade.value.clone(),HU.sunL.value,HU.pr.value],stL={icon:1},stS={icon:1},miss=[];
+  names.forEach((n,i)=>{if(only&&only.indexOf(n)<0)return;if(!D[n]){miss.push(n);return;}
+    const sc=new T.Scene(),sun=setupLights(sc),g=grp(0,0,0,sc);PART_OL=0;const v=D[n](g)||{};sc.updateMatrixWorld(true);
+    const az=v.az===undefined?0.5:v.az,el=v.el===undefined?0.46:v.el,rt=new T.Vector3(Math.cos(az),0,-Math.sin(az)),up=new T.Vector3(-Math.sin(az)*Math.sin(el),Math.cos(el),-Math.cos(az)*Math.sin(el));
+    let c=v.c,half=v.half;if(!c){// frame the picture by what is really drawn: every vertex as the camera sees it
+      const bb=new T.Box3().setFromObject(g),p=new T.Vector3();let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+      g.traverse(o=>{if(!o.isMesh||!o.geometry||!o.geometry.attributes.position)return;const P3=o.geometry.attributes.position,stp=Math.max(1,Math.floor(P3.count/600));
+        for(let k=0;k<P3.count;k+=stp){p.fromBufferAttribute(P3,k).applyMatrix4(o.matrixWorld);const a=p.dot(rt),b=p.dot(up);x0=Math.min(x0,a);x1=Math.max(x1,a);y0=Math.min(y0,b);y1=Math.max(y1,b);}});
+      c=bb.getCenter(new T.Vector3());c.addScaledVector(rt,(x0+x1)/2-c.dot(rt));c.addScaledVector(up,(y0+y1)/2-c.dot(up));half=Math.max(x1-x0,y1-y0)/2*(v.pad||1.2);}
+    sun.position.set(c.x-9,c.y+24,c.z+13);sun.target.position.copy(c);const sm=sun.shadow.camera,e=Math.max(2,half*2.6);sm.left=-e;sm.right=e;sm.top=e;sm.bottom=-e;sm.near=1;sm.far=80;sm.updateProjectionMatrix();sun.shadow.mapSize.set(1024,1024);
+    const cam=new T.OrthographicCamera(-half,half,half,-half,1,200);cam.position.set(c.x+Math.sin(az)*Math.cos(el)*80,c.y+Math.sin(el)*80,c.z+Math.cos(az)*Math.cos(el)*80);cam.lookAt(c);cam.updateMatrixWorld();
+    HU.lit.value.setRGB(1.03,1.0,0.97);HU.shade.value.setRGB(1.03*0.5,0.43,0.97*0.47);HU.sunL.value=(sun.color.r+sun.color.g+sun.color.b)/3*sun.intensity;
+    // [cell px, oversampling, state, x, y, css px the cell is meant for]
+    for(const [px,ss,st,dx,dy,css] of [[L,2,stL,(i%cols)*L,Math.floor(i/cols)*L,46],[S,4,stS,(i%colsS)*S,rowsL*L+Math.floor(i/colsS)*S,18]]){
+      const k=px*ss/css;r2.setSize(px*ss,px*ss,false);HU.pr.value=k;st.r=Math.max(1,Math.round(k*(px===L?0.46:0.56)));st.sens=(v.sens||(px===L?0.62:0.42));inkRender(r2,sc,cam,st);o2.clearRect(dx,dy,px,px);o2.drawImage(r2.domElement,dx,dy,px,px);}});
+  HU.lit.value.copy(keep[0]);HU.shade.value.copy(keep[1]);HU.sunL.value=keep[2];HU.pr.value=keep[3];
+  for(const st of [stL,stS])if(st.rt){st.rt.depthTexture.dispose();st.rt.dispose();}r2.dispose();r2.forceContextLoss&&r2.forceContextLoss();if(miss.length)console.warn('hIconAtlas: no model for',miss.join(', '));return out;}
 
 // ===================================================================
 // The wanderer in look H (22. 11.): drawn again for this style. Robin: the old head, the goggles and the hair looked generic.
