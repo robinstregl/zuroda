@@ -1,7 +1,7 @@
 // ================= Daleko icon set (one style: chunky dark outline, flat palette, soft highlight) =================
 const ICO_O='#3a2a20';
 // look H: the icons are drawn in their own style (same rule as STN in game.js)
-const ICO_H=((window.FORCE_STYLE)||(new URLSearchParams(location.search).get('s')))==='sun';
+const ICO_H=((window.FORCE_STYLE)||(new URLSearchParams(location.search).get('s'))||'sun')==='sun';
 // the baked sheet of look-H icons: cell sizes, grid and the order of the icons (the baker in lookh.js reads the same list)
 const HICON={L:160,S:64,cols:8,url:'img/hicons.png?v=1',names:['scrap','core','chip','energy','water','pack','hammer','canteen','boots','sling','compass','bottle','flowers','lamp','bench','palm',
   'sun','moon','dawn','dusk','hero','paw','levelup','check','close','wrench','signal','sound','mute','radio','chest','empty','cog','map','scroll','desert','home','drone']};
@@ -83,5 +83,5 @@ if(ICO_H){const at=new Image();at.onload=()=>{const {L,S,cols,names}=HICON,rowsL
 function drawRich(c,s,x,y,px,shadow){const parts=String(s).split(/(\{[a-z]+\})/).filter(Boolean);const isz=px*1.25;const al=c.textAlign;c.textAlign='left';
   const w=parts.map(p=>{const m=p.match(/^\{([a-z]+)\}$/);return m&&ICON_SRC[m[1]]?isz:c.measureText(p).width;});const tot=w.reduce((a,b)=>a+b,0);
   let cx=al==='center'?x-tot/2:al==='right'?x-tot:x;
-  parts.forEach((p,i)=>{const m=p.match(/^\{([a-z]+)\}$/);if(m&&ICON_SRC[m[1]]){const im=ICIMG[m[1]];if(im.complete)c.drawImage(im,cx,y-isz*0.82,isz,isz);}else{if(shadow){const f=c.fillStyle;c.fillStyle=shadow;c.fillText(p,cx+1.5,y+1.5);c.fillStyle=f;}c.fillText(p,cx,y);}cx+=w[i];});
+  parts.forEach((p,i)=>{const m=p.match(/^\{([a-z]+)\}$/);if(m&&ICON_SRC[m[1]]){const im=ICIMG[m[1]];if(im&&im.complete)c.drawImage(im,cx,y-isz*0.82,isz,isz);}else{if(shadow){const f=c.fillStyle;c.fillStyle=shadow;c.fillText(p,cx+1.5,y+1.5);c.fillStyle=f;}c.fillText(p,cx,y);}cx+=w[i];});
   c.textAlign=al;}

@@ -2,7 +2,7 @@
 (() => {
 'use strict';
 // ================= utils =================
-const FF='Jost, "Century Gothic", system-ui, sans-serif';
+let FF='Jost, "Century Gothic", system-ui, sans-serif';
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t;
 const easeInOut=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
 const smooth=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);};
@@ -193,9 +193,11 @@ const STYLES={
  sketch:  {name:'Pencil sketch',px:0,mat:'toon',grad:[150,255],ol:2,olc:'#2a2420',sh:'basic',cam:'ortho',paper:0.7,css:'grayscale(0.82) sepia(0.25) contrast(1.15) brightness(1.08)'},
 };
 // one art style for the whole game: Brawl-like (Robin, 19. 11.)
-const STN=(window.FORCE_STYLE)||(new URLSearchParams(location.search).get('s'))||'brawl';const ST=STYLES[STN]||STYLES.brawl;
+const STN=(window.FORCE_STYLE)||(new URLSearchParams(location.search).get('s'))||'sun';const ST=STYLES[STN]||STYLES.sun;// look H is the game (Robin 22. 11.: "dej vše na hlavní doménu"); the old look: ?s=brawl
 if(/notex/.test(location.hash))ST.tex=false;
-if(ST.sunink)document.body.classList.add('lookH');// compare: open with #notex for the untextured look
+if(ST.sunink){document.body.classList.add('lookH');// the UI of look H is the wanderer's notebook (src/notebook.css): handwriting on canvas too, and the pencil joystick
+  FF='"Shantell Sans", "Comic Sans MS", "Chalkboard SE", cursive';try{document.fonts.load('600 13px "Shantell Sans"');document.fonts.load('700 13px "Shantell Sans"');}catch(_){}
+  const J=document.getElementById('joy');if(J)J.innerHTML=hJoySvg();}// compare: open with #notex for the untextured look
 
 
 const T=window.THREE;
@@ -1577,6 +1579,7 @@ function enterBase(){
 }
 document.querySelectorAll('.wic[data-ic],#bDrop [data-ic],#bSling [data-ic]').forEach(e=>{e.innerHTML=icSvg(e.dataset.ic);});
 $('bMap').innerHTML=icSvg('map');$('xMap').innerHTML=icSvg('map');
+const zSay=t=>ST.sunink?'<span class="zh">'+icSvg('paw')+'</span><span class="zt">'+icx(t)+'</span>':icx(t);
 function refreshBaseUI(){
   $('rS').textContent=SV.scrap;$('rC').textContent=SV.cores;$('rX').textContent=SV.chips||0;
   $('rE').textContent=Math.floor(SV.energy||0)+'/'+energyCap();$('eFill').style.width=(clamp((SV.energy||0)/energyCap(),0,1)*100).toFixed(1)+'%';
@@ -1593,7 +1596,7 @@ function refreshBaseUI(){
   else if((SV.energy||0)<6&&SV.b.solar===0&&!canRepair('solar'))h='The battery is almost empty. Repair the Solar Field to charge it.';
   else if(SV.b.dilna&&!gearLv('kladivo'))h='Make a Hammer in the Workshop – then we can take wrecks apart.';
   else{const nb=bottleFill();h='The well holds '+Math.floor(SV.well)+' L. Shall I fill your flask'+(canteenCap()?' and canteen':'')+(nb?' and '+nb+' bottle'+(nb>1?'s':''):'')+'? That\'s '+fmtL(fill+nb*BOTTLE)+' L.';}
-  $('hint').innerHTML=icx(h);
+  $('hint').innerHTML=zSay(h);
   const anyCamp=CAMPS.some(c=>SV.camps[c.id]);
   const go=$('bGo');go.disabled=!!SV.fetch||fill<0.5;
   go.innerHTML=SV.fetch?'Zuro is out…':(anyCamp?'Choose on the map':'Fill up &amp; go')+`<small>${anyCamp?'home or a camp':fmtL(fill+bottleFill()*BOTTLE)+' L from the well'}</small>`;
@@ -1615,7 +1618,7 @@ function startScout(x,y){const l=SV.b.dron,c=DRONE.cost[l];if(!l||SV.scout||(SV.
   toast('{drone}','Drone on its way','Back in about '+Math.round(secs)+' s.');return true;}
 function checkFetch(){if(SV.fetch&&Date.now()>=SV.fetch.until){const f=SV.fetch;SV.fetch=null;SV.scrap+=f.s;SV.cores+=f.c;SV.chips=(SV.chips||0)+(f.k||0);save();
   toast('{paw}','Zuro is back!','He brought '+f.s+' {scrap}'+(f.c?' and '+f.c+' {core}':'')+' from your lost bag.');if(scene==='base'){rebuildBaseChars();refreshBaseUI();}}}
-function openGoSheet(){let h='<h2>Where to?</h2><div class="lv">WELL: '+Math.floor(SV.well)+' / '+wellCap()+' L</div>';
+function openGoSheet(){let h='<h2>Where to?</h2><div class="lv">Well: '+Math.floor(SV.well)+' / '+wellCap()+' L</div>';
   const fill=fillAmount();h+=`<div class="crow"><div class="ic">{home}</div><div class="tx"><b>From home</b><br>Fill up ${fmtL(fill)} L and walk out of the village.</div><button class="btn" data-act="go" data-k="">Go</button></div>`;
   for(const cp of CAMPS){if(!SV.camps[cp.id])continue;const ok=SV.well>=cp.trip+0.5;
     h+=`<div class="crow"><div class="ic">{desert}</div><div class="tx"><b>${cp.name}</b><br>${BIOME_NAME[biomeAt(cp.x,cp.y)]} · trip ${cp.trip} L + fill up</div><button class="btn" data-act="go" data-k="${cp.id}" ${ok?'':'disabled'}>${cp.trip} L</button></div>`;}
@@ -1635,7 +1638,7 @@ function canPay(n){return SV.scrap>=(n.s||0)&&SV.cores>=(n.c||0)&&(SV.chips||0)>
 const pay=n=>{SV.scrap-=n.s||0;SV.cores-=n.c||0;SV.chips=(SV.chips||0)-(n.x||0);SV.energy-=n.en||0;};
 const BOTTLE_COST=()=>({s:bottleCost(),c:0,en:0}),SMELT_COST={s:30,c:0,en:5};
 function workshopGrid(){
-  const sel=B.wsel||'kladivo';let h='<div class="sect">GEAR</div><div class="igrid">';
+  const sel=B.wsel||'kladivo';let h='<div class="sect">Gear</div><div class="igrid">';
   for(const ck in CRAFT){const c=CRAFT[ck],gl=gearLv(ck);
     h+=`<button class="it t${tierOf(gl)}${sel===ck?' sel':''}" data-act="pick" data-k="${ck}"><span class="ii t${tierOf(gl)}">{${c.icon}}</span>${gl?`<span class="rb">${ROMAN[gl]}</span>`:''}<span class="in">${c.name}</span>${pips(gl,c.lv.length)}</button>`;}
   h+=`<button class="it t1${sel==='bottle'?' sel':''}" data-act="pick" data-k="bottle"><span class="ii t1">{bottle}</span><span class="rb">${SV.bottles||0}/${bottleMax()}</span><span class="in">Water bottle</span></button>`;
@@ -1644,17 +1647,17 @@ function workshopGrid(){
   let d='';
   if(CRAFT[sel]){const c=CRAFT[sel],gl=gearLv(sel),nx=c.lv[gl],multi=c.lv.length>1;
     d+=`<div class="dt"><span class="ii big t${tierOf(gl)}">{${c.icon}}</span><div><div class="tier t${tierOf(gl)}">${gl?TIER[tierOf(gl)]+(multi?' · '+ROMAN[gl]:''):TIER[0]}</div><h3>${c.name}</h3></div></div>`;
-    if(gl)d+=`<div class="eff"><span class="lbl">NOW</span>${c.lv[gl-1].eff}</div>`;
-    if(nx){d+=`<div class="eff next"><span class="lbl">${gl?'LEVEL '+ROMAN[gl+1]:'CRAFT'}</span>${nx.eff}</div><div class="costs">${costChips(nx)}</div><button class="btn primary full" data-act="craft" data-k="${sel}" ${canPay(nx)?'':'disabled'}>${gl?'Upgrade to '+ROMAN[gl+1]:'Craft'}</button>`;}
-    else d+=`<div class="eff"><span class="lbl">MAX</span>Fully upgraded {check}</div>`;}
+    if(gl)d+=`<div class="eff"><span class="lbl">now</span>${c.lv[gl-1].eff}</div>`;
+    if(nx){d+=`<div class="eff next"><span class="lbl">${gl?'level '+ROMAN[gl+1]:'craft'}</span>${nx.eff}</div><div class="costs">${costChips(nx)}</div><button class="btn primary full" data-act="craft" data-k="${sel}" ${canPay(nx)?'':'disabled'}>${gl?'Upgrade to '+ROMAN[gl+1]:'Craft'}</button>`;}
+    else d+=`<div class="eff"><span class="lbl">max</span>Fully upgraded {check}</div>`;}
   else if(sel==='bottle'){const n=BOTTLE_COST(),full=(SV.bottles||0)>=bottleMax();
     d+=`<div class="dt"><span class="ii big t1">{bottle}</span><div><div class="tier t1">${SV.bottles||0} / ${bottleMax()} carried</div><h3>Water bottle</h3></div></div><div class="eff">0.5 L each. Filled at the well before every trip – drink it out there whenever you need. A bigger backpack carries more.</div>`;
-    d+=full?`<div class="eff"><span class="lbl">FULL</span>Upgrade the backpack to carry more.</div>`:`<div class="costs">${costChips(n)}</div><button class="btn primary full" data-act="bottle" ${canPay(n)?'':'disabled'}>Make a bottle</button>`;}
+    d+=full?`<div class="eff"><span class="lbl">full</span>Upgrade the backpack to carry more.</div>`:`<div class="costs">${costChips(n)}</div><button class="btn primary full" data-act="bottle" ${canPay(n)?'':'disabled'}>Make a bottle</button>`;}
   else{const n=SMELT_COST;d+=`<div class="dt"><span class="ii big t3">{core}</span><div><div class="tier t3">Recipe</div><h3>Melt down scrap</h3></div></div><div class="eff">Turns a pile of scrap into one gold scrap. Expensive, but certain.</div><div class="costs">${costChips(n)}</div><button class="btn primary full" data-act="smelt" ${canPay(n)?'':'disabled'}>Melt</button>`;}
   return h+`<div class="detail">${d}</div>`;}
 function openBuilding(k,keepScroll){
   const b=BLD[k],lvl=SV.b[k],n=nextLv(k);
-  let h=(ST.sunink?`<div class="hroom"><img src="${(k==='dilna'&&lvl>0?hRoom('work'):hScene(k,lvl))||''}" alt=""></div><div class="bhead">`:`<div class="bhead"><div class="bimg"><img src="${snapBld(k,lvl)}" alt=""></div>`)+`<div class="bht"><div class="kick">${lvl===0?'RUIN':'LEVEL '+lvl+' / '+b.lv.length}</div><h2>${b.name}</h2>${pips(lvl,b.lv.length)}</div></div><p class="bdesc">${b.desc}</p>`;
+  let h=(ST.sunink?`<div class="hroom"><img src="${(k==='dilna'&&lvl>0?hRoom('work'):hScene(k,lvl))||''}" alt=""></div><div class="bhead">`:`<div class="bhead"><div class="bimg"><img src="${snapBld(k,lvl)}" alt=""></div>`)+(ST.sunink?`<div class="bht"><h2>${b.name}</h2><div class="blv"><div class="kick">${lvl===0?'ruin':'level '+lvl+' of '+b.lv.length}</div>${pips(lvl,b.lv.length)}</div></div></div>`:`<div class="bht"><div class="kick">${lvl===0?'ruin':'level '+lvl+' of '+b.lv.length}</div><h2>${b.name}</h2>${pips(lvl,b.lv.length)}</div></div>`)+`<p class="bdesc">${b.desc}</p>`;
   // what the building does right now
   if(k==='cerpadlo')h+=`<div class="stat"><span>{water}</span><div><b>${Math.floor(SV.well)} / ${wellCap()} L</b> in the well<br><small>refills ${wellRate()} L/min</small></div></div>`;
   if(k==='solar')h+=`<div class="stat"><span>{energy}</span><div><b>${Math.floor(SV.energy||0)} / ${energyCap()}</b> in the battery<br><small>${energyRate()?'charges '+energyRate()+' energy/min':'not charging – repair the panels'}</small></div></div>`;
@@ -1663,13 +1666,13 @@ function openBuilding(k,keepScroll){
   if(k==='radio'&&lvl>0)h+=`<div class="msg">${MSGS[Math.max(0,Math.min(SV.msg,MSGS.length)-1)]||MSGS[0]}</div><p class="bdesc">On expeditions you can now see where the signal comes from. It is terribly far away.</p>`;
   if(k==='dilna'&&lvl>0)h+=workshopGrid();
   // repair / upgrade
-  if(n)h+=`<div class="sect">${lvl===0?'REPAIR':'NEXT LEVEL'}</div><div class="upc"><div class="eff">${n.eff}</div><div class="costs">${costChips(n)}</div><button class="btn ${k==='dilna'&&lvl>0?'':'primary'} full" data-act="repair" data-k="${k}" ${canRepair(k)?'':'disabled'}>${lvl===0?'Repair':'Upgrade to level '+(lvl+1)}</button></div>`;
-  else h+=`<div class="sect">LEVEL</div><div class="upc"><div class="eff">Fully upgraded {check}</div></div>`;
+  if(n)h+=`<div class="sect">${lvl===0?'Repair':'Next level'}</div><div class="upc"><div class="eff">${n.eff}</div><div class="costs">${costChips(n)}</div><button class="btn ${k==='dilna'&&lvl>0?'':'primary'} full" data-act="repair" data-k="${k}" ${canRepair(k)?'':'disabled'}>${lvl===0?'Repair':'Upgrade to level '+(lvl+1)}</button></div>`;
+  else h+=`<div class="sect">Level</div><div class="upc"><div class="eff">Fully upgraded {check}</div></div>`;
   const sc=document.querySelector('#sheet .sh-in'),top=keepScroll&&sc?sc.scrollTop:0;
   openSheet(h,true);B.sel=k;if(sc)sc.scrollTop=top;
 }
 function openHouse(){
-  openSheet((ST.sunink?`<div class="hroom"><img src="${hRoom('home')||''}" alt=""></div>`:'')+`<div class="kick" style="margin-bottom:6px">YOUR HOME</div><div class="portraits"><figure><img src="${PORTRAIT[SV.sex==='f'?'f':'m']||''}" alt=""><figcaption>${SV.name||'Wanderer'} · Lv ${heroLv()}</figcaption></figure><figure><img src="${PORTRAIT.dog||''}" alt=""><figcaption>Zuro · Lv ${dogLv()}</figcaption></figure></div><h2>Home</h2><div class="lv">EXPEDITIONS: ${SV.exp} · FARTHEST: ${fmtM(SV.best).toUpperCase()}</div><p>This is where you and Zuro live. Zuro always brings you back.</p>
+  openSheet((ST.sunink?`<div class="hroom"><img src="${hRoom('home')||''}" alt=""></div>`:'')+`<div class="kick" style="margin-bottom:6px">your home</div><div class="portraits"><figure><img src="${PORTRAIT[SV.sex==='f'?'f':'m']||''}" alt=""><figcaption>${SV.name||'Wanderer'} · Lv ${heroLv()}</figcaption></figure><figure><img src="${PORTRAIT.dog||''}" alt=""><figcaption>Zuro · Lv ${dogLv()}</figcaption></figure></div><h2>Home</h2><div class="lv">Expeditions: ${SV.exp} · farthest: ${fmtM(SV.best)}</div><p>This is where you and Zuro live. Zuro always brings you back.</p>
   <div class="eff"><b>${SV.name||'Wanderer'}</b> · level ${heroLv()}/30 &nbsp; · &nbsp; <b>Zuro</b> · level ${dogLv()}/15<br>Walked together: ${fmtMeters(SV.meters||0)} · Rescue keeps ${100-Math.round(rescueLoss()*100)} % of the load</div><div class="eff">Flask <b>${FLASK} L</b>${canteenCap()?' + canteen <b>'+canteenCap()+' L</b>':''} · Well <b>${Math.floor(SV.well)} / ${wellCap()} L</b> (+${wellRate()} L/min) · Backpack <b>${bagCap()}</b><br>Gear: ${Object.keys(SV.craft).filter(k=>CRAFT[k]&&gearLv(k)).map(k=>'{'+CRAFT[k].icon+'}'+(CRAFT[k].lv.length>1?' '+ROMAN[gearLv(k)]:'')).join(' &nbsp;')||'—'} · Camps found: ${CAMPS.filter(c=>SV.camps[c.id]).length}<br>Bottles: {bottle} ${SV.bottles||0} / ${bottleMax()} (${BOTTLE} L each)</div>
   <button class="btn full" data-act="reset" style="margin-top:8px">Start over completely</button>`,true);
 }
@@ -2094,7 +2097,7 @@ function endExp(type,cp){
 }
 function showSummary(){
   X.shown=true;
-  let h=`<h3>EXPEDITION ${SV.exp}</h3><div class="big">${X.end==='home'?'You made it home':X.end==='camp'?'You made it to '+X.endCamp.name:'Zuro dragged you home'}</div>${X.ko?'<div class="info">'+X.ko+'</div>':''}`;
+  let h=`<h3>Expedition ${SV.exp}</h3><div class="big">${X.end==='home'?'You made it home':X.end==='camp'?'You made it to '+X.endCamp.name:'Zuro dragged you home'}</div>${X.ko?'<div class="info">'+X.ko+'</div>':''}`;
   h+=`<div class="gain">+${X.scrap} {scrap}${X.cores?' &nbsp; +'+X.cores+' {core}':''}${X.chips?' &nbsp; +'+X.chips+' {chip}':''}</div>`;
   if(X.end==='thirst'&&(X.lostS||X.lostC||X.lostX))h+=`<div class="lost">Zuro could only save part of the load (${X.lossPct} % left in the sand): ${X.lostS} {scrap}${X.lostC?' '+X.lostC+' {core}':''}${X.lostX?' '+X.lostX+' {chip}':''}. You can go back for the bag.</div>`;
   h+=`<div class="info">Walked together: +${X.addM} m${X.back?' · '+fmtL(X.back)+' L poured back into the well':''}</div>`;
@@ -2250,7 +2253,7 @@ function updExpHUD(){const cap=X.cap,can=canteenCap(),w=clamp(X.water,0,cap);
     else{txt=W.name+'. We need {hammer} Hammer '+ROMAN[W.need]+' from the Workshop.';btn='{hammer} Needs Hammer '+ROMAN[W.need];dis=true;}}
   else if(X.nearCamp&&!SV.camps[X.nearCamp.id]){st='c'+X.nearCamp.id+(X.scrap>=CAMP_COST);txt='A good spot for '+X.nearCamp.name+'. Build it and you can travel here from home.';btn='{home} Build camp · '+CAMP_COST+' {scrap}';dis=X.scrap<CAMP_COST;}
   updCombatBtns();
-  if(st!==X._act){X._act=st;const el=$('xact');if(!st)el.classList.add('hidden');else{el.classList.remove('hidden');$('xactTxt').innerHTML=icx(txt);const b=$('bAct'),m=btn.match(/^\{(\w+)\}\s*(.*)$/);b.innerHTML=icx(m?`<span class="ai">{${m[1]}}</span><small>${m[2]}</small>`:`<small>${btn}</small>`);b.disabled=dis;}}}
+  if(st!==X._act){X._act=st;const el=$('xact');if(!st)el.classList.add('hidden');else{el.classList.remove('hidden');$('xactTxt').innerHTML=zSay(txt);const b=$('bAct'),m=btn.match(/^\{(\w+)\}\s*(.*)$/);b.innerHTML=icx(m?`<span class="ai">{${m[1]}}</span><small>${m[2]}</small>`:`<small>${btn}</small>`);b.disabled=dis;}}}
 function drawFloaters(){
   ctx.textAlign='center';ctx.font=`600 ${13*dpr}px ${FF}`;
   for(let i=floaters.length-1;i>=0;i--){const f=floaters[i];const e=tNow-f.b;if(e>1.4){floaters.splice(i,1);continue;}const p=proj(f.x3,f.y3+e*1.2,f.z3);if(p.z>1)continue;
@@ -2424,8 +2427,9 @@ function groundPoint(e,h){setNdc(e);plane.constant=-(h||0);if(!ray.ray.intersect
 let ptr=false;const PTRS=new Map();let pinch=null;
 // floating joystick (Robin 20. 11.): put a thumb anywhere and drag to walk; a quick tap still walks to that spot
 let JOY=null;const joyEl=()=>$('joy');
-function joyShow(on){const j=joyEl();if(!j)return;if(!on){j.classList.add('hidden');return;}j.classList.remove('hidden');j.style.left=JOY.x0+'px';j.style.top=JOY.y0+'px';}
-function joyKnob(){const k=joyEl()&&joyEl().firstElementChild;if(!k)return;let dx=JOY.x-JOY.x0,dy=JOY.y-JOY.y0;const L=Math.hypot(dx,dy),M=46;if(L>M){dx*=M/L;dy*=M/L;}k.style.transform=`translate(${dx}px,${dy}px)`;}
+function joyShow(on){const j=joyEl();if(!j)return;if(!on){j.classList.add('hidden');return;}const r=stage.getBoundingClientRect();j.classList.remove('hidden');j.style.left=(JOY.x0-r.left)+'px';j.style.top=(JOY.y0-r.top)+'px';joyKnob();}
+function joyKnob(){const j=joyEl(),k=j&&j.querySelector('i');if(!k)return;let dx=JOY.x-JOY.x0,dy=JOY.y-JOY.y0;const L=Math.hypot(dx,dy),M=46;if(L>M){dx*=M/L;dy*=M/L;}k.style.transform=`translate(${dx}px,${dy}px)`;
+  const ln=j.querySelector('.jl');if(ln){const l=Math.min(L,M),e=Math.max(0,l-28);ln.setAttribute('x2',(85+(l?dx/l*e:0)).toFixed(1));ln.setAttribute('y2',(85+(l?dy/l*e:0)).toFixed(1));ln.style.opacity=e>5?1:0;}}
 const pdist=()=>{const v=[...PTRS.values()];return Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y)||1;};
 canvas.addEventListener('wheel',e=>{if(scene==='exp')e.preventDefault();},{passive:false});// no manual zoom – the view is fixed
 canvas.addEventListener('pointerdown',e=>{
@@ -2496,7 +2500,7 @@ let CSHEET=null;
 window.__charSheet=()=>{const sc=new T.Scene();sc.background=C('#2a2420');setupLights(sc);const keep=SV.sex;const row=(z,mkf,sx)=>{for(let i=0;i<4;i++){const o=mkf();o.root.position.set((i-1.5)*2.3,z,0);o.root.rotation.y=[0,-Math.PI/2,Math.PI,0.6][i];o.root.scale.setScalar(sx);sc.add(o.root);}};
   SV.sex='m';row(1.9,()=>makeHero(heroGear()),1);SV.sex=keep;row(-1.4,()=>makeDog(dogGear()),1.15);
   const cam=new T.OrthographicCamera(-5,5,5*innerHeight/Math.max(1,stage.clientWidth),-5*innerHeight/Math.max(1,stage.clientWidth),0.1,100);cam.position.set(0,2.6,14);cam.lookAt(0,1.0,0);CSHEET={sc,cam};ov.style.display='none';};
-function placeMute(){const p=scene==='exp'?$('xhud'):$('bhud'),m=$('mute');if(!p||!m||p.classList.contains('hidden'))return;const pr=p.querySelector('.wpanel');if(!pr)return;const b=pr.getBoundingClientRect().bottom-stage.getBoundingClientRect().top;const t=Math.round(b+10)+'px';if(m.style.top!==t)m.style.top=t;const xm=$('xMap');if(xm&&xm.style.top!==t)xm.style.top=t;}
+function placeMute(){const p=scene==='exp'?$('xhud'):$('bhud'),m=$('mute');if(!p||!m||p.classList.contains('hidden'))return;const pr=p.querySelector('.wpanel');if(!pr)return;const b=pr.getBoundingClientRect().bottom-stage.getBoundingClientRect().top;const t=Math.round(b+(ST.sunink?16:10))+'px';if(m.style.top!==t){m.style.top=t;stage.style.setProperty('--hudb',Math.round(b)+'px');}const xm=$('xMap');if(xm&&xm.style.top!==t)xm.style.top=t;}
 let muteT=0;
 function frame(nowT){
   if(window.CATALOG)return;
@@ -2521,6 +2525,6 @@ function frame(nowT){
 }
 window.__dbg={makeScrap,makeWreck,makeCrate,makeDrone,makeSeeker,makeGoldCog,makeBag,makeCamp,makeDeadTree,makeBoulder,makePuddle,makeCactus,makeBot,makeBuilding,makeRuin,makeChipDrop,makeCacheBottle,makeSaltCrystals,makeRubble,makeBrine,makeHero,makeDog,makePalm,makeHouse,heroGear,dogGear,makeLamp,makeBench,makeFlowers};
 window.__hicons=only=>ST.sunink?hIconAtlas(only).toDataURL('image/png'):null;window.__woltReady=()=>!!WOLT;
-window.__snd=()=>Object.keys(SBUF).length;window.__ps=(k)=>ps(k);window.__obst=(cx,cy)=>obstOf(cx,cy);window.__coast=(x,y)=>coastSD(x,y);window.__markSeen=(x,y,r)=>markSeen(x,y,r);window.__MVhits=()=>(MV.hits||[]).map(h=>({x:h.x,y:h.y,t:h.t,id:h.cp&&h.cp.id}));window.__segPt=segPt;window.__BS=BS;window.__camT=camT;window.__house=()=>openHouse();window.__close=()=>closeSheet();window.__SV=()=>SV;window.__rebuild=()=>{for(const k in BLD)rebuildBuilding(k);};window.__X=()=>X;window.__go=()=>startExpedition();window.__open=k=>openBuilding(k);window.__fix=p=>fixDest(p);
+window.__snd=()=>Object.keys(SBUF).length;window.__ps=(k)=>ps(k);window.__obst=(cx,cy)=>obstOf(cx,cy);window.__coast=(x,y)=>coastSD(x,y);window.__markSeen=(x,y,r)=>markSeen(x,y,r);window.__MVhits=()=>(MV.hits||[]).map(h=>({x:h.x,y:h.y,t:h.t,id:h.cp&&h.cp.id}));window.__segPt=segPt;window.__BS=BS;window.__camT=camT;window.__house=()=>openHouse();window.__close=()=>closeSheet();window.__SV=()=>SV;window.__rebuild=()=>{for(const k in BLD)rebuildBuilding(k);};window.__X=()=>X;window.__go=()=>startExpedition();window.__open=k=>openBuilding(k);window.__fix=p=>fixDest(p);window.__forX=(a,b,c,d,f)=>forX(a,b,c,d,f);
 requestAnimationFrame(frame);
 })();
