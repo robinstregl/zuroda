@@ -310,7 +310,7 @@ function hIconDefs(){const q=hGeo(),P=HP,gold=hM('#f6c960'),green=hM('#8fca9f'),
 function hIconAtlas(only){const names=HICON.names,L=HICON.L,S=HICON.S,cols=HICON.cols,N=names.length,rowsL=Math.ceil(N/cols),W=cols*L,colsS=Math.floor(W/S),Ht=rowsL*L+Math.ceil(N/colsS)*S;
   const out=document.createElement('canvas');out.width=W;out.height=Ht;const o2=out.getContext('2d');o2.imageSmoothingEnabled=true;o2.imageSmoothingQuality='high';
   const r2=new T.WebGLRenderer({antialias:false,alpha:true,premultipliedAlpha:false,preserveDrawingBuffer:true});r2.setPixelRatio(1);r2.outputEncoding=T.sRGBEncoding;r2.shadowMap.enabled=true;r2.shadowMap.type=T.PCFShadowMap;r2.setClearColor(0x000000,0);
-  const D=hIconDefs(),keep=[HU.lit.value.clone(),HU.shade.value.clone(),HU.sunL.value,HU.pr.value],stL={icon:1},stS={icon:1},miss=[];
+  const D=hIconDefs(),keep=[HU.lit.value.clone(),HU.shade.value.clone(),HU.sunL.value,HU.pr.value,HU.shf.value.x],stL={icon:1},stS={icon:1},miss=[];HU.shf.value.x=1e4;
   names.forEach((n,i)=>{if(only&&only.indexOf(n)<0)return;if(!D[n]){miss.push(n);return;}
     const sc=new T.Scene(),sun=setupLights(sc),g=grp(0,0,0,sc);PART_OL=0;const v=D[n](g)||{};sc.updateMatrixWorld(true);
     const az=v.az===undefined?0.5:v.az,el=v.el===undefined?0.46:v.el,rt=new T.Vector3(Math.cos(az),0,-Math.sin(az)),up=new T.Vector3(-Math.sin(az)*Math.sin(el),Math.cos(el),-Math.cos(az)*Math.sin(el));
@@ -325,7 +325,7 @@ function hIconAtlas(only){const names=HICON.names,L=HICON.L,S=HICON.S,cols=HICON
     // [cell px, oversampling, state, x, y, css px the cell is meant for]
     for(const [px,ss,st,dx,dy,css] of [[L,2,stL,(i%cols)*L,Math.floor(i/cols)*L,46],[S,4,stS,(i%colsS)*S,rowsL*L+Math.floor(i/colsS)*S,18]]){
       const k=px*ss/css;r2.setSize(px*ss,px*ss,false);HU.pr.value=k;st.r=Math.max(1,Math.round(k*(px===L?0.46:0.56)));st.sens=(v.sens||(px===L?0.62:0.42));inkRender(r2,sc,cam,st);o2.clearRect(dx,dy,px,px);o2.drawImage(r2.domElement,dx,dy,px,px);}});
-  HU.lit.value.copy(keep[0]);HU.shade.value.copy(keep[1]);HU.sunL.value=keep[2];HU.pr.value=keep[3];
+  HU.lit.value.copy(keep[0]);HU.shade.value.copy(keep[1]);HU.sunL.value=keep[2];HU.pr.value=keep[3];HU.shf.value.x=keep[4];
   for(const st of [stL,stS])if(st.rt){st.rt.depthTexture.dispose();st.rt.dispose();}r2.dispose();r2.forceContextLoss&&r2.forceContextLoss();if(miss.length)console.warn('hIconAtlas: no model for',miss.join(', '));return out;}
 
 // ===================================================================
@@ -421,10 +421,10 @@ function hSnap(w,h,fill,pr){let r2=null;try{pr=pr||2;r2=new T.WebGLRenderer({ant
     {const sd=v.sun||[-9,24,13];sun.position.set(v.c.x+sd[0],v.c.y+sd[1],v.c.z+sd[2]);}sun.target.position.copy(v.c);const s=sun.shadow.camera,e=Math.max(4,v.half*2.4);s.left=-e;s.right=e;s.top=e;s.bottom=-e;s.near=1;s.far=80;s.updateProjectionMatrix();sun.shadow.mapSize.set(1024,1024);
     const cam=new T.OrthographicCamera(-v.half*w/h,v.half*w/h,v.half,-v.half,1,200),az=v.az===undefined?0.5:v.az,el=v.el===undefined?0.5:v.el;
     cam.position.set(v.c.x+Math.sin(az)*Math.cos(el)*80,v.c.y+Math.sin(el)*80,v.c.z+Math.cos(az)*Math.cos(el)*80);cam.lookAt(v.c);cam.updateMatrixWorld();
-    const keep=[HU.lit.value.clone(),HU.shade.value.clone(),HU.sunL.value,HU.pr.value];
+    const keep=[HU.lit.value.clone(),HU.shade.value.clone(),HU.sunL.value,HU.pr.value,HU.shf.value.x];HU.shf.value.x=1e4;// pictures for the UI keep their shadows whole
     HU.lit.value.setRGB(1.03,1.0,0.97);HU.shade.value.setRGB(1.03*0.5,0.43,0.97*0.47);HU.sunL.value=(sun.color.r+sun.color.g+sun.color.b)/3*sun.intensity;HU.pr.value=pr;
     const st={};inkRender(r2,sc,cam,st);const url=r2.domElement.toDataURL('image/png');
-    HU.lit.value.copy(keep[0]);HU.shade.value.copy(keep[1]);HU.sunL.value=keep[2];HU.pr.value=keep[3];
+    HU.lit.value.copy(keep[0]);HU.shade.value.copy(keep[1]);HU.sunL.value=keep[2];HU.pr.value=keep[3];HU.shf.value.x=keep[4];
     if(st.rt){st.rt.depthTexture.dispose();st.rt.dispose();}r2.dispose();r2.forceContextLoss&&r2.forceContextLoss();return url;}
   catch(e){try{r2&&r2.dispose();}catch(_){}console.warn('hSnap',e);return null;}}
 function hSnapChars(kind,w,h){return hSnap(w,h,sc=>{

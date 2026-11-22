@@ -376,12 +376,25 @@ function MAT(o){o=Object.assign({},o);const k=ST.mat;
 // sunlit walls) or in shade (one grey-mauve tone for both unlit sides and cast shadows, with thin diagonal hatching). Shadow edges come out crisp.
 // Colours are only nudged toward the palette; the ground is bleached almost white so everything on it reads clearly.
 const PEACH={value:C('#f6e2cf')};
-const HU={ground:{value:C('#fdf2e9')},lit:{value:new T.Color(1,1,1)},shade:{value:new T.Color(0.5,0.43,0.47)},sunL:{value:1},pr:{value:2},
+const HU={shf:{value:new T.Vector3(2.2,8.0,159)},ground:{value:C('#fdf2e9')},lit:{value:new T.Color(1,1,1)},shade:{value:new T.Color(0.5,0.43,0.47)},sunL:{value:1},pr:{value:2},
   lk:{value:new T.Vector4(LK.hatch,LK.soft,LK.dots,LK.gb)}};// look (2.7): hatching strength, softness of the shading, dots instead of hatching, how much the ground is bleached
 function sunify(m){m.onBeforeCompile=sh=>{const gr=!!(m.map&&m.vertexColors),ch=m.userData.char?1:0;
-  sh.uniforms.uPeach=PEACH;sh.uniforms.uGround=HU.ground;sh.uniforms.uLit=HU.lit;sh.uniforms.uShade=HU.shade;sh.uniforms.uSunL=HU.sunL;sh.uniforms.uPR=HU.pr;sh.uniforms.uLK=HU.lk;
+  sh.uniforms.uPeach=PEACH;sh.uniforms.uGround=HU.ground;sh.uniforms.uLit=HU.lit;sh.uniforms.uShade=HU.shade;sh.uniforms.uSunL=HU.sunL;sh.uniforms.uPR=HU.pr;sh.uniforms.uLK=HU.lk;sh.uniforms.uShF=HU.shf;
   if(gr){sh.vertexShader='varying vec3 vWP;\n'+sh.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
     sh.fragmentShader='varying vec3 vWP;\n'+sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n{float w=sin(vWP.x*0.11+sin(vWP.z*0.07)*2.3+vWP.z*0.035);float c=smoothstep(0.82,0.97,w);diffuseColor.rgb*=0.95+0.05*w;diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.0,0.98,0.95),c*0.35);}');}
+  // shadows thin out with the distance from what casts them (2.11, Robin: "ať po nějakém čase začnou mizet"): the shadow map knows how far
+  // from the sun the caster is, the picture point knows its own distance – the gap between the two is how long the shadow ray already is.
+  // uShF = (gap where fading starts, gap where the shadow is gone, depth range of the sun's shadow camera). The gap is blended from the four nearest map points that are in shadow, so it has no steps.
+  {const lf=T.ShaderChunk.lights_fragment_begin,lf2=lf.replace('getShadow( directionalShadowMap[ i ]','zShadow( directionalShadowMap[ i ]');
+    if(lf2!==lf)sh.fragmentShader=sh.fragmentShader.replace('#include <lights_fragment_begin>',lf2).replace('#include <shadowmap_pars_fragment>',`#include <shadowmap_pars_fragment>
+#ifdef USE_SHADOWMAP
+uniform vec3 uShF;
+float zShadow(sampler2D map,vec2 size,float bias,float radius,vec4 coord){float s=getShadow(map,size,bias,radius,coord);if(s>0.995)return s;
+ vec3 c=coord.xyz/coord.w;vec2 st=c.xy*size-0.5,f=fract(st),b=(floor(st)+0.5)/size,px=1.0/size;
+ vec4 g=max(vec4(c.z)-vec4(unpackRGBAToDepth(texture2D(map,b)),unpackRGBAToDepth(texture2D(map,b+vec2(px.x,0.0))),unpackRGBAToDepth(texture2D(map,b+vec2(0.0,px.y))),unpackRGBAToDepth(texture2D(map,b+px))),0.0);
+ vec4 w=vec4((1.0-f.x)*(1.0-f.y),f.x*(1.0-f.y),(1.0-f.x)*f.y,f.x*f.y)*step(1e-5,g);float ws=w.x+w.y+w.z+w.w;if(ws<1e-4)return s;
+ return mix(s,1.0,smoothstep(uShF.x,uShF.y,dot(g,w)/ws*uShF.z));}
+#endif`);}
   sh.fragmentShader='uniform vec3 uPeach;uniform vec3 uGround;uniform vec3 uLit;uniform vec3 uShade;uniform float uSunL;uniform float uPR;uniform vec4 uLK;\n'+sh.fragmentShader
   .replace('#include <color_fragment>','#include <color_fragment>\n{float lum=dot(diffuseColor.rgb,vec3(.3,.59,.11));'+(gr?'diffuseColor.rgb=mix(diffuseColor.rgb,uGround,uLK.w);':ch?'':'diffuseColor.rgb=mix(diffuseColor.rgb,uPeach,0.06+0.14*(1.0-smoothstep(0.02,0.25,lum)));')+'}')
   .replace('vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;',
@@ -395,7 +408,7 @@ function sunify(m){m.onBeforeCompile=sh=>{const gr=!!(m.map&&m.vertexColors),ch=
  vec3 outgoingLight=alb*mix(sc*(1.0-pat*${ch?'0.0':'0.14'}),lc,lit)+totalEmissiveRadiance;`);
   // alpha tells the ink pass how eagerly to draw fold lines here: characters only get their outlines and big overlaps, not every facet
   if(!m.transparent)sh.fragmentShader=sh.fragmentShader.replace('#include <dithering_fragment>','#include <dithering_fragment>\ngl_FragColor.a='+(ch?'0.22':gr?'0.3':'1.0')+';');};
-  m.customProgramCacheKey=()=>'sun3'+(m.vertexColors?'v':'')+(m.map?'m':'')+(m.userData.char?'c':'')+(m.transparent?'t':'');return m;}
+  m.customProgramCacheKey=()=>'sun4'+(m.vertexColors?'v':'')+(m.map?'m':'')+(m.userData.char?'c':'')+(m.transparent?'t':'');return m;}
 const TM=M;
 const OUTC=C(ST.olc||'#3a261a'),omc={};
 function OL(th){const k=(th/0.014).toFixed(3);if(omc[k])return omc[k];
@@ -430,7 +443,9 @@ function setupLights(scene){
   const sc=sun.shadow.camera;sc.left=-38;sc.right=38;sc.top=38;sc.bottom=-38;sc.near=1;sc.far=160;sun.shadow.bias=-0.0012;sun.shadow.normalBias=0.03;
   sun.userData.hemi=hemi;scene.add(sun);scene.add(sun.target);return sun;
 }
-function placeSun(sun,x,z){x=Math.round(x/8)*8;z=Math.round(z/8)*8;const so=ST.sun||(ST.sunink&&LK.sun)||DAY.off;sun.position.set(x+so[0],so[1],z+so[2]);sun.target.position.set(x,0,z);}
+const SUN_MIN=Math.tan(30*Math.PI/180);// the lowest the shadow-casting sun goes (2.11): at dawn and dusk shadows were up to ten times longer than the things themselves
+function placeSun(sun,x,z){x=Math.round(x/8)*8;z=Math.round(z/8)*8;const fix=ST.sun||(ST.sunink&&LK.sun),so=fix||DAY.off,sy=fix||!ST.sunink?so[1]:Math.max(so[1],Math.hypot(so[0],so[2])*SUN_MIN);
+  sun.position.set(x+so[0],sy,z+so[2]);sun.target.position.set(x,0,z);}
 // ================= day cycle =================
 const DAYLEN=360;
 const DK=[
@@ -2517,7 +2532,7 @@ function planTo(tx,ty){const ex=MV.mode==='exp'&&X&&!X.end,sx=ex?X.x:0,sy=ex?X.y
   for(const h of (MV.hits||[]))if(h.t==='poi'&&h.k==='water')src.push({x:h.o.x,y:h.o.y,v:h.o.v});
   for(const q of src){if(segD(q.x,q.y,sx,sy,tx,ty)<55||segD(q.x,q.y,tx,ty,hx,hy)<55){extra+=q.v;n++;}}
   const tot=have+extra,ok2=tot>=needT+needB,ok1=tot>=needT;
-  return {sx,sy,tx,ty,d,needT,needB,have,extra,n,ok1,ok2,col:ok2?'#7ee0a8':ok1?'#ffd36e':'#ff6e5a',
+  return {sx,sy,tx,ty,d,needT,needB,have,extra,n,ok1,ok2,col:ST.sunink?(ok2?'#2a8756':ok1?'#a86a12':'#b9352d'):(ok2?'#7ee0a8':ok1?'#ffd36e':'#ff6e5a'),
     verdict:ok2?'You make it there and back':ok1?'You get there – but not back':'Too far – you\'d run dry on the way'};}
 function planText(P){return fmtM(P.d)+(P.sx||P.sy?' from you':' from home')+' · needs ~'+fmtL(P.needT+P.needB)+' L there and back<br>You carry '+fmtL(P.have)+' L'+(P.n?' + '+fmtL(P.extra)+' L known water on the way ('+P.n+')':'')+'<br><small>Holes and robots can make the way longer.</small>';}
 function closeMap(){MV.open=false;$('mapv').classList.add('hidden');}
@@ -2533,10 +2548,15 @@ function mapSelect(h){MV.sel=h;const c=$('mcard');if(!h){c.classList.add('hidden
   if(h.t==='scout'){const l=SV.b.dron,d=Math.hypot(MV.pick.x,MV.pick.y),inR=d<=DRONE.range[l],c2=DRONE.cost[l];t=inR?'Scout this area':'Too far for the drone';
     sub=fmtM(d)+' from home'+(inR?' · maps '+fmtM(DRONE.r[l])+' around it':' · range '+fmtM(DRONE.range[l])+'. Upgrade the drone to fly further.');btn='Send the drone · '+c2+' {energy}';ok=inR&&!SV.scout&&(SV.energy||0)>=c2;
     $('mcT').textContent=t;$('mcS').innerHTML=icx(sub);const b=$('mcB');b.style.display='';b.innerHTML=icx(btn);b.disabled=!ok;c.classList.remove('hidden');return;}
-  if(h.t==='home'){t='Home';sub='Your village in the oasis. Well: '+Math.floor(SV.well)+' / '+wellCap()+' L';if(MV.mode==='go'){btn='Fill up &amp; go · '+fmtL(fillAmount())+' L';ok=fillAmount()>=0.5;}}
+  const onExp=MV.mode==='exp'&&X&&!X.end,walk=(x,y,safe)=>{const P=planTo(x,y);MV.plan=P;drawMap();// a walk to a safe place needs no way back
+    return '<br><b style="color:'+(safe?(P.ok1?'#2a8756':'#b9352d'):P.col)+'">'+(safe?(P.ok1?'You make it there':'Too far – you\'d run dry on the way'):P.verdict)+'</b><br>'+(safe?fmtM(P.d)+(P.sx||P.sy?' from you':' from home')+' · needs ~'+fmtL(P.needT)+' L<br>You carry '+fmtL(P.have)+' L'+(P.n?' + '+fmtL(P.extra)+' L known water on the way ('+P.n+')':''):planText(P));};
+  if(h.t==='home'){t='Home';sub='Your village in the oasis. Well: '+Math.floor(SV.well)+' / '+wellCap()+' L';if(MV.mode==='go'){btn='Fill up &amp; go · '+fmtL(fillAmount())+' L';ok=fillAmount()>=0.5;}
+    else if(onExp){sub+=walk(0,0,1);btn='Go there';}}
   else{const cp=h.cp;t=SV.camps[cp.id]?cp.name:'Camp site';sub=BIOME_NAME[biomeAt(cp.x,cp.y)]+' · '+fmtM(Math.hypot(cp.x,cp.y))+' from home';
     if(!SV.camps[cp.id])sub+='<br>'+(SV.drill[cp.id]?'You have its well drill. ':'First find the old well drill lying somewhere around it. ')+'Building the camp takes '+campTxt(cp.cost)+'.';
-    else if(MV.mode==='go'){btn='Travel · '+cp.trip+' L + fill up';ok=SV.well>=cp.trip+0.5;if(!ok)sub+='<br>Not enough water in the well yet.';}}
+    else if(MV.mode==='go'){btn='Travel · '+cp.trip+' L + fill up';ok=SV.well>=cp.trip+0.5;if(!ok)sub+='<br>Not enough water in the well yet.';}
+    if(onExp){sub+=walk(cp.x,cp.y,!!SV.camps[cp.id]);btn='Go there';}
+    else if(MV.mode==='view'&&scene==='base'){sub+=walk(cp.x,cp.y,!!SV.camps[cp.id]);btn='Fill up &amp; go there';ok=!SV.fetch&&fillAmount()>=0.5;}}
   $('mcT').textContent=t;$('mcS').innerHTML=icx(sub);const b=$('mcB');b.style.display=btn?'':'none';b.innerHTML=btn;b.disabled=!ok;c.classList.remove('hidden');}
 (function(){const cv=()=>$('mapc');let P=new Map(),drag=null,pin=null,moved=0;
   document.addEventListener('DOMContentLoaded',()=>{});
@@ -2559,6 +2579,8 @@ function mapSelect(h){MV.sel=h;const c=$('mcard');if(!h){c.classList.add('hidden
   $('mcB').addEventListener('click',()=>{const h=MV.sel;
     if(h&&h.t==='way'){if(X)X.way=null;mapSelect(null);drawMap();return;}
     if(h&&(h.t==='plan'||h.t==='poi')&&(MV.mode==='exp'||MV.mode==='view')){const o=h.t==='poi'?h.o:h,w={x:o.x,y:o.y};if(MV.mode==='exp'){if(X&&!X.end){X.way=w;sfx.ui('select');closeMap();}return;}if(scene==='base'){PWAY=w;closeMap();startExpedition();if(scene!=='exp')PWAY=null;}return;}
+    if(h&&(h.t==='home'||h.cp)&&h.t!=='poi'&&MV.mode!=='go'){const w=h.t==='home'?{x:0,y:0}:{x:h.cp.x,y:h.cp.y};// walk to home or to a camp (2.11)
+      if(MV.mode==='exp'){if(X&&!X.end){X.way=w;sfx.ui('select');closeMap();}}else if(MV.mode==='view'&&scene==='base'&&h.cp){PWAY=w;closeMap();startExpedition();if(scene!=='exp')PWAY=null;}return;}
     if(h&&h.t==='scout'&&MV.pick){if(startScout(MV.pick.x,MV.pick.y)){closeMap();openBuilding('dron');}return;}if(!h||MV.mode!=='go')return;closeMap();if(h.t==='home')startExpedition();else startExpedition(h.cp.id);});
   window.addEventListener('resize',()=>{if(MV.open)drawMap();});
 })();

@@ -1,6 +1,19 @@
 {
-  "root": "2.10",
+  "root": "2.11",
   "versions": [
+    {
+      "v": "2.11",
+      "date": "22. 11. 2026",
+      "title": "Kratší stíny a cesta domů z mapy",
+      "max": true,
+      "notes": [
+        "Stíny už nejsou roztažené přes půl obrazovky. Slunce pro ně nikdy nestojí níž než 30°, takže stín je nejvýš asi 1,7× delší, než je věc vysoká (ráno a večer býval až desetkrát delší).",
+        "Stín navíc s délkou slábne: u paty věci je plný a směrem ke konci se plynule ztrácí. Nejvíc je to vidět u stromů a vraků.",
+        "Na mapě jde klepnout přímo na Domov nebo na kemp a nechat se tam vést. Na výpravě se ukáže, kolik je to daleko a kolik vody to stojí, a tlačítko „Go there“ zapne šipku. Z vesnice jde stejně vyrazit pěšky ke kempu.",
+        "Verdikty na kartičce mapy (dojdeš / nedojdeš) mají tmavší barvy, aby byly na bílé kartě čitelné.",
+        "Běží i na hlavní adrese zuroda.com."
+      ]
+    },
     {
       "v": "2.10",
       "date": "22. 11. 2026",
