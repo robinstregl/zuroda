@@ -14,6 +14,9 @@ for i, v in enumerate(vs):
     tags = (['nejnovější'] if i == 0 else []) + (['běží na zuroda.com'] if v['v'] == J.get('root') else [])
     notes = ''.join('<li>%s</li>' % e(n) for n in v.get('notes', []))
     link = '<a class="go" href="../v%s/">Hrát verzi %s</a>' % (e(v['v']), e(v['v'])) if built else '<span class="no">není nasazená</span>'
+    # test shortcut (from 2.6): the same build opened with #max plays a separate, fully unlocked save
+    if built and v.get('max'):
+        link += '<p class="alt">Na zkoušení: <a href="../v%s/#max">všechno na max</a> · <a href="../v%s/#maxall">max + kempy a celá mapa</a></p>' % (e(v['v']), e(v['v']))
     cards += ('<article style="--r:%sdeg"><i class="tape"></i><header><b>%s</b><div><h2>%s</h2><time>%s</time></div></header>%s<ul>%s</ul>%s</article>\n'
               % ([-0.6, 0.5, -0.4, 0.7][i % 4], e(v['v']), e(v['title']), e(v['date']), ''.join('<span class="tag">%s</span>' % t for t in tags), notes, link))
 page = '''<!DOCTYPE html>
@@ -53,6 +56,7 @@ ul{margin:6px 0 16px;padding-left:20px}li{margin:3px 0}
 .go::before{content:'';position:absolute;z-index:-1;inset:1.6px;clip-path:polygon(15.2px 0,100%% 0,100%% 100%%,15.2px 100%%,0 68%%,0 32%%);background:radial-gradient(circle at 17.4px 50%%,#fbf3e4 0 4.6px,var(--ni) 4.9px 6.1px,rgba(74,51,43,0) 6.6px),var(--nc)}
 .go{isolation:isolate}.go:focus-visible{outline:3px solid var(--nst);outline-offset:4px}
 .no{color:var(--ns)}
+.alt{margin:14px 0 0;font-size:14px;color:var(--ns)}.alt a{color:var(--nst);text-underline-offset:3px}
 </style>
 </head>
 <body>

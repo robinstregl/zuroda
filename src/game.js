@@ -13,6 +13,11 @@ const fmtMeters=m=>m<1000?Math.round(m)+' m':(m/1000).toFixed(m<10000?2:1)+' km'
 const fmtM=u=>fmtMeters(u*M_PER_U);
 const fmtL=l=>Math.max(0,l).toFixed(1);
 const BOT=location.hash==='#bot';
+// test shortcut (Robin 22. 11.: "a link or a name that works as a cheat, so I always land straight in a fully opened game"):
+// …/#max = everything at level 10 and plenty of everything · …/#max5 = everything at level 5 (any 1–10) · …/#maxall = #max plus every camp built and the whole map known.
+// It plays in a save of its own, so the real game is never touched. The same word typed as the wanderer's name on the title screen switches to it.
+const cheatOf=h=>(((h||'').trim().match(/^#?(max(?:all|10|[1-9])?)$/i)||[])[1]||'').toLowerCase(),CHEAT=cheatOf(location.hash);
+window.addEventListener('hashchange',()=>{if(cheatOf(location.hash)!==CHEAT)location.reload();});
 const $=id=>document.getElementById(id);
 const onPressLater=[];
 const S=0.1; // 2D game units -> 3D units
@@ -130,8 +135,8 @@ const CH=240,W=360;
 // ================= save =================
 // numbered builds (zuroda.com/v2.0/ – Robin 22. 11.: every update under its own number, so the history stays playable) keep a save of their own:
 // an old version never reads the save of a newer one. On its first run a version takes over the save of the newest older version (or of the main page).
-const ZVER=window.ZVER||'';const SAVE_KEY='daleko3_save'+(ZVER?'_v'+ZVER:'');
-if(ZVER)try{if(localStorage.getItem(SAVE_KEY)===null){const pv=v=>v.split('.').map(Number),lt=(a,b)=>{for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x!==y)return x<y;}return false;};
+const ZVER=window.ZVER||'';const SAVE_BASE='daleko3_save'+(ZVER?'_v'+ZVER:''),SAVE_KEY=SAVE_BASE+(CHEAT?'_'+CHEAT:'');// the test shortcut keeps a save of its own (and never takes over an older one)
+if(ZVER&&!CHEAT)try{if(localStorage.getItem(SAVE_KEY)===null){const pv=v=>v.split('.').map(Number),lt=(a,b)=>{for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x!==y)return x<y;}return false;};
   let src='daleko3_save',bv=null;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i),m=k&&k.match(/^daleko3_save_v([0-9.]+)$/);if(m&&lt(pv(m[1]),pv(ZVER))&&(!bv||lt(bv,pv(m[1])))){bv=pv(m[1]);src=k;}}
   const o=localStorage.getItem(src);if(o!==null)localStorage.setItem(SAVE_KEY,o);}}catch(_){}
 function freshSave(){return {v:1,eco:2,seed:(Math.random()*4294967295)>>>0,scrap:0,cores:0,chips:0,bottles:0,b:{cerpadlo:0,solar:0,dilna:0,dron:0,radio:0},energy:30,scout:null,
@@ -2628,6 +2633,17 @@ document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
 document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault();},{passive:false});
 
 // ================= title & loop =================
+// the test shortcut: applied on every load, so the save behind it is always fully stocked (what you explore and build in it stays)
+function applyCheat(){const all=CHEAT==='maxall',L=clamp(parseInt(CHEAT.slice(3))||10,1,10);
+  if(SV.name==='Wanderer')try{const o=JSON.parse(localStorage.getItem(SAVE_BASE)||localStorage.getItem('daleko3_save'));if(o&&o.name)SV.name=o.name;}catch(_){}// the wanderer keeps the name from the real game
+  SV.cheat=CHEAT;for(const k in SV.b)SV.b[k]=Math.max(SV.b[k]|0,L);for(const k in CRAFT)SV.craft[k]=Math.max(SV.craft[k]|0,Math.min(L,CRAFT[k].lv.length));
+  SV.meters=Math.max(SV.meters||0,Math.ceil(Math.max(heroReq(3*L),dogReq(Math.ceil(1.5*L)))));
+  SV.scrap=Math.max(SV.scrap,3000);SV.cores=Math.max(SV.cores,300);SV.chips=Math.max(SV.chips||0,300);SV.well=wellCap();SV.energy=energyCapOf(SV.b.solar);SV.bottles=bottleMax();
+  SV.green=Math.max(SV.green|0,L);SV.greenW=SV.green>=10?0:SV.greenW||0;SV.exp=Math.max(SV.exp,1);SV.msg=Math.max(SV.msg||0,Math.min(MSGS.length,L));
+  if(all){for(const cp of CAMPS){SV.camps[cp.id]=1;SV.drill[cp.id]=1;}
+    if(!SV.allSeen){SV.allSeen=1;for(let q=SPINE[0][0]-400;q<AX.L+1600;q+=500){const m=spineAt(q);for(let w=m[0]-m[1]-900;w<=m[0]+m[1]+900;w+=500){const pt=axP(q,w);markSeen(pt[0],pt[1],420);}}}}
+  save();}
+if(CHEAT)applyCheat();
 buildBase();scene3=BS.scene;
 // portraits rendered from the game's own models (Robin 20. 11.: everything in the game's style, no outside pictures)
 const PORTRAIT={};
@@ -2647,14 +2663,16 @@ window.__animSnap=(k,t,ry,sx,zm,gx)=>{try{const w=220,h=300,r2=new T.WebGLRender
   const keep=SV.sex;SV.sex=sx||'f';const H=makeHero(Object.assign(heroGear(),{tool:'hammer'},gx||{}));SV.sex=keep;H.root.rotation.y=ry||0;sc.add(H.root);if(H.sk){const P=new Float32Array(SK_NB*4+3);skSample(H.sk,skClip(k),t,P);skApply(H.sk,P);}else{const c=animClip(k);const P=new Float32Array(AF);sampleClip(c,t,P);applyPose(H,P);}if(k==='smash'||k==='fix')toolInHand(H,true);
   const cam=new T.PerspectiveCamera(30,w/h,0.1,50);if(zm){cam.position.set(0,2.0,2.3);cam.lookAt(0,1.62,0);}else{cam.position.set(0,1.6,5.2);cam.lookAt(0,1.0,0);}r2.render(sc,cam);const u=r2.domElement.toDataURL('image/png');r2.dispose();return u;}catch(e){return 'ERR '+e;}};
 SV.sex='m';
-if(ZVER){const t=document.querySelector('#title .tag');if(t)t.textContent='EARLY PROTOTYPE · '+ZVER;const f=document.querySelector('.side .fine');if(f)f.textContent='Early prototype '+ZVER+' · © 2026 Vabiko';}
+if(ZVER||CHEAT){const t=document.querySelector('#title .tag');if(t)t.textContent='EARLY PROTOTYPE'+(ZVER?' · '+ZVER:'')+(CHEAT?' · '+CHEAT.toUpperCase():'');}
+if(ZVER){const f=document.querySelector('.side .fine');if(f)f.textContent='Early prototype '+ZVER+' · © 2026 Vabiko';}
 (function buildTitle(){const el=$('tbtns');el.innerHTML='';
   // one wanderer only (Robin 21. 11.); no pictures on the title – the live village is the picture (22. 11.)
   const inp=document.createElement('input');inp.maxLength=14;inp.value=SV.name||'Wanderer';inp.placeholder='Your name';inp.setAttribute('aria-label','Your wanderer’s name');
   const lab=document.createElement('div');lab.className='lab';lab.textContent='Your wanderer’s name';
   const b=document.createElement('button');b.className='btn primary';b.textContent=hadSave?'Continue':'Start';
-  b.addEventListener('click',()=>{SV.name=(inp.value||'Wanderer').trim().slice(0,14)||'Wanderer';SV.sex='m';save();initAudio();$('title').classList.add('hidden');enterBase();});
-  el.appendChild(lab);el.appendChild(inp);el.appendChild(b);})();
+  b.addEventListener('click',()=>{{const cz=cheatOf(inp.value);if(cz&&cz!==CHEAT){location.hash='#'+cz;location.reload();return;}}SV.name=(inp.value||'Wanderer').trim().slice(0,14)||'Wanderer';SV.sex='m';save();initAudio();$('title').classList.add('hidden');enterBase();});
+  el.appendChild(lab);el.appendChild(inp);el.appendChild(b);
+  if(CHEAT){const n=document.querySelector('#title .tfoot .small');if(n){n.textContent='Test save – everything unlocked. ';const a=document.createElement('a');a.href='#';a.textContent='Back to the real game';a.style.cssText='color:inherit;text-decoration:underline;cursor:pointer';a.addEventListener('click',e=>{e.preventDefault();history.replaceState(null,'',location.pathname+location.search);location.reload();});n.appendChild(a);}}})();
 if(BOT){$('title').classList.add('hidden');enterBase();}
 let last=performance.now();
 // debug: turnaround of both wanderers and Zuro (window.__charSheet())

@@ -2,6 +2,19 @@
   "root": "1.0",
   "versions": [
     {
+      "v": "2.6",
+      "date": "22. 11. 2026",
+      "title": "Zkratka na zkoušení",
+      "max": true,
+      "notes": [
+        "Hra je stejná jako 2.5. Přibyla zkratka pro zkoušení: když za adresu verze připíšeš #max, otevře se hra se vším na úrovni 10, s poutníkem a Zurem na nejvyšší úrovni, plnou studnou a baterií a zásobou 3 000 šrotu, 300 zlatých a 300 čipů.",
+        "#maxall k tomu přidá všech sedm kempů postavených a celou mapu odkrytou. #max5 (nebo jiné číslo 1 až 10) dá všechno na úroveň 5, na vyzkoušení prostředka hry.",
+        "Totéž jde přes jméno: na titulní obrazovce napiš jako jméno poutníka max, maxall nebo max5 a stiskni Start.",
+        "Zkratka hraje ve vlastní uložené hře, takže tvůj skutečný postup zůstane, jak byl. Zpátky se dostaneš odkazem Back to the real game na titulní obrazovce nebo adresou bez #max.",
+        "Při každém otevření se zásoby, studna a baterie doplní. Co ve zkušební hře prozkoumáš a postavíš, v ní zůstane."
+      ]
+    },
+    {
       "v": "2.5",
       "date": "22. 11. 2026",
       "title": "Delší cesta a vrták",
