@@ -39,7 +39,7 @@ async def stages(n, only):
             for r in rows: e = ('ko' if r['ko'] else r['end']); ends[e] = ends.get(e, 0) + 1
             print(json.dumps({'stage': name, 'bag': lv[2], 'water_L': lv[3], 'bottles': rows[0]['nb0'] if rows else 0, 'n': len(rows), 'scrap': round(avg(lambda r: r['s']), 1), 'gold': round(avg(lambda r: r['c']), 2), 'chips': round(avg(lambda r: r['x']), 2),
                 'secs': round(avg(lambda r: r['t'])), 'water_left_%': round(100 * avg(lambda r: r['left'] / r['cap'])), 'bottles_left': round(avg(lambda r: r['nb']), 1), 'bag_full_%': round(100 * avg(lambda r: min(1, r['load'] / r['bag']))),
-                'farthest_m': round(avg(lambda r: r['maxD'])), 'walked_m': round(avg(lambda r: r['walk'])), 'ends': ends, 'nudges': sum(r['stuck'] for r in rows)}), flush=True)
+                'robots_met': round(avg(lambda r: r['seen']), 1), 'robots_killed': round(avg(lambda r: r['kills']), 2), 'shots': round(avg(lambda r: r['shots']), 1), 'farthest_m': round(avg(lambda r: r['maxD'])), 'walked_m': round(avg(lambda r: r['walk'])), 'ends': ends, 'nudges': sum(r['stuck'] for r in rows)}), flush=True)
             print('   per trip (scrap, secs, water left %, end):', [(r['s'], round(r['t']), round(100 * r['left'] / r['cap']), ('ko' if r['ko'] else r['end'])[0]) for r in rows], flush=True)
         print('ERR', errs[:5]); await b.close()
 async def hour(minutes):
@@ -51,7 +51,7 @@ async def hour(minutes):
             r = await pg.evaluate("""(()=>{const S=__SV(),g=window.__g;const r=__simExp();if(!r){g.t+=5;__simShop(5);g.idle++;return {wait:1,t:g.t,well:S.well};}
               g.n++;g.t+=r.t;if(r.ko)g.ko++;else if(r.end==='thirst')g.thirst++;g.nudges+=r.stuck;__simShop(r.t+15);g.t+=15;const lv=__lv();
               return {t:Math.round(g.t),n:g.n,b:Object.values(S.b).join('-'),gear:['kladivo','batoh','cutora','boty','prak','kompas'].map(k=>S.craft[k]||0).join('-'),scrap:S.scrap,gold:S.cores,chips:S.chips||0,energy:Math.round(S.energy||0),well:Math.round(S.well),
-                hero:lv[0],dog:lv[1],km:Math.round((S.meters||0)/100)/10,last:[r.s,Math.round(r.t),Math.round(100*r.left/r.cap),r.ko?'ko':r.end],ko:g.ko,thirst:g.thirst,nudges:g.nudges,camps:Object.keys(S.camps).length}})()""")
+                kills:(g.kills=(g.kills||0)+r.kills),chipsIn:(g.chipsIn=(g.chipsIn||0)+r.x),hero:lv[0],dog:lv[1],km:Math.round((S.meters||0)/100)/10,last:[r.s,Math.round(r.t),Math.round(100*r.left/r.cap),r.ko?'ko':r.end],ko:g.ko,thirst:g.thirst,nudges:g.nudges,camps:Object.keys(S.camps).length}})()""")
             if r.get('wait'):
                 if r['t'] > minutes * 60: break
                 continue

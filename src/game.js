@@ -70,7 +70,7 @@ function wsUnlockText(n){const u=[];for(const k in CRAFT)CRAFT[k].lv.forEach((l,
 const ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
 const gearLv=k=>SV.craft[k]|0;
 // wrecks: kind 0 car, 1 helicopter, 2 motorbike → hammer level needed and loot
-const WRECK={2:{name:'Old motorbike',need:1,s:[4,6],g:0.3},0:{name:'Old car',need:3,s:[7,10],g:1},1:{name:'Crashed helicopter',need:5,s:[11,15],g:2},3:{name:'Crashed plane',need:7,s:[22,30],g:3,chip:0.6}};
+const WRECK={2:{name:'Old motorbike',need:1,s:[4,6],g:0.3},0:{name:'Old car',need:3,s:[7,10],g:1},1:{name:'Crashed helicopter',need:5,s:[11,15],g:2},3:{name:'Crashed plane',need:7,s:[22,30],g:3}};// 2.2: no circuits in wrecks any more
 // camps: built once, then a one-click trip from home (costs well water)
 // camps: the places Robin marked on the map (20. 11.). No arrows point to them – the player has to find them.
 const CAMPS=[
@@ -1590,6 +1590,8 @@ function enterBase(){
 }
 document.querySelectorAll('.wic[data-ic],#bDrop [data-ic],#bSling [data-ic]').forEach(e=>{e.innerHTML=icSvg(e.dataset.ic);});
 $('bMap').innerHTML=icSvg('map');$('xMap').innerHTML=icSvg('map');
+// an upgrade you could pay for if only you had the circuits
+function chipShort(){const sh=n=>n&&n.x&&(SV.chips||0)<n.x&&SV.scrap>=n.s&&SV.cores>=n.c;for(const k in BLD)if(sh(nextLv(k)))return true;if(SV.b.dilna)for(const k in CRAFT){const n=CRAFT[k].lv[gearLv(k)];if(n&&(!n.w||SV.b.dilna>=n.w)&&sh(n))return true;}return false;}
 const zSay=t=>ST.sunink?'<span class="zh">'+icSvg('paw')+'</span><span class="zt">'+icx(t)+'</span>':icx(t);
 function refreshBaseUI(){
   $('rS').textContent=SV.scrap;$('rC').textContent=SV.cores;$('rX').textContent=SV.chips||0;
@@ -1605,6 +1607,7 @@ function refreshBaseUI(){
   else if(totalLevels()===0)h=canRepair('cerpadlo')?'Tap the ruined Water Pump – it will fill the well faster.':'We need '+BLD.cerpadlo.lv[0].s+' {scrap} to fix the Water Pump. Back to the desert!';
   else if(SV.exp<5&&canRepairAny())h='We can repair something! Tap a ruin with an orange ring.';
   else if(SV.b.dilna&&!gearLv('kladivo'))h='Make a Hammer in the Workshop – then we can take wrecks apart.';
+  else if(chipShort())h='We need circuits {chip} for the next upgrade. Only robots carry them. '+(gearLv('prak')?'Stun one with the slingshot, finish it and pick up what falls out.':'Make a Slingshot in the Workshop – it stuns them from a safe distance.');
   else{const nb=bottleFill();h='The well holds '+Math.floor(SV.well)+' L. Shall I fill your flask'+(canteenCap()?' and canteen':'')+(nb?' and '+nb+' bottle'+(nb>1?'s':''):'')+'? That\'s '+fmtL(fill+nb*BOTTLE)+' L.';}
   $('hint').innerHTML=zSay(h);
   const anyCamp=CAMPS.some(c=>SV.camps[c.id]);
@@ -1777,9 +1780,12 @@ function drawBaseOverlay(){
 // ===================================================================
 // ===== enemies (Robin 20. 11.): guard drones circle gold scrap, seekers patrol the far desert. Fair detection: a cone you can see,
 // a '?' that fills up before the '!' – and if they get you, you're knocked out and Zuro drags you home (same as running dry).
-const FOE={drone:{hp:3,R:62,A:0.42,tDet:0.85,chip:1},bot:{hp:4,R:78,A:0.5,tDet:0.7,chip:1}};
-const foeDead=id=>SV.scrapT[id]!==undefined&&SV.exp-SV.scrapT[id]<8;
-function newFoe(type,id,x,y,o){const F=FOE[type];return Object.assign({type,id,x,y,dir:0,hp:F.hp,hpMax:F.hp,R:F.R,A:F.A,tDet:F.tDet,stun:0,alert:0,chase:0,cool:0},o);}
+// 2.2: circuits fall only from robots – a drone always drops one, a seeker two. Robots are back after FOE_BACK expeditions (was 8), so there is always something to hunt.
+// No robot lives closer than FOE_NEAR to home; the first ring beyond it is "easy" (slower to notice you, slower in a chase) so you can learn on them.
+const FOE={drone:{hp:3,R:62,A:0.42,tDet:0.85,chip:1},bot:{hp:4,R:78,A:0.5,tDet:0.7,chip:2}};
+const FOE_BACK=4,FOE_NEAR={drone:800,bot:1000},FOE_EASY={drone:1600,bot:1800};
+const foeDead=id=>SV.scrapT[id]!==undefined&&SV.exp-SV.scrapT[id]<FOE_BACK;
+function newFoe(type,id,x,y,o){const F=FOE[type];const f=Object.assign({type,id,x,y,dir:0,hp:F.hp,hpMax:F.hp,R:F.R,A:F.A,tDet:F.tDet,stun:0,alert:0,chase:0,cool:0},o);if(f.easy){f.tDet*=1.5;if(f.spd)f.spd*=0.75;}return f;}
 function genChunk(cx,cy,noMesh){
   const rng=mulberry32(hash3(SV.seed,cx,cy));
   const ox=cx*CH,oy=cy*CH,dist=Math.hypot(ox+CH/2,oy+CH/2);
@@ -1809,10 +1815,14 @@ function genChunk(cx,cy,noMesh){
   if(dist>380&&rng()<(bio===3?0.3:0.15)){const p=Pp(60),walls=[];const nwl=4+Math.floor(rng()*3);
     for(let i=0;i<nwl;i++){const a=i/nwl*6.283+rng()*0.4,rr=34+rng()*10;walls.push({x:p.x+Math.cos(a)*rr,y:p.y+Math.sin(a)*rr*0.8,w:14+rng()*12,h:8+rng()*6});}
     const sid=id('r',0);const ru={x:p.x,y:p.y,walls,core:tk(sid)?null:{id:sid,x:p.x,y:p.y}};c.ruins.push(ru);
-    const fid=id('d',0),a0=rng()*6.28,sp0=0.55+rng()*0.25;if(!foeDead(fid))c.foes.push(newFoe('drone',fid,p.x,p.y,{cx:p.x,cy:p.y,r:62,a:a0,spd:sp0,ruin:ru}));}
+    const fid=id('d',0),a0=rng()*6.28,sp0=0.55+rng()*0.25;if(dist>=FOE_NEAR.drone&&!foeDead(fid))c.foes.push(newFoe('drone',fid,p.x,p.y,{cx:p.x,cy:p.y,r:62,a:a0,spd:sp0,ruin:ru,easy:dist<FOE_EASY.drone?1:0}));}
   // seekers: ground robots patrolling far out in the desert (Robin 20. 11.)
   if(dist>520&&rng()<(bio===3?0.3:bio===2?0.22:0.13)){const p=Pp(50),a=rng()*Math.PI,L=40+rng()*30,fid=id('b',0);
-    if(!foeDead(fid))c.foes.push(newFoe('bot',fid,p.x,p.y,{wp:[{x:p.x-Math.cos(a)*L,y:p.y-Math.sin(a)*L},{x:p.x+Math.cos(a)*L,y:p.y+Math.sin(a)*L}],i:1,pause:0,dir:a}));}
+    if(dist>=FOE_NEAR.bot&&!foeDead(fid))c.foes.push(newFoe('bot',fid,p.x,p.y,{wp:[{x:p.x-Math.cos(a)*L,y:p.y-Math.sin(a)*L},{x:p.x+Math.cos(a)*L,y:p.y+Math.sin(a)*L}],i:1,pause:0,dir:a,easy:dist<FOE_EASY.bot?1:0}));}
+  // 2.2: the big wrecks are guarded – a seeker walks its beat past every plane and most helicopters, so the best loot and the circuits are in the same place
+  // (its own random stream: the rest of the chunk stays exactly where it was)
+  {const w=c.wrecks.find(q=>q.kind===1||q.kind===3);if(w&&dist>=FOE_NEAR.bot){const rg=mulberry32(hash3((SV.seed^0x7f4a7c15)>>>0,cx,cy));if(w.kind===3||rg()<0.6){const a=rg()*Math.PI,L=45+rg()*20,off=w.kind===3?64:40,qx=w.x+Math.cos(a+1.5708)*off,qy=w.y+Math.sin(a+1.5708)*off,fid=id('g',0);
+    if(!foeDead(fid))c.foes.push(newFoe('bot',fid,qx,qy,{wp:[{x:qx-Math.cos(a)*L,y:qy-Math.sin(a)*L},{x:qx+Math.cos(a)*L,y:qy+Math.sin(a)*L}],i:1,pause:0,dir:a,guard:w,easy:dist<FOE_EASY.bot?1:0}));}}}
   STARTERS.forEach((q,i)=>{if(q.x>=ox&&q.x<ox+CH&&q.y>=oy&&q.y<oy+CH){const sid='k'+i;if(!tk(sid))c.crates.push({id:sid,x:q.x,y:q.y,ph:i,core:i<2});}});
   for(const cp of CAMPS)if(cp.x>=ox&&cp.x<ox+CH&&cp.y>=oy&&cp.y<oy+CH)c.camps.push(cp);
   c.obst=obstOf(cx,cy);
@@ -1822,6 +1832,7 @@ function genChunk(cx,cy,noMesh){
   c.foes=c.foes.filter(f=>f.ruin?c.ruins.includes(f.ruin):(f.wp.every(w=>walkable(w.x,w.y)&&Math.hypot(w.x,w.y)>300&&!CAMPS.some(cp=>Math.hypot(w.x-cp.x,w.y-cp.y)<90))));
   const far=o=>Math.hypot(o.x,o.y)>95;const offCamp=o=>!CAMPS.some(cp=>Math.hypot(o.x-cp.x,o.y-cp.y)<40);
   for(const k of ['scrap','cacti','waters','rocks','crates','props','wrecks','fata','dust'])c[k]=c[k].filter(o=>far(o)&&offCamp(o)&&(o.rim||clear(o,k==='wrecks'?(o.kind===3?80:40):k==='dust'?0:12)));
+  c.foes=c.foes.filter(f=>!f.guard||c.wrecks.includes(f.guard));
   if(!noMesh)buildChunkMeshes(c);
   return c;
 }
@@ -1967,10 +1978,13 @@ function autopilotX(dt){
     const con=(o,w)=>{if(Math.hypot(o.x,o.y)<180)return;const d=Math.hypot(o.x-X.x,o.y-X.y);if(d<sr&&d*w<bd){bd=d*w;tgt=o;}};
     for(const s of c.scrap)con(s,1);for(const w of c.wrecks)if(gearLv('kladivo')>=WRECK[w.kind].need)con(w,0.7);for(const k of c.crates)con(k,0.8);for(const cp of c.camps)if(!SV.camps[cp.id]&&X.scrap>=CAMP_COST+4)con(cp,0.5);
     if(X.water/X.cap<0.6){for(const w of c.waters)if(!w.taken)con(w,0.5);}
-    for(const r of c.ruins)if(r.core)con(r.core,0.7);for(const b of SV.bags)con(b,0.4);for(const d of (X.drops||[]))con(d,1.5);});
+    for(const r of c.ruins)if(r.core)con(r.core,0.7);for(const b of SV.bags)con(b,0.4);for(const d of (X.drops||[]))con(d,0.3);});
+  const sl=gearLv('prak');let hunt=null;
+  if(sl&&X.scrap>5){forX(X.x-sr,X.y-sr,X.x+sr,X.y+sr,c=>{for(const f of c.foes){if(f.dead)continue;const d=Math.hypot(f.x-X.x,f.y-X.y);if(d<sr&&d*0.55<bd){bd=d*0.55;hunt=f;}}},true);
+    if(hunt){const d=Math.hypot(hunt.x-X.x,hunt.y-X.y),k=Math.max(0,d-(SLING.range(sl)-12))/Math.max(1,d);tgt={x:X.x+(hunt.x-X.x)*k,y:X.y+(hunt.y-X.y)*k};}}
   if(tgt){X.dest={x:tgt.x,y:tgt.y};}
   else{X.botT-=dt;if(X.botT<=0){X.botT=2+Math.random()*2;const out=Math.atan2(X.y,X.x);X.botDir=lerp(X.botDir,out,0.4)+(Math.random()-0.5)*1.2;}X.dest={x:X.x+Math.cos(X.botDir)*100,y:X.y+Math.sin(X.botDir)*100};}
-  forX(X.x-160,X.y-160,X.x+160,X.y+160,c=>{for(const f of c.foes){if(f.dead||f.stun>0)continue;const dx=X.x-f.x,dy=X.y-f.y,dd=Math.hypot(dx,dy);if(dd<f.R+30&&X.dest){X.dest.x+=dx/dd*110;X.dest.y+=dy/dd*110;}}},true);
+  forX(X.x-160,X.y-160,X.x+160,X.y+160,c=>{for(const f of c.foes){if(f.dead||f.stun>0||f===hunt)continue;const dx=X.x-f.x,dy=X.y-f.y,dd=Math.hypot(dx,dy);if(dd<f.R+30&&X.dest){X.dest.x+=dx/dd*110;X.dest.y+=dy/dd*110;}}},true);
   if(X.foeNear&&!X.foeNear.dead&&X.scrap>4)slingShoot();if(X.nearFoe&&gearLv('kladivo')&&(X.nearFoe.stun>0||X.nearFoe.alert<0.3))smash();
 }
 
@@ -1984,7 +1998,7 @@ function updFoes(dt){X.nearFoe=null;X.foeNear=null;let nfd=1e9,fnd=1e9;X.slingCd
     if(f.stun>0){f.stun-=dt;if(f.stun<=0&&f.aware){f.aware=0;if(f.type==='bot'){f.chase=4.5;f.alert=1;}else f.alert=Math.max(f.alert,0.6);}continue;}
     if(f.type==='drone'){f.a+=f.spd*dt;f.x=f.cx+Math.cos(f.a)*f.r;f.y=f.cy+Math.sin(f.a)*f.r*0.8;f.dir=f.a+Math.PI/2+Math.sin(X.t*1.4+f.cx)*0.7;}
     else{f.cool=Math.max(0,f.cool-dt);
-      if(f.chase>0){f.chase-=dt;f.dir=Math.atan2(X.y-f.y,X.x-f.x);foeMove(f,f.dir,56*dt);if(dd>200||f.chase<=0){f.chase=0;f.alert=0.3;f.cool=2.5;xText('…it lost you','#7a6a5a');}}
+      if(f.chase>0){f.chase-=dt;f.dir=Math.atan2(X.y-f.y,X.x-f.x);foeMove(f,f.dir,(f.easy?44:56)*dt);if(dd>200||f.chase<=0){f.chase=0;f.alert=0.3;f.cool=2.5;xText('…it lost you','#7a6a5a');}}
       else if(f.pause>0){f.pause-=dt;f.dir+=Math.sin(X.t*1.6+f.x)*dt*1.4;}
       else{const w=f.wp[f.i],dx=w.x-f.x,dy=w.y-f.y,dw=Math.hypot(dx,dy);if(dw<5){f.i=1-f.i;f.pause=1.5;}else{const a=Math.atan2(dy,dx);f.dir=a+Math.sin(X.t*1.7+f.y)*0.3;foeMove(f,a,24*dt);}}}
     if(X.end)continue;
@@ -1995,8 +2009,8 @@ function updFoes(dt){X.nearFoe=null;X.foeNear=null;let nfd=1e9,fnd=1e9;X.slingCd
 function knockout(f,msg){if(X.end||window.NOKO)return;X.ko=msg+' Zuro dragged you home.';X.dest=null;sfx.zap();xBurst(X.x,X.y,'#ff6a4a',24,130);X.zapLine={x0:f.x,y0:f.y,t:X.t};endExp('thirst');}
 function hitFoe(f,dmg,src){if(f.dead)return;f.hp-=dmg;f.stun=src==='hammer'?1.1:1.3;f.hitT=0.3;f.aware=1;f.alert=Math.max(f.alert,0.5);xBurst(f.x,f.y,'#ffd36e',10,90);sfx.hit();
   if(f.hp<=0)killFoe(f);else xText(f.type==='drone'?'Hit! It wobbles…':'Hit! It\'s stunned…','#9a6a14');}
-function killFoe(f){f.dead=true;SV.scrapT[f.id]=SV.exp;xBurst(f.x,f.y,'#ff6a4a',22,140);xBurst(f.x,f.y,'#8b8f96',18,110);sfx.boom();
-  const n=FOE[f.type].chip+(f.type==='bot'&&Math.random()<0.4?1:0);dropChip(f.x,f.y,n);dropChip(f.x,f.y,1+(Math.random()<0.5?1:0),'scrap');xText('Destroyed! A circuit and some scrap fell out','#2f7a52');X.events.push({x:f.x,y:f.y,t:'chip'});}
+function killFoe(f){f.dead=true;X.kills=(X.kills||0)+1;SV.scrapT[f.id]=SV.exp;xBurst(f.x,f.y,'#ff6a4a',22,140);xBurst(f.x,f.y,'#8b8f96',18,110);sfx.boom();
+  const n=FOE[f.type].chip;dropChip(f.x,f.y,n);dropChip(f.x,f.y,1+(Math.random()<0.5?1:0),'scrap');xText(n>1?'Destroyed! Two circuits and some scrap fell out':'Destroyed! A circuit and some scrap fell out','#2f7a52');X.events.push({x:f.x,y:f.y,t:'chip'});}
 // circuits fall on the ground where the robot broke – you have to walk over and pick them up (Robin 20. 11.)
 function makeScrapDrop(n){const g=grp();const m=makeScrap(n,Math.floor(Math.random()*999));m.scale.setScalar(0.8);g.add(m);g.userData.b=m;g.userData.ring=part(G.ring,new T.MeshBasicMaterial({color:C('#c8b89a'),transparent:true,opacity:0.6,depthWrite:false}),0,0.06,0,1.4,1,1.4,g,true);return g;}
 function makeChipDrop(){const g=grp();PART_OL=0.01;const b=grp(0,0.12,0,g);b.rotation.set(0.15,0.6,0.1);part(G.box,'#3f8a5a',0,0,0,0.9,0.1,0.9,b);part(G.box,'#2b3436',0,0.07,0,0.42,0.06,0.42,b);
@@ -2009,7 +2023,7 @@ function updDrops(){const D=X.drops;if(!D)return;for(let i=D.length-1;i>=0;i--){
   if(o.n<=0){X.scene.remove(o.m);D.splice(i,1);}}}
 function slingShoot(){const l=gearLv('prak'),f=X.foeNear;if(!l||!f||f.dead||X.end)return false;if(X.slingCd>0)return false;const d=Math.hypot(f.x-X.x,f.y-X.y);if(d>SLING.range(l))return false;
   if(X.scrap<1){xText('No scrap left to shoot','#c0532f');return false;}X.scrap--;X.slingCd=SLING.cd(l);X.face=Math.atan2(f.x-X.x,f.y-X.y);heroPlay(X.hero,'throw',1.9);
-  const m=part(G.sph,'#8b8f96',X.x*S,1.2,X.y*S,0.16,0.16,0.16,X.scene,true);X.shots.push({f,x0:X.x,y0:X.y,t:0,dur:Math.max(0.12,d/430),m,dmg:SLING.dmg(l)});sfx.sling();return true;}
+  const m=part(G.sph,'#8b8f96',X.x*S,1.2,X.y*S,0.16,0.16,0.16,X.scene,true);X.shots.push({f,x0:X.x,y0:X.y,t:0,dur:Math.max(0.12,d/430),m,dmg:SLING.dmg(l)});X.nshots=(X.nshots||0)+1;sfx.sling();return true;}
 function updShots(dt){for(let i=X.shots.length-1;i>=0;i--){const s=X.shots[i];s.t+=dt;const k=Math.min(1,s.t/s.dur),x=lerp(s.x0,s.f.x,k),y=lerp(s.y0,s.f.y,k);
   s.m.position.set(x*S,H2(x,y)+1.2+Math.sin(k*Math.PI)*1.1,y*S);if(k>=1){X.scene.remove(s.m);X.shots.splice(i,1);if(!s.f.dead)hitFoe(s.f,s.dmg,'sling');}}}
 function smash(){const f=X.nearFoe,l=gearLv('kladivo');if(!f||f.dead||!l||X.smashCd>0||X.end)return false;X.smashCd=0.45;X.face=Math.atan2(f.x-X.x,f.y-X.y);X.dest=null;X.smashT=X.t;heroPlay(X.hero,'smash',1);hitFoe(f,hammerDmg(l),'hammer');return true;}
@@ -2573,11 +2587,11 @@ window.__hicons=only=>ST.sunink?hIconAtlas(only).toDataURL('image/png'):null;win
 window.__snd=()=>Object.keys(SBUF).length;window.__ps=(k)=>ps(k);window.__obst=(cx,cy)=>obstOf(cx,cy);window.__coast=(x,y)=>coastSD(x,y);window.__markSeen=(x,y,r)=>markSeen(x,y,r);window.__MVhits=()=>(MV.hits||[]).map(h=>({x:h.x,y:h.y,t:h.t,id:h.cp&&h.cp.id}));window.__segPt=segPt;window.__BS=BS;window.__camT=camT;window.__house=()=>openHouse();window.__close=()=>closeSheet();window.__SV=()=>SV;window.__rebuild=()=>{for(const k in BLD)rebuildBuilding(k);};window.__X=()=>X;window.__go=()=>startExpedition();window.__open=k=>openBuilding(k);window.__fix=p=>fixDest(p);
 // balance sims (tools/sim_fast.py): the bot plays expeditions without drawing – whole minutes of play in a blink. A stuck bot gets a nudge sideways (counted).
 window.__simExp=(camp)=>{window.SIMBOT=1;const w0=SV.well;startExpedition(camp||null);if(!X||scene!=='exp'){window.SIMBOT=0;return null;}const fill=X.water,nb0=X.bottles,st=1/30,stk=[];let n=0,stuck=0,lx=X.x,ly=X.y,lt=0;
-  while(!X.end&&n<90000){updateExp(st);n++;if((n&15)===0){if(Math.hypot(X.x-lx,X.y-ly)<3&&!X.dis&&!X.intro){if(X.t-lt>3){if(stk.length<6){let nb=null,nd=1e9;obstNear(X.x,X.y,o=>{const d=segPt(X.x,X.y,o).d-o.r;if(d<nd){nd=d;nb=o.t;}});let rw=0;forX(X.x-80,X.y-80,X.x+80,X.y+80,c=>{for(const r of c.ruins)for(const w of r.walls)if(Math.abs(X.x-w.x)<w.w/2+12&&Math.abs(X.y-w.y)<w.h/2+12)rw++;},true);stk.push([Math.round(X.x),Math.round(X.y),nb,Math.round(nd),rw,Math.round(coastSD(X.x,X.y).d),X.dest?Math.round(Math.hypot(X.dest.x-X.x,X.dest.y-X.y)):-1,X.botHome?1:0]);}const a=Math.atan2(X.y,X.x)+1.57;X.x+=Math.cos(a)*70;X.y+=Math.sin(a)*70;stuck++;lt=X.t;}}else{lx=X.x;ly=X.y;lt=X.t;}}}
-  const r={s:X.scrap,c:X.cores,x:X.chips||0,t:Math.round(X.t*10)/10,end:X.end||'timeout',ko:!!X.ko,fill,left:X.end==='thirst'?0:Math.round(X.water*100)/100,cap:X.cap,nb0,nb:X.bottles,walk:Math.round(X.walked*M_PER_U),maxD:Math.round(X.maxD*M_PER_U),bag:bagCap(),load:weight(),stuck,stk,dyn:X.dyn||0,lost:X.lostS||0};
+  while(!X.end&&n<90000){updateExp(st);n++;if((n&15)===0){if(Math.hypot(X.x-lx,X.y-ly)<3&&!X.dis&&!X.intro){if(X.t-lt>3){if(stk.length<6){let nb=null,nd=1e9;obstNear(X.x,X.y,o=>{const d=segPt(X.x,X.y,o).d-o.r;if(d<nd){nd=d;nb=o.t;}});let rw=0;forX(X.x-80,X.y-80,X.x+80,X.y+80,c=>{for(const r of c.ruins)for(const w of r.walls)if(Math.abs(X.x-w.x)<w.w/2+12&&Math.abs(X.y-w.y)<w.h/2+12)rw++;},true);stk.push([Math.round(X.x),Math.round(X.y),nb,Math.round(nd),rw,Math.round(coastSD(X.x,X.y).d),X.dest?Math.round(Math.hypot(X.dest.x-X.x,X.dest.y-X.y)):-1,X.botHome?1:0,X.scrap,X.foeNear?[X.foeNear.type,Math.round(X.foeNearD),Math.round(X.foeNear.stun*10)/10,X.foeNear.hp,Math.round(X.slingCd*10)/10]:null,(X.drops||[]).map(d=>[d.kind,d.n,Math.round(Math.hypot(d.x-X.x,d.y-X.y))]).slice(0,3),room(),Math.round(X.water*100)/100]);}const a=Math.atan2(X.y,X.x)+1.57;X.x+=Math.cos(a)*70;X.y+=Math.sin(a)*70;stuck++;lt=X.t;}}else{lx=X.x;ly=X.y;lt=X.t;}}}
+  const r={s:X.scrap,c:X.cores,x:X.chips||0,t:Math.round(X.t*10)/10,end:X.end||'timeout',ko:!!X.ko,fill,left:X.end==='thirst'?0:Math.round(X.water*100)/100,cap:X.cap,nb0,nb:X.bottles,walk:Math.round(X.walked*M_PER_U),maxD:Math.round(X.maxD*M_PER_U),bag:bagCap(),load:weight(),stuck,stk,dyn:X.dyn||0,lost:X.lostS||0,kills:X.kills||0,seen:Object.keys(X.foeWarn||{}).length,shots:X.nshots||0};
   window.SIMBOT=0;enterBase();return r;};
 window.__walk=(sx,sy,tx,ty,maxT)=>{if(!X||X.end)return null;X.x=sx;X.y=sy;X.dx=sx;X.dy=sy+10;X.intro=null;X.slideOb=null;X.slide=0;X.dest=fixDest({x:tx,y:ty});if(!X.dest)return {skip:1};const D=X.dest,d0=Math.hypot(D.x-sx,D.y-sy),t0=X.t;
   while(X.dest&&!X.end&&X.t-t0<maxT){X.water=X.cap;X.scrap=0;updateExp(1/30);}return {arr:Math.hypot(X.x-D.x,X.y-D.y)<8,t:Math.round((X.t-t0)*10)/10,d0:Math.round(d0),left:Math.round(Math.hypot(X.x-D.x,X.y-D.y)),end:X.end};};
-window.__simShop=secs=>{tickWell(secs);let n=0;while(n<200&&botShop())n++;return n;};window.__ret=()=>X&&typeof retNeed==='function'?retNeed():0;window.__bottleMax=()=>bottleMax();window.__lv=()=>[heroLv(),dogLv(),bagCap(),waterCap()];window.__forX=(a,b,c,d,f)=>forX(a,b,c,d,f);
+window.__simShop=secs=>{tickWell(secs);let n=0;while(n<200&&botShop())n++;return n;};window.__ret=()=>X&&typeof retNeed==='function'?retNeed():0;window.__refresh=()=>refreshBaseUI();window.__step=n=>{for(let i=0;i<n&&X&&!X.end;i++)updateExp(1/30);};window.__bottleMax=()=>bottleMax();window.__lv=()=>[heroLv(),dogLv(),bagCap(),waterCap()];window.__forX=(a,b,c,d,f)=>forX(a,b,c,d,f);
 requestAnimationFrame(frame);
 })();

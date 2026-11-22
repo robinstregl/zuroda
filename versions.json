@@ -2,6 +2,19 @@
   "root": "1.0",
   "versions": [
     {
+      "v": "2.2",
+      "date": "22. 11. 2026",
+      "title": "Roboti a čipy",
+      "notes": [
+        "Čipy teď padají jen z robotů: z hlídacího dronu jeden, z Pátrače dva. V letadlech už nejsou.",
+        "Roboti se vracejí po 4 výpravách (dřív po 8), takže je pořád co lovit.",
+        "Blíž než 80 m od domu žádný robot není. První roboti za touhle hranicí jsou pomalejší: déle jim trvá, než si tě všimnou, a Pátrač tě nedohoní.",
+        "Vrtulníky a letadla hlídá Pátrač. Nejlepší kořist a čipy jsou tak na stejném místě.",
+        "Když ti na vylepšení chybí jen čipy, Zuro řekne, kde je vzít a čím.",
+        "Automat s prakem teď přinese 4 až 9 čipů za výpravu (dřív 1 až 4) a ve dvou a půl hodinách hry ho nesložil žádný robot."
+      ]
+    },
+    {
       "v": "2.1",
       "date": "22. 11. 2026",
       "title": "Voda rozhoduje, baterie nebrzdí",
