@@ -313,7 +313,7 @@ function sunify(m){const pk=(m.map?0.58:0.17).toFixed(2),gr=!!m.map;m.onBeforeCo
   if(gr){sh.vertexShader='varying vec3 vWP;\n'+sh.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
     sh.fragmentShader='varying vec3 vWP;\n'+sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n{float w=sin(vWP.x*0.11+sin(vWP.z*0.07)*2.3+vWP.z*0.035);float c=smoothstep(0.82,0.97,w);diffuseColor.rgb*=0.93+0.07*w;diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.0,0.97,0.93),c*0.35);}');}
   sh.fragmentShader='uniform vec3 uPeach;\n'+sh.fragmentShader
-  .replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb=mix(diffuseColor.rgb,uPeach,'+pk+');')
+  .replace('#include <color_fragment>','#include <color_fragment>\n{float lum=dot(diffuseColor.rgb,vec3(.3,.59,.11));diffuseColor.rgb=mix(diffuseColor.rgb,uPeach,'+pk+'+'+(gr?'0.0':'0.24')+'*(1.0-smoothstep(0.02,0.3,lum)));}')
   .replace('#include <dithering_fragment>','#include <dithering_fragment>\n{float lr=dot(gl_FragColor.rgb,vec3(.299,.587,.114))/max(.001,dot(diffuseColor.rgb,vec3(.299,.587,.114)));if(lr<.8&&mod(gl_FragCoord.x-gl_FragCoord.y,9.)<1.7)gl_FragColor.rgb*=.84;}');};
   m.customProgramCacheKey=()=>'sun'+(m.vertexColors?'v':'')+(m.map?'m':'');return m;}
 const TM=M;
