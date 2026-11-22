@@ -321,11 +321,11 @@ function makeSeekerH(R3,A){const g=grp(),q=hGeo(),body=grp(0,0,0,g);
 function hRoomShell(sc,w,d,floorCol){const g=grp(0,0,0,sc);part(rbox(w+0.3,0.3,d+0.3,0.08),floorCol,0,0.15,0,1,1,1,g);
   part(rbox(w+0.3,3.0,0.25,0.06),HP.wall,0,1.8,-d/2,1,1,1,g);part(rbox(0.25,3.0,d+0.3,0.06),HP.wallS,-w/2,1.8,0,1,1,1,g);
   part(rbox(w+0.36,0.16,0.32,0.05),HP.trim,0,3.34,-d/2,1,1,1,g);part(rbox(0.32,0.16,d+0.36,0.05),HP.trim,-w/2,3.34,0,1,1,1,g);return g;}
-function hWindow(g,x,y,z,w,h){part(rbox(w+0.24,h+0.24,0.12,0.04),HP.teal,x,y,z,1,1,1,g);part(G.box,HP.tank,x,y,z+0.03,w,h,0.1,g);part(G.box,HP.teal,x,y,z+0.05,0.07,h,0.1,g);part(G.box,HP.teal,x,y,z+0.05,w,0.07,0.1,g);}
+function hRoomWin(g,x,y,z,w,h){part(rbox(w+0.24,h+0.24,0.12,0.04),HP.teal,x,y,z,1,1,1,g);part(G.box,HP.tank,x,y,z+0.03,w,h,0.1,g);part(G.box,HP.teal,x,y,z+0.05,0.07,h,0.1,g);part(G.box,HP.teal,x,y,z+0.05,w,0.07,0.1,g);}
 function hRoom(kind){const key='room'+kind;if(BIMG[key])return BIMG[key];
   return BIMG[key]=hSnap(330,200,sc=>{const q=hGeo(),Y=0.3,W=6.4,D=5,g=hRoomShell(sc,W,D,kind==='home'?'#ecd2b6':'#dfe3e6');const leg=(x,z,h,c)=>part(q.cyl10,c||HP.woodD,x,Y+h/2,z,0.1,h,0.1,g);
     if(kind==='home'){
-      hWindow(g,1.5,2.05,-D/2+0.14,1.3,1.0);
+      hRoomWin(g,1.5,2.05,-D/2+0.14,1.3,1.0);
       // bed along the left wall
       part(rbox(1.6,0.42,2.7,0.1),HP.wood,-2.2,Y+0.21,-0.95,1,1,1,g);part(rbox(1.46,0.24,2.56,0.1),HP.cream,-2.2,Y+0.52,-0.95,1,1,1,g);part(rbox(1.5,0.26,1.6,0.1),HP.coral,-2.2,Y+0.55,-0.4,1,1,1,g);part(rbox(1.0,0.2,0.55,0.08),'#ffffff',-2.2,Y+0.74,-1.92,1,1,1,g);
       // shelf with bottles and a little plant
@@ -342,7 +342,7 @@ function hRoom(kind){const key='room'+kind;if(BIMG[key])return BIMG[key];
       {const pk=grp(-1.15,Y+0.32,0.55,g);pk.rotation.y=0.5;buildBackH(pk,'satchel',{});pk.children[0].position.set(0,0,0);}
       part(q.cyl10,HP.clay,-2.5,Y+0.3,1.85,0.6,0.6,0.6,g);for(let i=0;i<6;i++){const a=i/6*6.283;const l=part(G.cone5,i%2?HP.sage:HP.sageD,-2.5+Math.cos(a)*0.28,Y+1.1,1.85+Math.sin(a)*0.28,0.3,1.1,0.12,g);l.rotation.set(Math.sin(a)*0.5,0,-Math.cos(a)*0.5);}
     }else{
-      hWindow(g,-1.9,2.15,-D/2+0.14,1.0,0.8);
+      hRoomWin(g,-1.9,2.15,-D/2+0.14,1.0,0.8);
       // workbench under a tool board
       part(rbox(3.4,0.14,1.05,0.04),HP.wood,0.9,Y+1.02,-1.8,1,1,1,g);for(const [x,z] of [[-0.6,-2.2],[2.4,-2.2],[-0.6,-1.4],[2.4,-1.4]])leg(x,z,0.96,HP.metalD);part(rbox(3.1,0.08,0.8,0.03),HP.woodD,0.9,Y+0.3,-1.8,1,1,1,g);
       part(rbox(2.8,1.25,0.08,0.03),HP.teal,0.9,2.35,-D/2+0.17,1,1,1,g);

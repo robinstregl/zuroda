@@ -817,7 +817,7 @@ function makeBotV(v,col,s){const o=BOTV[v](col);o.b.scale.setScalar(s||1);
 // ================= characters (from the character lab) =================
 // ---------- geometry helpers ----------
 const gcache={};
-function rbox(w,h,d,r,s){const key='rb'+[w,h,d,r].join('_');if(gcache[key])return gcache[key];s=s||12;
+function rbox(w,h,d,r,s){w=w>1e-4?w:1e-4;h=h>1e-4?h:1e-4;d=d>1e-4?d:1e-4;r=r>0?r:0;const key='rb'+[w,h,d,r].join('_');if(gcache[key])return gcache[key];s=s||12;
   const g=new T.BoxGeometry(1,1,1,s,s,s),p=g.attributes.position,n=g.attributes.normal;const hw=w/2,hh=h/2,hd=d/2;r=Math.min(r,hw,hh,hd);
   const iw=hw-r,ih=hh-r,id=hd-r,kx=iw/hw,ky=ih/hh,kz=id/hd;
   const f=(u,k)=>{const a=Math.abs(u)*2;const m=a<0.5?a/0.5*k:k+(a-0.5)/0.5*(1-k);return Math.sign(u)*m;};
