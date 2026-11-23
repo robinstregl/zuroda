@@ -132,6 +132,11 @@
   body.lookH .tbtns{gap:12px}body.lookH .tbtns .lab{font:500 12.5px/1.2 var(--ff);letter-spacing:.01em;text-transform:none;opacity:1;color:var(--gm)}
   body.lookH .tbtns input{font:600 18px/1.2 var(--ff);padding:13px 16px;border:0;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:var(--gs1);color:var(--gi)}
   body.lookH .tbtns .btn.primary{border:0;color:#fff;background:linear-gradient(180deg,#d6453a,#c93a30);box-shadow:0 12px 26px rgba(217,69,58,.34),inset 0 1px 0 rgba(255,255,255,.35);font-size:19px;letter-spacing:0}
+  /* loading (2.12): the bar is a HUD meter – navy track, Zuro's red; on the desktop the frame is an empty pane of milky glass until the game fades in */
+  body.lookH .tbtns{min-height:148px}
+  body.lookH .ldt{background:rgba(42,47,79,.11)}
+  body.lookH .ldt i{background:linear-gradient(90deg,#d6453a,#c93a30)}
+  body.lookH.framed.loading #stage,body.lookH.framed.ldout #stage{background:rgba(255,255,255,.4)}
   body.lookH .small{opacity:1;color:var(--gm)}body.lookH .small a{color:var(--gi)}
   body.lookH #decorBar{background:rgba(255,255,255,.94);border-top:0;border-radius:26px 26px 0 0;box-shadow:0 -10px 30px rgba(150,95,60,.14)}
   body.lookH .chip{border:0;background:#fff;color:var(--gi);box-shadow:var(--gs1)}body.lookH .chip.sel{box-shadow:0 0 0 2px var(--gr)}

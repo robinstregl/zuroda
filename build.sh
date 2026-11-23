@@ -9,7 +9,9 @@ set -e
 cd "$(dirname "$0")"
 CDN=https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js
 page() { # $1 three.js url, $2 output file, $3 version number ('' = none: the main page keeps the plain save)
-  { sed '/^\/\*@ui\*\/$/r src/glass.css' src/head.html; echo "<script src=\"$1\"></script>"; echo '<script>'; cat src/icons.js; echo '</script><script>'; cat src/anims.js; echo '</script><script>'; cat src/nature.js; echo '</script><script>'; cat src/hero.js; echo '</script><script>'; sed "/^'use strict';\$/r src/lookh.js" src/game.js; echo '</script></body></html>'; } > "$2.tmp"
+  # the small __ld(...) scripts between the parts are milestones of the loading bar (head.html): share of the download time that is behind us
+  # (gzipped: three.js 149 kB next to the page's 486 kB – nature 110, hero 197, game 142); the last 30 % belong to the game building itself
+  { sed '/^\/\*@ui\*\/$/r src/glass.css' src/head.html; echo "<script src=\"$1\"></script>"; echo '<script>window.__ld&&__ld(.3,.34)</script><script>'; cat src/icons.js; echo '</script><script>'; cat src/anims.js; echo '</script><script>'; cat src/nature.js; echo '</script><script>window.__ld&&__ld(.34,.55)</script><script>'; cat src/hero.js; echo '</script><script>window.__ld&&__ld(.55,.7)</script><script>'; sed "/^'use strict';\$/r src/lookh.js" src/game.js; echo '</script></body></html>'; } > "$2.tmp"
   if [ -n "$3" ]; then sed "0,/<head>/s//<head><script>window.ZVER=\"$3\"<\/script>/" "$2.tmp" > "$2"; rm "$2.tmp"; else mv "$2.tmp" "$2"; fi
   echo "built $2"
 }

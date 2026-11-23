@@ -1,5 +1,7 @@
 
-(() => {
+// The whole page has arrived here. The game builds itself two frames later (2.12), so the loading bar (head.html, __ld) gets one painted
+// step in between and keeps gliding while the building blocks the page for a second; a hidden tab has no frames – a timer starts it there.
+(main => {if(!window.__ld||location.hash==='#bot'){main();return;}window.__ld(.7,.86,2.5);let d=0;const go=()=>{if(!d){d=1;main();}};requestAnimationFrame(()=>requestAnimationFrame(go));setTimeout(go,400);})(() => {
 'use strict';
 // ================= utils =================
 let FF='Jost, "Century Gothic", system-ui, sans-serif';
@@ -260,6 +262,7 @@ if(/notex/.test(location.hash))ST.tex=false;
 if(ST.sunink){document.body.classList.add('lookH');// the UI of look H is "Sklo" (src/glass.css): Outfit on canvas too, and the glass joystick
   FF='Outfit, "Century Gothic", system-ui, sans-serif';try{document.fonts.load('500 13px Outfit');document.fonts.load('600 13px Outfit');}catch(_){}
   const J=document.getElementById('joy');if(J)J.innerHTML=hJoySvg();}// compare: open with #notex for the untextured look
+else document.body.classList.remove('lookH');// the page is born in look H so the loading screen already wears it (2.12)
 
 
 const T=window.THREE;
@@ -2664,15 +2667,26 @@ window.__animSnap=(k,t,ry,sx,zm,gx)=>{try{const w=220,h=300,r2=new T.WebGLRender
 SV.sex='m';
 if(ZVER||CHEAT||LOOKN!==LOOK_DEF){const t=document.querySelector('#title .tag');if(t)t.textContent='EARLY PROTOTYPE'+(ZVER?' · '+ZVER:'')+(CHEAT?' · '+CHEAT.toUpperCase():'')+(LOOKN!==LOOK_DEF?' · LOOK '+LOOKN:'');}
 if(ZVER){const f=document.querySelector('.side .fine');if(f)f.textContent='Early prototype '+ZVER+' · © 2026 Vabiko';}
-(function buildTitle(){const el=$('tbtns');el.innerHTML='';
+(function buildTitle(){const el=$('tbtns');for(const c of [...el.children])if(c.id!=='ld')c.remove();
   // one wanderer only (Robin 21. 11.); no pictures on the title – the live village is the picture (22. 11.)
   const inp=document.createElement('input');inp.maxLength=14;inp.value=SV.name||'Wanderer';inp.placeholder='Your name';inp.setAttribute('aria-label','Your wanderer’s name');
   const lab=document.createElement('div');lab.className='lab';lab.textContent='Your wanderer’s name';
   const b=document.createElement('button');b.className='btn primary';b.textContent=hadSave?'Continue':'Start';
-  b.addEventListener('click',()=>{{const cz=cheatOf(inp.value);if(cz&&cz!==CHEAT){location.hash='#'+cz;location.reload();return;}}SV.name=(inp.value||'Wanderer').trim().slice(0,14)||'Wanderer';SV.sex='m';save();initAudio();$('title').classList.add('hidden');enterBase();});
+  b.addEventListener('click',()=>{{const cz=cheatOf(inp.value);if(cz&&cz!==CHEAT){location.hash='#'+cz;location.reload();return;}}SV.name=(inp.value||'Wanderer').trim().slice(0,14)||'Wanderer';SV.sex='m';save();initAudio();ldDone(1);$('title').classList.add('hidden');enterBase();});
   el.appendChild(lab);el.appendChild(inp);el.appendChild(b);
   if(CHEAT){const n=document.querySelector('#title .tfoot .small');if(n){n.textContent='Test save – everything unlocked. ';const a=document.createElement('a');a.href='#';a.textContent='Back to the real game';a.style.cssText='color:inherit;text-decoration:underline;cursor:pointer';a.addEventListener('click',e=>{e.preventDefault();history.replaceState(null,'',location.pathname+location.search);location.reload();});n.appendChild(a);}}})();
-if(BOT){$('title').classList.add('hidden');enterBase();}
+// Loading screen (2.12, Robin 23. 11.: "aby seděl graficky se zbytkem a byl tam načítací bar"). The page shows the bar from its first paint
+// (head.html, __ld). Here the last stretch: the game is built, now a few drawn frames (the first one compiles the shaders), the fonts and the
+// icon sheet – then the bar runs to the end, the village fades in behind the title and the name field with Start takes the bar's place.
+// Nothing waits longer than 6 s for a font or a picture.
+let ldN=0,ldOK=0,ldFont=0;const ldT0=performance.now();
+try{Promise.all([document.fonts.load('600 40px Fraunces'),document.fonts.load('500 13px Outfit'),document.fonts.load('600 18px Outfit')]).then(()=>{ldFont=1;},()=>{ldFont=1;});}catch(_){ldFont=1;}
+function ldDone(now){if(ldOK)return;ldOK=1;const B=document.body.classList,go=()=>{B.remove('loading');B.add('ldout');setTimeout(()=>{B.remove('ldout');const l=$('ld');if(l)l.remove();},900);};
+  if(window.__ld)window.__ld(1);if(now)go();else setTimeout(go,300);}
+function ldTick(){if(ldOK)return;ldN++;if(ldN<3)return;const ic=!ST.sunink||!!ICIMG[HICON.names[0]];if((ldFont&&ic)||performance.now()-ldT0>6000)ldDone();}
+if(window.__ld)window.__ld(.86,1,1.6);
+window.__ldState=()=>[ldN,ldOK,ldFont,document.body.className];
+if(BOT){ldDone(1);$('title').classList.add('hidden');enterBase();}
 let last=performance.now();
 // debug: turnaround of both wanderers and Zuro (window.__charSheet())
 let CSHEET=null;
@@ -2682,7 +2696,8 @@ window.__charSheet=()=>{const sc=new T.Scene();sc.background=C('#2a2420');setupL
 function placeMute(){const p=scene==='exp'?$('xhud'):$('bhud'),m=$('mute');if(!p||!m||p.classList.contains('hidden'))return;const pr=p.querySelector('.wpanel');if(!pr)return;const b=pr.getBoundingClientRect().bottom-stage.getBoundingClientRect().top;const t=Math.round(b+(ST.sunink?16:10))+'px';if(m.style.top!==t){m.style.top=t;stage.style.setProperty('--hudb',Math.round(b)+'px');}const xm=$('xMap');if(xm&&xm.style.top!==t)xm.style.top=t;}
 let muteT=0;
 function frame(nowT){
-  if(window.CATALOG)return;
+  if(window.CATALOG){ldDone(1);return;}
+  if(!ldOK)ldTick();
   const rdt=(nowT-last)/1000,dt=Math.min(0.05,rdt);last=nowT;tNow+=dt;
   if(!ST.px&&!window.FIXQ&&rdt>0&&rdt<0.25&&!document.hidden){fpsAcc+=rdt;fpsN++;fpsT+=rdt;if(fpsT>2){const f=fpsN/fpsAcc;fpsAcc=fpsN=fpsT=0;
     // a slow phone gets a softer picture – but only when that actually helps. iOS in Low Power Mode draws 30 frames a second whatever we do;
@@ -2721,4 +2736,4 @@ window.__walk=(sx,sy,tx,ty,maxT)=>{if(!X||X.end)return null;X.x=sx;X.y=sy;X.dx=s
   while(X.dest&&!X.end&&X.t-t0<maxT){X.water=X.cap;X.scrap=0;updateExp(1/30);}return {arr:Math.hypot(X.x-D.x,X.y-D.y)<8,t:Math.round((X.t-t0)*10)/10,d0:Math.round(d0),left:Math.round(Math.hypot(X.x-D.x,X.y-D.y)),end:X.end};};
 window.__simShop=secs=>{tickWell(secs);let n=0;while(n<200&&botShop())n++;return n;};window.__ret=()=>X&&typeof retNeed==='function'?retNeed():0;window.__refresh=()=>refreshBaseUI();window.__green=n=>{if(n!==undefined){SV.green=n;SV.greenW=0;}return [greenLv(),SV.greenW||0,greenPour()];};window.__step=n=>{for(let i=0;i<n&&X&&!X.end;i++)updateExp(1/30);};window.__bottleMax=()=>bottleMax();window.__lv=()=>[heroLv(),dogLv(),bagCap(),waterCap()];window.__forX=(a,b,c,d,f)=>forX(a,b,c,d,f);
 requestAnimationFrame(frame);
-})();
+});

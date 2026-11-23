@@ -1,6 +1,19 @@
 {
-  "root": "2.11",
+  "root": "2.12",
   "versions": [
+    {
+      "v": "2.12",
+      "date": "23. 11. 2026",
+      "title": "Načítací obrazovka",
+      "max": true,
+      "notes": [
+        "Načítání vypadá od první chvíle jako zbytek hry: tmavě modrý nápis s červeným sluncem, nové písmo a na počítači rovnou skleněný rámeček, duny a nápis vlevo. Dřív se na okamžik ukázal starý hnědý nápis bez rámečku.",
+        "Přibyl načítací pruh. Stojí tam, kde se pak objeví jméno a tlačítko Start, postupuje podle toho, kolik hry už dorazilo, a doběhne, až je hra opravdu připravená (vesnice vykreslená, písma a ikony načtené).",
+        "Vesnice za titulní obrazovkou se plynule rozsvítí a jméno s tlačítkem se objeví až s ní – nic neposkočí.",
+        "Když hra nedorazí (výpadek připojení), napíše to místo pruhu, který by nikdy nedoběhl.",
+        "Běží i na hlavní adrese zuroda.com."
+      ]
+    },
     {
       "v": "2.11",
       "date": "22. 11. 2026",

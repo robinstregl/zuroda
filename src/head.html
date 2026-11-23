@@ -8,6 +8,7 @@
 <meta property="og:title" content="Zuroda"><meta property="og:description" content="A wanderer and his robot dog Zuro rebuild a forgotten desert village."><meta property="og:image" content="img/og.png"><meta name="theme-color" content="#fbeee2">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Zuroda"><meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="img/app-icon-180.png"><link rel="manifest" href="img/app.webmanifest">
+<link rel="preload" href="fonts/fraunces-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%23d9453a'/%3E%3C/svg%3E">
 <style>
 @font-face{font-family:'Jost';font-style:normal;font-weight:300;font-display:swap;src:url(fonts/jost-latin-300-normal.woff2) format('woff2')}
@@ -19,7 +20,7 @@
 @font-face{font-family:'Jost';font-style:italic;font-weight:500;font-display:swap;src:url(fonts/jost-latin-500-italic.woff2) format('woff2')}
 @font-face{font-family:'Outfit';font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/outfit-latin-ext-wght-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:'Outfit';font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/outfit-latin-wght-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:'Fraunces';font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/fraunces-latin-wght-normal.woff2) format('woff2')}
+@font-face{font-family:'Fraunces';font-style:normal;font-weight:100 900;font-display:block;src:url(fonts/fraunces-latin-wght-normal.woff2) format('woff2')}
 @font-face{font-family:'Fraunces';font-style:italic;font-weight:100 900;font-display:swap;src:url(fonts/fraunces-latin-wght-italic.woff2) format('woff2')}
 :root{--ff:Jost,'Century Gothic',system-ui,sans-serif;--fs:Fraunces,Georgia,'Times New Roman',serif;--hink:#5a3d34;--hcoral:#f2957f;--hpaper:#fbeee2}
   :root{--ink:#3a2a20;--paper:#f4e6c8;--terra:#c8643c;--sage:#6f8a5a;--water:#4f9fb0}
@@ -55,6 +56,18 @@
   .tbtns input{font:inherit;font-size:16px;text-align:center;padding:11px 14px;border-radius:999px;border:1.5px solid rgba(90,61,52,.55);background:rgba(255,251,246,.92);color:var(--hink);outline:none;box-shadow:3px 3px 0 rgba(90,61,52,.14)}
   .tbtns .btn.primary{background:var(--hcoral);color:#fffaf4;border:1.5px solid var(--hink);box-shadow:3px 3px 0 rgba(90,61,52,.32);font-size:17px;letter-spacing:.04em}
   .small{font-size:11.5px;opacity:.6;margin-top:12px;line-height:1.5;max-width:300px}
+  /* loading (2.12): the page wears its final look from the first paint – a thin bar stands where the name field and Start will be,
+     the game picture and the buttons fade in when the game is really ready (ldDone in game.js; the bar is driven by __ld below) */
+  .tbtns{position:relative;min-height:134px;justify-content:flex-end}/* = the height of the label, the field and the button, so nothing moves when they come */
+  .tbtns>*,.tfoot .small{transition:opacity .45s ease,transform .12s}
+  .ld{position:absolute;left:0;right:0;top:50%;display:flex;flex-direction:column;align-items:center;gap:12px;transform:translateY(-50%);pointer-events:none}
+  .ldt{width:100%;height:8px;border-radius:4px;background:rgba(90,61,52,.14);overflow:hidden}
+  .ldt i{display:block;width:100%;height:100%;border-radius:4px;background:var(--hcoral);transform:translateX(-98%);transition:transform 8s cubic-bezier(.2,.7,.3,1);will-change:transform}
+  body.loading .tbtns>:not(.ld),body.loading .tfoot .small{opacity:0;visibility:hidden}
+  body:not(.loading) .ld{opacity:0}
+  body.lderr .ldt{opacity:.45}body.lderr .ld .lab{text-transform:none;letter-spacing:0;line-height:1.4;max-width:240px}
+  #c,#o{transition:opacity .6s ease}
+  body.loading #c,body.loading #o{opacity:0}
   .portraits{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:2px 0 12px}.portraits figure{margin:0}.portraits img{width:100%;aspect-ratio:1;object-fit:cover;object-position:50% 22%;border-radius:14px;display:block}.portraits figcaption{font-size:12px;font-weight:600;text-align:center;margin-top:4px;opacity:.75}
 
   /* ===== look H (Robin 22. 11.) – world-side helpers only: haze at the edges and the tilt-shift strips. The UI of look H is "Sklo" (frosted glass, Outfit),
@@ -186,7 +199,7 @@
      the wordmark on one side, nothing else. No pictures, no instructions. ---- */
   #bg{display:none;position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:linear-gradient(180deg,#fdf3e8 0%,#fceadc 60%,#fbe4d3 100%)}
   #bg svg{position:absolute;left:0;top:0;width:100%;height:100%}
-  body.framed #bg{display:block}
+  body.framed #bg,body.loading #bg,body.ldout #bg{display:block}
   body.framed #wrap{align-items:center;gap:clamp(28px,4.5vw,84px);z-index:1}
   body.framed #stage{border-radius:28px;flex:none;box-shadow:0 0 0 1.5px var(--hink),14px 16px 0 -1px rgba(90,61,52,.13),0 30px 70px -30px rgba(140,80,50,.35)}
   aside.side{display:none;flex-direction:column;gap:16px;width:clamp(250px,23vw,340px);color:var(--hink);font-family:var(--ff);flex:none}
@@ -258,7 +271,7 @@
 /*@ui*/
 </style>
 </head>
-<body>
+<body class="lookH loading">
 <div id="bg"><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
 <circle cx="1300" cy="176" r="104" fill="#fff" fill-opacity=".6"/>
 <path d="M0 500 C220 452 430 486 670 456 S1110 408 1330 442 1520 458 1600 438 V900 H0Z" fill="#fadfcc" fill-opacity=".8"/>
@@ -327,7 +340,7 @@
     <div class="thead"><div class="tag">EARLY PROTOTYPE</div>
       <h1 class="wordmark" aria-label="Zuroda">Zur<i></i>da</h1>
       <div class="story">A wanderer, a robot dog<br>and a desert that remembers.</div></div>
-    <div class="tfoot"><div class="tbtns" id="tbtns"></div>
+    <div class="tfoot"><div class="tbtns" id="tbtns"><div class="ld" id="ld" role="status" aria-label="Loading"><div class="ldt"><i id="ldf"></i></div><div class="lab">Loading…</div></div></div>
       <div class="small">Progress is saved in this browser.</div></div>
   </div>
   <button id="mute" class="hidden" aria-label="Sound"></button>
@@ -336,3 +349,23 @@
   <div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 29 29" shape-rendering="crispEdges"><rect x="-2" y="-2" width="29" height="29" fill="#ffffff"/><path d="M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM8 0h1v1h-1zM10 0h1v1h-1zM11 0h1v1h-1zM12 0h1v1h-1zM14 0h1v1h-1zM18 0h1v1h-1zM19 0h1v1h-1zM20 0h1v1h-1zM21 0h1v1h-1zM22 0h1v1h-1zM23 0h1v1h-1zM24 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM10 1h1v1h-1zM12 1h1v1h-1zM13 1h1v1h-1zM16 1h1v1h-1zM18 1h1v1h-1zM24 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM9 2h1v1h-1zM12 2h1v1h-1zM13 2h1v1h-1zM14 2h1v1h-1zM18 2h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1zM0 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM9 3h1v1h-1zM14 3h1v1h-1zM15 3h1v1h-1zM16 3h1v1h-1zM18 3h1v1h-1zM20 3h1v1h-1zM21 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM8 4h1v1h-1zM9 4h1v1h-1zM12 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM16 4h1v1h-1zM18 4h1v1h-1zM20 4h1v1h-1zM21 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM11 5h1v1h-1zM13 5h1v1h-1zM14 5h1v1h-1zM18 5h1v1h-1zM24 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM19 6h1v1h-1zM20 6h1v1h-1zM21 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM9 7h1v1h-1zM12 7h1v1h-1zM14 7h1v1h-1zM15 7h1v1h-1zM0 8h1v1h-1zM3 8h1v1h-1zM4 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM13 8h1v1h-1zM14 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM23 8h1v1h-1zM24 8h1v1h-1zM1 9h1v1h-1zM3 9h1v1h-1zM5 9h1v1h-1zM11 9h1v1h-1zM12 9h1v1h-1zM14 9h1v1h-1zM15 9h1v1h-1zM17 9h1v1h-1zM19 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM22 9h1v1h-1zM23 9h1v1h-1zM0 10h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM4 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM9 10h1v1h-1zM10 10h1v1h-1zM12 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM18 10h1v1h-1zM21 10h1v1h-1zM24 10h1v1h-1zM2 11h1v1h-1zM4 11h1v1h-1zM5 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM14 11h1v1h-1zM15 11h1v1h-1zM18 11h1v1h-1zM20 11h1v1h-1zM21 11h1v1h-1zM22 11h1v1h-1zM23 11h1v1h-1zM24 11h1v1h-1zM2 12h1v1h-1zM6 12h1v1h-1zM7 12h1v1h-1zM9 12h1v1h-1zM10 12h1v1h-1zM13 12h1v1h-1zM14 12h1v1h-1zM16 12h1v1h-1zM18 12h1v1h-1zM24 12h1v1h-1zM0 13h1v1h-1zM1 13h1v1h-1zM2 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM10 13h1v1h-1zM12 13h1v1h-1zM15 13h1v1h-1zM17 13h1v1h-1zM20 13h1v1h-1zM23 13h1v1h-1zM0 14h1v1h-1zM1 14h1v1h-1zM2 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM14 14h1v1h-1zM15 14h1v1h-1zM18 14h1v1h-1zM20 14h1v1h-1zM21 14h1v1h-1zM22 14h1v1h-1zM23 14h1v1h-1zM24 14h1v1h-1zM0 15h1v1h-1zM2 15h1v1h-1zM3 15h1v1h-1zM4 15h1v1h-1zM8 15h1v1h-1zM10 15h1v1h-1zM12 15h1v1h-1zM13 15h1v1h-1zM14 15h1v1h-1zM16 15h1v1h-1zM19 15h1v1h-1zM21 15h1v1h-1zM22 15h1v1h-1zM24 15h1v1h-1zM0 16h1v1h-1zM3 16h1v1h-1zM4 16h1v1h-1zM6 16h1v1h-1zM7 16h1v1h-1zM8 16h1v1h-1zM9 16h1v1h-1zM10 16h1v1h-1zM11 16h1v1h-1zM12 16h1v1h-1zM15 16h1v1h-1zM16 16h1v1h-1zM17 16h1v1h-1zM18 16h1v1h-1zM19 16h1v1h-1zM20 16h1v1h-1zM22 16h1v1h-1zM23 16h1v1h-1zM8 17h1v1h-1zM9 17h1v1h-1zM10 17h1v1h-1zM11 17h1v1h-1zM16 17h1v1h-1zM20 17h1v1h-1zM22 17h1v1h-1zM23 17h1v1h-1zM0 18h1v1h-1zM1 18h1v1h-1zM2 18h1v1h-1zM3 18h1v1h-1zM4 18h1v1h-1zM5 18h1v1h-1zM6 18h1v1h-1zM8 18h1v1h-1zM10 18h1v1h-1zM12 18h1v1h-1zM13 18h1v1h-1zM14 18h1v1h-1zM16 18h1v1h-1zM18 18h1v1h-1zM20 18h1v1h-1zM24 18h1v1h-1zM0 19h1v1h-1zM6 19h1v1h-1zM8 19h1v1h-1zM9 19h1v1h-1zM11 19h1v1h-1zM13 19h1v1h-1zM15 19h1v1h-1zM16 19h1v1h-1zM20 19h1v1h-1zM0 20h1v1h-1zM2 20h1v1h-1zM3 20h1v1h-1zM4 20h1v1h-1zM6 20h1v1h-1zM8 20h1v1h-1zM9 20h1v1h-1zM11 20h1v1h-1zM13 20h1v1h-1zM15 20h1v1h-1zM16 20h1v1h-1zM17 20h1v1h-1zM18 20h1v1h-1zM19 20h1v1h-1zM20 20h1v1h-1zM24 20h1v1h-1zM0 21h1v1h-1zM2 21h1v1h-1zM3 21h1v1h-1zM4 21h1v1h-1zM6 21h1v1h-1zM8 21h1v1h-1zM9 21h1v1h-1zM12 21h1v1h-1zM13 21h1v1h-1zM16 21h1v1h-1zM17 21h1v1h-1zM18 21h1v1h-1zM23 21h1v1h-1zM24 21h1v1h-1zM0 22h1v1h-1zM2 22h1v1h-1zM3 22h1v1h-1zM4 22h1v1h-1zM6 22h1v1h-1zM10 22h1v1h-1zM11 22h1v1h-1zM13 22h1v1h-1zM17 22h1v1h-1zM20 22h1v1h-1zM21 22h1v1h-1zM22 22h1v1h-1zM23 22h1v1h-1zM24 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM10 23h1v1h-1zM11 23h1v1h-1zM12 23h1v1h-1zM13 23h1v1h-1zM19 23h1v1h-1zM20 23h1v1h-1zM22 23h1v1h-1zM23 23h1v1h-1zM24 23h1v1h-1zM0 24h1v1h-1zM1 24h1v1h-1zM2 24h1v1h-1zM3 24h1v1h-1zM4 24h1v1h-1zM5 24h1v1h-1zM6 24h1v1h-1zM8 24h1v1h-1zM9 24h1v1h-1zM10 24h1v1h-1zM11 24h1v1h-1zM12 24h1v1h-1zM13 24h1v1h-1zM16 24h1v1h-1zM21 24h1v1h-1zM24 24h1v1h-1z" fill="#2a2f4f"/></svg><div><b>Best on your phone</b>Scan to play, or open zuroda.com</div></div>
 </aside>
 </div>
+<script>
+// Before the game arrives (three.js + ~1 MB of game below): lay the page out exactly as resize() in game.js will, so nothing jumps
+// when the game takes over, and drive the loading bar. __ld(p,n,T): we are at p (0–1), the next milestone is n; the bar glides
+// towards just short of n over T seconds (guessed from the pace so far) – a CSS transition, so it keeps moving while scripts run.
+(function(){var d=document,B=d.body.classList,st=d.getElementById('stage'),f=d.getElementById('ldf'),t0=performance.now(),cur=0,fin=0;
+  if(((window.FORCE_STYLE)||(new URLSearchParams(location.search).get('s'))||'sun')!=='sun')B.remove('lookH');
+  function lay(){if(!B.contains('loading'))return;var vv=window.visualViewport,vw=innerWidth,full=Math.round(vv?vv.height:innerHeight),fr=vw>=760&&vw>full*0.9;
+    B.toggle('framed',fr);B.toggle('wide',fr&&vw>=1180&&full>=560);var vh=fr?Math.max(420,full-48):full;st.style.width=Math.min(vw,Math.round(vh*0.5625))+'px';st.style.height=vh+'px';}
+  lay();addEventListener('resize',lay);
+  var zv=window.ZVER;if(zv){var a=d.querySelector('#title .tag'),b=d.querySelector('.side .fine');if(a)a.textContent='EARLY PROTOTYPE · '+zv;if(b)b.textContent='Early prototype '+zv+' · © 2026 Vabiko';}
+  window.__ld=function(p,n,T){if(!f||fin)return;p=Math.max(p,cur);cur=p;
+    if(p>=1){fin=1;f.style.transition='transform .3s ease-out';f.style.transform='translateX(0)';return;}
+    n=Math.max(n||p,p);if(!T)T=Math.min(14,Math.max(.6,(performance.now()-t0)/1000/Math.max(p,.05)*(n-p)*1.4));
+    f.style.transitionDuration=T+'s';f.style.transform='translateX(-'+(100-(p+(n-p)*.92)*100).toFixed(1)+'%)';};
+  if(f){f.getBoundingClientRect();window.__ld(.02,.3,8);}
+  // a part that did not arrive (three.js, a broken script): say so instead of a bar that never ends
+  addEventListener('error',function(e){var t=e.target;if(!B.contains('loading')||!((t&&t.tagName==='SCRIPT')||e.message))return;fin=1;B.add('lderr');
+    var l=d.querySelector('#ld .lab');if(l)l.textContent='Couldn’t load the game. Check your connection and reload the page.';},true);
+})();
+</script>
