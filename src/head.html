@@ -341,7 +341,7 @@
       <h1 class="wordmark" aria-label="Zuroda">Zur<i></i>da</h1>
       <div class="story">A wanderer, a robot dog<br>and a desert that remembers.</div></div>
     <div class="tfoot"><div class="tbtns" id="tbtns"><div class="ld" id="ld" role="status" aria-label="Loading"><div class="ldt"><i id="ldf"></i></div><div class="lab">Loading…</div></div></div>
-      <div class="small">Progress is saved in this browser.</div></div>
+      <div class="small">Progress is saved in this browser.<br>The game keeps anonymous play statistics.</div></div>
   </div>
   <button id="mute" class="hidden" aria-label="Sound"></button>
 </div>
@@ -364,6 +364,21 @@
     n=Math.max(n||p,p);if(!T)T=Math.min(14,Math.max(.6,(performance.now()-t0)/1000/Math.max(p,.05)*(n-p)*1.4));
     f.style.transitionDuration=T+'s';f.style.transform='translateX(-'+(100-(p+(n-p)*.92)*100).toFixed(1)+'%)';};
   if(f){f.getBoundingClientRect();window.__ld(.02,.3,8);}
+  // Play statistics (2.13): small anonymous notes to /api/e (functions/api/e.js). `sid` is made up here on every load and kept only in
+  // this page's memory – nothing is stored on the device, so one sitting cannot be tied to another. Off for test saves (#max…), the bot,
+  // automated browsers and local builds (window.ZSTATS=1 forces it on for tests). A device marked with #mine (Robin's own; #notmine
+  // takes the mark off) says so with every note and the stats page leaves it out – that mark is the only thing kept on the device.
+  var own=0,hs=(location.hash||'').toLowerCase();
+  try{var LS=window.localStorage;if(hs==='#mine'||hs==='#notmine'){if(hs==='#mine')LS.setItem('zuroda_mine','1');else LS.removeItem('zuroda_mine');history.replaceState(null,'',location.pathname+location.search);}own=LS.getItem('zuroda_mine')?1:0;}catch(_){}
+  var zon=(!!window.ZSTATS||(/(^|\.)zuroda\.com$|(^|\.)zuroda-git\.pages\.dev$/.test(location.hostname)&&!navigator.webdriver))&&!/^#(bot|max)/.test(hs);
+  var mm=window.matchMedia?function(q){try{return matchMedia(q).matches;}catch(_){return false;}}:function(){return false;};
+  var zb={sid:(Math.random().toString(36).slice(2,10)+Date.now().toString(36)).replace(/[^a-z0-9]/g,'').slice(0,16),v:window.ZB||'',dev:mm('(pointer:coarse)')?'m':'d',app:(navigator.standalone===true||mm('(display-mode: standalone)'))?1:0,own:own};
+  window.__zown=function(){return own;};
+  addEventListener('hashchange',function(){var h=(location.hash||'').toLowerCase();if(h==='#mine'||h==='#notmine')location.reload();});// typed into the address of an open game
+  window.__zev=function(k,o){if(!zon)return;try{var p={k:k},i;for(i in zb)p[i]=zb[i];for(i in o||{})p[i]=o[i];var body=JSON.stringify(p);
+    if(!(navigator.sendBeacon&&navigator.sendBeacon('/api/e',body)))fetch('/api/e',{method:'POST',body:body,keepalive:true}).catch(function(){});}catch(_){}};
+  var rh='';try{rh=d.referrer?new URL(d.referrer).hostname:'';if(rh===location.hostname)rh='';}catch(_){}
+  window.__zev('load',{a:Math.round(performance.now()),s:rh});
   // a part that did not arrive (three.js, a broken script): say so instead of a bar that never ends
   addEventListener('error',function(e){var t=e.target;if(!B.contains('loading')||!((t&&t.tagName==='SCRIPT')||e.message))return;fin=1;B.add('lderr');
     var l=d.querySelector('#ld .lab');if(l)l.textContent='Couldn’t load the game. Check your connection and reload the page.';},true);

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script>window.ZB="2.13"</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Zuroda</title>
@@ -502,7 +502,7 @@
       <h1 class="wordmark" aria-label="Zuroda">Zur<i></i>da</h1>
       <div class="story">A wanderer, a robot dog<br>and a desert that remembers.</div></div>
     <div class="tfoot"><div class="tbtns" id="tbtns"><div class="ld" id="ld" role="status" aria-label="Loading"><div class="ldt"><i id="ldf"></i></div><div class="lab">Loading…</div></div></div>
-      <div class="small">Progress is saved in this browser.</div></div>
+      <div class="small">Progress is saved in this browser.<br>The game keeps anonymous play statistics.</div></div>
   </div>
   <button id="mute" class="hidden" aria-label="Sound"></button>
 </div>
@@ -525,6 +525,21 @@
     n=Math.max(n||p,p);if(!T)T=Math.min(14,Math.max(.6,(performance.now()-t0)/1000/Math.max(p,.05)*(n-p)*1.4));
     f.style.transitionDuration=T+'s';f.style.transform='translateX(-'+(100-(p+(n-p)*.92)*100).toFixed(1)+'%)';};
   if(f){f.getBoundingClientRect();window.__ld(.02,.3,8);}
+  // Play statistics (2.13): small anonymous notes to /api/e (functions/api/e.js). `sid` is made up here on every load and kept only in
+  // this page's memory – nothing is stored on the device, so one sitting cannot be tied to another. Off for test saves (#max…), the bot,
+  // automated browsers and local builds (window.ZSTATS=1 forces it on for tests). A device marked with #mine (Robin's own; #notmine
+  // takes the mark off) says so with every note and the stats page leaves it out – that mark is the only thing kept on the device.
+  var own=0,hs=(location.hash||'').toLowerCase();
+  try{var LS=window.localStorage;if(hs==='#mine'||hs==='#notmine'){if(hs==='#mine')LS.setItem('zuroda_mine','1');else LS.removeItem('zuroda_mine');history.replaceState(null,'',location.pathname+location.search);}own=LS.getItem('zuroda_mine')?1:0;}catch(_){}
+  var zon=(!!window.ZSTATS||(/(^|\.)zuroda\.com$|(^|\.)zuroda-git\.pages\.dev$/.test(location.hostname)&&!navigator.webdriver))&&!/^#(bot|max)/.test(hs);
+  var mm=window.matchMedia?function(q){try{return matchMedia(q).matches;}catch(_){return false;}}:function(){return false;};
+  var zb={sid:(Math.random().toString(36).slice(2,10)+Date.now().toString(36)).replace(/[^a-z0-9]/g,'').slice(0,16),v:window.ZB||'',dev:mm('(pointer:coarse)')?'m':'d',app:(navigator.standalone===true||mm('(display-mode: standalone)'))?1:0,own:own};
+  window.__zown=function(){return own;};
+  addEventListener('hashchange',function(){var h=(location.hash||'').toLowerCase();if(h==='#mine'||h==='#notmine')location.reload();});// typed into the address of an open game
+  window.__zev=function(k,o){if(!zon)return;try{var p={k:k},i;for(i in zb)p[i]=zb[i];for(i in o||{})p[i]=o[i];var body=JSON.stringify(p);
+    if(!(navigator.sendBeacon&&navigator.sendBeacon('/api/e',body)))fetch('/api/e',{method:'POST',body:body,keepalive:true}).catch(function(){});}catch(_){}};
+  var rh='';try{rh=d.referrer?new URL(d.referrer).hostname:'';if(rh===location.hostname)rh='';}catch(_){}
+  window.__zev('load',{a:Math.round(performance.now()),s:rh});
   // a part that did not arrive (three.js, a broken script): say so instead of a bar that never ends
   addEventListener('error',function(e){var t=e.target;if(!B.contains('loading')||!((t&&t.tagName==='SCRIPT')||e.message))return;fin=1;B.add('lderr');
     var l=d.querySelector('#ld .lab');if(l)l.textContent='Couldn’t load the game. Check your connection and reload the page.';},true);
@@ -2844,7 +2859,7 @@ function applyGreen(anim){const lv=greenLv(),gi=BS.gInst;if(!gi)return;const o3=
   const had=BS.pond.children.length;while(BS.pond.children.length)BS.pond.remove(BS.pond.children[0]);if(lv>=9){BS.pond.add(makePuddle(lv>=10?17:11));if(anim&&!had){BS.pond.scale.setScalar(0.01);BS.pond.userData.pop=0;}}
   BS.gLv=lv;}
 function waterVillage(){const a=greenPour();if(a<=0)return false;const lv=greenLv();SV.well-=a;SV.greenW=(SV.greenW||0)+a;sfx.drink();
-  if(SV.greenW>=GREEN.cost[lv]-0.05){SV.green=lv+1;SV.greenW=0;sfx.repair();toast('{palm}','The village is greener · '+SV.green+' of 10',GREEN.what[SV.green]);}
+  if(SV.greenW>=GREEN.cost[lv]-0.05){SV.green=lv+1;SV.greenW=0;sfx.repair();zEv('green',{a:SV.green,n:SV.exp});toast('{palm}','The village is greener · '+SV.green+' of 10',GREEN.what[SV.green]);}
   save();refreshBaseUI();return true;}
 function rebuildBuilding(k){
   const sc=BS.scene,b=BLD[k],lvl=SV.b[k];
@@ -2991,7 +3006,7 @@ $('shBody').addEventListener('click',e=>{
   const t=e.target.closest('[data-act]');if(!t||t.disabled)return;const act=t.dataset.act,k=t.dataset.k;
   if(act==='repair')doRepair(k);
   if(act==='pick'){sfx.ui('select');B.wsel=k;openBuilding('dilna',true);}
-  if(act==='craft'){const c=CRAFT[k],gl=gearLv(k),nx=c.lv[gl];if(nx&&canPay(nx)){pay(nx);SV.craft[k]=gl+1;save();sfx.repair();toast('{'+c.icon+'}',c.name+(c.lv.length>1?' '+ROMAN[gl+1]:''),nx.eff);refreshBaseUI();openBuilding('dilna',true);if(k==='kladivo'||k==='batoh')rebuildBaseChars();}}
+  if(act==='craft'){const c=CRAFT[k],gl=gearLv(k),nx=c.lv[gl];if(nx&&canPay(nx)){pay(nx);SV.craft[k]=gl+1;save();sfx.repair();zEv('up',{s:'g:'+k,a:gl+1,n:SV.exp});toast('{'+c.icon+'}',c.name+(c.lv.length>1?' '+ROMAN[gl+1]:''),nx.eff);refreshBaseUI();openBuilding('dilna',true);if(k==='kladivo'||k==='batoh')rebuildBaseChars();}}
   if(act==='water'){if(waterVillage())openBuilding('cerpadlo',true);}
   if(act==='scout'){closeSheet();openMap('scout');}
   if(act==='go'){startExpedition(k||null);}
@@ -3002,7 +3017,7 @@ $('shBody').addEventListener('click',e=>{
     else{t.dataset.confirm='1';t.textContent='Sure? Tap again – this erases all progress';}}
 });
 function doRepair(k){
-  if(!canRepair(k))return;const n=nextLv(k);pay(n);SV.b[k]++;save();sfx.repair();
+  if(!canRepair(k))return;const n=nextLv(k);pay(n);SV.b[k]++;save();sfx.repair();zEv('up',{s:'b:'+k,a:SV.b[k],n:SV.exp});
   const b=BLD[k];rebuildBuilding(k);const g=BS.bld[k];g.scale.setScalar(0.01);g.userData.pop=0;
   burst3(BS.scene,b.x*S,1.5,b.y*S,'#e0b04c',18,5);burst3(BS.scene,b.x*S,1.5,b.y*S,b.col,14,4);
   toast('{wrench}',b.name+(SV.b[k]===1?' repaired!':' upgraded!'),n.eff);refreshBaseUI();openBuilding(k,true);
@@ -3257,11 +3272,11 @@ function xAction(){if(!X||X.end||X.intro)return;
   if(slingReady()){slingShoot();return;}
   if(X.goHome&&!X.dis){comeHome();return;}
   if(X.nearWreck&&!X.dis){const W=WRECK[X.nearWreck.kind];if(gearLv('kladivo')<W.need){xText('Needs {hammer} Hammer '+ROMAN[W.need],'#c8643c');return;}if(room()<=0){fullMsg();return;}X.dis={w:X.nearWreck,c:X.nearWreckC,t:0};X.dest=null;sfx.clink();return;}
-  if(X.nearDrill&&!X.nearDrill.got){const d=X.nearDrill;d.got=true;SV.drill[d.cp.id]=1;save();sfx.core();xBurst(d.x,d.y,'#e0b04c',18,100);X.nearDrill=null;
+  if(X.nearDrill&&!X.nearDrill.got){const d=X.nearDrill;d.got=true;SV.drill[d.cp.id]=1;save();sfx.core();zEv('drill',{s:d.cp.id,n:SV.exp});xBurst(d.x,d.y,'#e0b04c',18,100);X.nearDrill=null;
     if(d.m&&d.m.parent){const par=d.m.parent,pos=d.m.position.clone(),ry=d.m.rotation.y;par.remove(d.m);d.m=makeDrillH(true);d.m.position.copy(pos);d.m.rotation.y=ry;par.add(d.m);}
     toast('{wrench}','Well drill found!','Now '+d.cp.name+' can be founded. The drill is yours for good – no need to carry it home.');X.events.push({x:d.x,y:d.y,t:'crate'});return;}
   if(X.nearCamp&&!SV.camps[X.nearCamp.id]){const cp=X.nearCamp;if(!SV.drill[cp.id]){xText('A camp needs a well drill first','#c0532f');return;}if(!campCan(cp.cost)){xText('Still missing '+campLack(cp.cost),'#c0532f');return;}
-    campPay(cp.cost);SV.camps[cp.id]=1;save();sfx.repair();xBurst(cp.x,cp.y,'#e0b04c',20,100);
+    campPay(cp.cost);SV.camps[cp.id]=1;save();sfx.repair();zEv('camp',{s:cp.id,n:SV.exp});xBurst(cp.x,cp.y,'#e0b04c',20,100);
     if(cp.m&&cp.m.parent){const par=cp.m.parent,pos=cp.m.position.clone();par.remove(cp.m);cp.m=makeCamp(true);cp.m.position.copy(pos);par.add(cp.m);}
     toast('{home}',cp.name+' built!','From home you can now travel here in one tap ('+cp.trip+' L from the well).');X.events.push({x:cp.x,y:cp.y,t:'camp'});}
 }
@@ -3434,6 +3449,7 @@ function endExp(type,cp){
     X.rs={hx:X.x*S,hz:X.y*S,face:X.x>0?-Math.PI/2:Math.PI/2,dx0:X.dx*S,dz0:X.dy*S,dface0:X.dface};}
   else{sfx.home();window._cheer=1;X.back=Math.round(X.water*10)/10;SV.well=Math.min(wellCap(),SV.well+X.water);}
   SV.scrap+=X.scrap;SV.cores+=X.cores;SV.chips=(SV.chips||0)+(X.chips||0);SV.exp++;if(X.maxD>SV.best){SV.best=X.maxD;X.record=true;}
+  zEv('exp',{n:SV.exp,a:Math.round(X.t),b:Math.round(X.maxD*M_PER_U),c:Math.round(X.walked*M_PER_U),d:Math.round(100*Math.max(0,X.water)/Math.max(0.01,X.cap)),e:X.scrap,f:X.chips||0,s:type});
   X.addM=Math.round(X.walked*M_PER_U);SV.meters=(SV.meters||0)+X.addM;X.lv1=[heroLv(),dogLv()];
   {const e0=SV.energy||0;SV.energy=Math.min(Math.max(e0,energyCap()),e0+Math.floor(X.addM/DYNAMO_M));X.dyn=Math.round(SV.energy-e0);}// Zuro's dynamo
   X.msg=null;if(SV.b.radio&&SV.msg<Math.min(MSGS.length,SV.b.radio)){X.msg=MSGS[SV.msg];SV.msg++;}
@@ -3887,14 +3903,16 @@ window.__animSnap=(k,t,ry,sx,zm,gx)=>{try{const w=220,h=300,r2=new T.WebGLRender
   const keep=SV.sex;SV.sex=sx||'f';const H=makeHero(Object.assign(heroGear(),{tool:'hammer'},gx||{}));SV.sex=keep;H.root.rotation.y=ry||0;sc.add(H.root);if(H.sk){const P=new Float32Array(SK_NB*4+3);skSample(H.sk,skClip(k),t,P);skApply(H.sk,P);}else{const c=animClip(k);const P=new Float32Array(AF);sampleClip(c,t,P);applyPose(H,P);}if(k==='smash'||k==='fix')toolInHand(H,true);
   const cam=new T.PerspectiveCamera(30,w/h,0.1,50);if(zm){cam.position.set(0,2.0,2.3);cam.lookAt(0,1.62,0);}else{cam.position.set(0,1.6,5.2);cam.lookAt(0,1.0,0);}r2.render(sc,cam);const u=r2.domElement.toDataURL('image/png');r2.dispose();return u;}catch(e){return 'ERR '+e;}};
 SV.sex='m';
-if(ZVER||CHEAT||LOOKN!==LOOK_DEF){const t=document.querySelector('#title .tag');if(t)t.textContent='EARLY PROTOTYPE'+(ZVER?' · '+ZVER:'')+(CHEAT?' · '+CHEAT.toUpperCase():'')+(LOOKN!==LOOK_DEF?' · LOOK '+LOOKN:'');}
+const ZMINE=!!(window.__zown&&window.__zown());// this device is marked as Robin's own (#mine) – its play is left out of the statistics
+if(ZVER||CHEAT||LOOKN!==LOOK_DEF||ZMINE){const t=document.querySelector('#title .tag');if(t)t.textContent='EARLY PROTOTYPE'+(ZVER?' · '+ZVER:'')+(CHEAT?' · '+CHEAT.toUpperCase():'')+(LOOKN!==LOOK_DEF?' · LOOK '+LOOKN:'')+(ZMINE?' · MINE':'');}
 if(ZVER){const f=document.querySelector('.side .fine');if(f)f.textContent='Early prototype '+ZVER+' · © 2026 Vabiko';}
 (function buildTitle(){const el=$('tbtns');for(const c of [...el.children])if(c.id!=='ld')c.remove();
   // one wanderer only (Robin 21. 11.); no pictures on the title – the live village is the picture (22. 11.)
   const inp=document.createElement('input');inp.maxLength=14;inp.value=SV.name||'Wanderer';inp.placeholder='Your name';inp.setAttribute('aria-label','Your wanderer’s name');
   const lab=document.createElement('div');lab.className='lab';lab.textContent='Your wanderer’s name';
   const b=document.createElement('button');b.className='btn primary';b.textContent=hadSave?'Continue':'Start';
-  b.addEventListener('click',()=>{{const cz=cheatOf(inp.value);if(cz&&cz!==CHEAT){location.hash='#'+cz;location.reload();return;}}SV.name=(inp.value||'Wanderer').trim().slice(0,14)||'Wanderer';SV.sex='m';save();initAudio();ldDone(1);$('title').classList.add('hidden');enterBase();});
+  b.addEventListener('click',()=>{{const mz=(inp.value||'').trim().toLowerCase();if(mz==='#mine'||mz==='#notmine'){location.hash=mz;location.reload();return;}}
+    {const cz=cheatOf(inp.value);if(cz&&cz!==CHEAT){location.hash='#'+cz;location.reload();return;}}SV.name=(inp.value||'Wanderer').trim().slice(0,14)||'Wanderer';SV.sex='m';save();initAudio();ldDone(1);zEv('start',{a:Math.round((performance.now()-zReadyT)/100)/10,b:hadSave?1:0,n:SV.exp});$('title').classList.add('hidden');enterBase();});
   el.appendChild(lab);el.appendChild(inp);el.appendChild(b);
   if(CHEAT){const n=document.querySelector('#title .tfoot .small');if(n){n.textContent='Test save – everything unlocked. ';const a=document.createElement('a');a.href='#';a.textContent='Back to the real game';a.style.cssText='color:inherit;text-decoration:underline;cursor:pointer';a.addEventListener('click',e=>{e.preventDefault();history.replaceState(null,'',location.pathname+location.search);location.reload();});n.appendChild(a);}}})();
 // Loading screen (2.12, Robin 23. 11.: "aby seděl graficky se zbytkem a byl tam načítací bar"). The page shows the bar from its first paint
@@ -3902,9 +3920,19 @@ if(ZVER){const f=document.querySelector('.side .fine');if(f)f.textContent='Early
 // icon sheet – then the bar runs to the end, the village fades in behind the title and the name field with Start takes the bar's place.
 // Nothing waits longer than 6 s for a font or a picture.
 let ldN=0,ldOK=0,ldFont=0;const ldT0=performance.now();
+// Play statistics (2.13, Robin 23. 11.: "abych viděl, kolik hráčů hru zkusilo, jak dlouho ji hráli"). zEv(k,{…}) hands a small anonymous note
+// to __zev in head.html, which posts it to /api/e (functions/api/e.js → D1). No player number is stored anywhere – the notes of one sitting
+// share a random word that lives only in this page. zPlay = seconds actually played (after Start, tab visible); it goes out at growing
+// intervals ('ping') and whenever the page is hidden ('bye'), so a sitting's length is the largest number that arrived.
+const zEv=(k,o)=>{try{if(window.__zev&&!window.SIMBOT)window.__zev(k,o);}catch(_){}};
+let zPlay=0,zNext=30,zBye=0,zReadyT=0;
+const zOut=k=>{zEv(k,{a:Math.round(zPlay),b:scene==='exp'?1:0,n:SV.exp});};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&zPlay-zBye>4){zBye=zPlay;zOut('bye');}});
+addEventListener('pagehide',()=>{if(zPlay-zBye>4){zBye=zPlay;zOut('bye');}});
 try{Promise.all([document.fonts.load('600 40px Fraunces'),document.fonts.load('500 13px Outfit'),document.fonts.load('600 18px Outfit')]).then(()=>{ldFont=1;},()=>{ldFont=1;});}catch(_){ldFont=1;}
 function ldDone(now){if(ldOK)return;ldOK=1;const B=document.body.classList,go=()=>{B.remove('loading');B.add('ldout');setTimeout(()=>{B.remove('ldout');const l=$('ld');if(l)l.remove();},900);};
-  if(window.__ld)window.__ld(1);if(now)go();else setTimeout(go,300);}
+  if(window.__ld)window.__ld(1);if(now)go();else setTimeout(go,300);
+  zReadyT=performance.now();if(!BOT)zEv('ready',{a:Math.round(zReadyT/100)/10,b:hadSave?1:0,n:SV.exp,s:'look'+LOOKN});}
 function ldTick(){if(ldOK)return;ldN++;if(ldN<3)return;const ic=!ST.sunink||!!ICIMG[HICON.names[0]];if((ldFont&&ic)||performance.now()-ldT0>6000)ldDone();}
 if(window.__ld)window.__ld(.86,1,1.6);
 window.__ldState=()=>[ldN,ldOK,ldFont,document.body.className];
@@ -3921,6 +3949,7 @@ function frame(nowT){
   if(window.CATALOG){ldDone(1);return;}
   if(!ldOK)ldTick();
   const rdt=(nowT-last)/1000,dt=Math.min(0.05,rdt);last=nowT;tNow+=dt;
+  if(scene!=='title'&&rdt>0){zPlay+=Math.min(rdt,1);if(zPlay>=zNext){zNext=zNext<60?60:zNext<180?zNext+60:zNext<300?300:zNext<420?420:zNext<600?600:zNext+300;zOut('ping');}}
   if(!ST.px&&!window.FIXQ&&rdt>0&&rdt<0.25&&!document.hidden){fpsAcc+=rdt;fpsN++;fpsT+=rdt;if(fpsT>2){const f=fpsN/fpsAcc;fpsAcc=fpsN=fpsT=0;
     // a slow phone gets a softer picture – but only when that actually helps. iOS in Low Power Mode draws 30 frames a second whatever we do;
     // the old rule read that as "slow" and went down to the coarsest picture for good (Robin's iPhone, 22. 11.). Now: two steps down that

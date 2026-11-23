@@ -1,6 +1,20 @@
 {
-  "root": "2.12",
+  "root": "2.13",
   "versions": [
+    {
+      "v": "2.13",
+      "date": "23. 11. 2026",
+      "title": "Statistiky hraní",
+      "max": true,
+      "notes": [
+        "Hra posílá anonymní poznámky o hraní: že se otevřela a načetla, že někdo zmáčkl Start, jak dopadla každá výprava (délka, jak daleko, jestli došla voda), co se vylepšilo a jak dlouho se hrálo.",
+        "Žádné cookies a žádné číslo hráče – poznámky jednoho hraní spojuje jen náhodné slovo, které žije v otevřené stránce a nikam se neukládá. Na titulní obrazovce je o tom jedna věta.",
+        "Nová soukromá stránka zuroda.com/statistiky/ (otevírá se klíčem): kolik lidí hru zkusilo, kde při první návštěvě odpadají, hraní po dnech, výpravy, zařízení a země.",
+        "Vlastní zařízení jde označit, aby se do čísel nepočítalo: otevřít hru s #mine na konci adresy, nebo napsat #mine jako jméno poutníka (v aplikaci z plochy). Titulní obrazovka pak ukazuje „· MINE“; #notmine označení zruší.",
+        "Zkoušení přes #max se nepočítá vůbec.",
+        "Běží i na hlavní adrese zuroda.com."
+      ]
+    },
     {
       "v": "2.12",
       "date": "23. 11. 2026",
